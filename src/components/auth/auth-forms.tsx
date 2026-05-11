@@ -1,27 +1,47 @@
 "use client";
 
-import { ArrowRight, Building2, Lock, Mail } from "lucide-react";
+import { ArrowRight, Building2, Lock, Mail, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { startTransition, useState } from "react";
 
 import { useSignIn, useSignUp } from "@clerk/nextjs";
 
 import { LogoutButton } from "@/components/auth/logout-button";
 import type { FlashMessage } from "@/lib/types";
 
+type AuthMode = "login" | "register";
+
 interface AuthFormsProps {
-  mode: "login" | "register";
+  mode: AuthMode;
   initialFlash: FlashMessage | null;
   requiresOrganizationSetup: boolean;
 }
+
+interface PendingVerification {
+  email: string;
+  organizationName: string;
+}
+
+const getClerkErrorMessage = (error: unknown, fallback: string) => {
+  if (typeof error !== "object" || error == null || !("errors" in error)) {
+    return fallback;
+  }
+
+  const errors = (error as { errors?: Array<{ longMessage?: string; message?: string }> }).errors;
+  const message = errors?.[0]?.longMessage ?? errors?.[0]?.message;
+
+  return message ? String(message) : fallback;
+};
 
 export const AuthForms = ({ mode, initialFlash, requiresOrganizationSetup }: AuthFormsProps) => {
   const router = useRouter();
   const { isLoaded: signInLoaded, signIn, setActive: setSignInActive } = useSignIn();
   const { isLoaded: signUpLoaded, signUp, setActive: setSignUpActive } = useSignUp();
+  const [activeMode, setActiveMode] = useState<AuthMode>(mode);
   const [flash, setFlash] = useState<FlashMessage | null>(initialFlash);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [pendingVerification, setPendingVerification] = useState<PendingVerification | null>(null);
 
   const setError = (message: string) => {
     setFlash({
@@ -29,6 +49,39 @@ export const AuthForms = ({ mode, initialFlash, requiresOrganizationSetup }: Aut
       message,
     });
     setIsSubmitting(false);
+  };
+
+  const setInfo = (message: string) => {
+    setFlash({
+      type: "info",
+      message,
+    });
+    setIsSubmitting(false);
+  };
+
+  const finishBootstrap = async (organizationName?: string) => {
+    const response = await fetch("/api/auth/bootstrap", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+      },
+      body: JSON.stringify(organizationName ? { organizationName } : {}),
+    });
+
+    return response.ok;
+  };
+
+  const handleModeChange = (nextMode: AuthMode) => {
+    if (nextMode === activeMode) {
+      return;
+    }
+
+    startTransition(() => {
+      setActiveMode(nextMode);
+      setPendingVerification(null);
+      setFlash(null);
+      setIsSubmitting(false);
+    });
   };
 
   const handleLogin = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -66,8 +119,8 @@ export const AuthForms = ({ mode, initialFlash, requiresOrganizationSetup }: Aut
       await fetch("/api/auth/bootstrap", { method: "POST" });
       router.push("/admin");
       router.refresh();
-    } catch {
-      setError("Logowanie nie powiodło się. Sprawdź dane konta.");
+    } catch (error) {
+      setError(getClerkErrorMessage(error, "Logowanie nie powiodło się. Sprawdź dane konta."));
     }
   };
 
@@ -109,67 +162,93 @@ export const AuthForms = ({ mode, initialFlash, requiresOrganizationSetup }: Aut
         password,
       });
 
-      if (attempt.status !== "complete" || !attempt.createdSessionId) {
-        setError(
-          "Konto wymaga dodatkowego potwierdzenia adresu e-mail. Dokończ weryfikację i wróć tutaj.",
-        );
+      if (attempt.status === "complete" && attempt.createdSessionId) {
+        await setSignUpActive({ session: attempt.createdSessionId });
+
+        const configured = await finishBootstrap(organizationName);
+
+        if (!configured) {
+          setError("Konto utworzone, ale nie udało się skonfigurować organizacji.");
+          return;
+        }
+
+        router.push("/admin");
+        router.refresh();
         return;
       }
 
-      await setSignUpActive({ session: attempt.createdSessionId });
+      await attempt.prepareEmailAddressVerification({ strategy: "email_code" });
+      setPendingVerification({ email, organizationName });
+      setInfo(`Wysłaliśmy kod weryfikacyjny na ${email}. Wpisz go poniżej, aby aktywować konto.`);
+    } catch (error) {
+      setError(getClerkErrorMessage(error, "Nie udało się utworzyć konta organizatora."));
+    }
+  };
 
-      const response = await fetch("/api/auth/bootstrap", {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-        },
-        body: JSON.stringify({ organizationName }),
-      });
+  const handleVerifyEmail = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
 
-      if (!response.ok) {
-        setError("Konto utworzone, ale nie udało się skonfigurować organizacji.");
+    if (!pendingVerification) {
+      setError("Najpierw utwórz konto, aby przejść do weryfikacji adresu e-mail.");
+      return;
+    }
+
+    if (!signUpLoaded || !signUp || !setSignUpActive) {
+      setError("Weryfikacja chwilowo niedostępna. Spróbuj ponownie za moment.");
+      return;
+    }
+
+    const formData = new FormData(event.currentTarget);
+    const code = String(formData.get("code") ?? "").trim();
+
+    if (!code) {
+      setError("Wpisz kod weryfikacyjny z wiadomości e-mail.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    setFlash(null);
+
+    try {
+      const verificationAttempt = await signUp.attemptEmailAddressVerification({ code });
+
+      if (verificationAttempt.status !== "complete" || !verificationAttempt.createdSessionId) {
+        setError("Nie udało się potwierdzić adresu e-mail. Sprawdź kod i spróbuj ponownie.");
+        return;
+      }
+
+      await setSignUpActive({ session: verificationAttempt.createdSessionId });
+
+      const configured = await finishBootstrap(pendingVerification.organizationName);
+
+      if (!configured) {
+        setError("Adres e-mail został potwierdzony, ale nie udało się skonfigurować organizacji.");
         return;
       }
 
       router.push("/admin");
       router.refresh();
-    } catch {
-      setError("Nie udało się utworzyć konta organizatora.");
+    } catch (error) {
+      setError(
+        getClerkErrorMessage(error, "Nie udało się potwierdzić adresu e-mail. Sprawdź kod i spróbuj ponownie."),
+      );
     }
   };
 
-  const handleGoogleAuth = async () => {
+  const handleResendVerificationCode = async () => {
+    if (!pendingVerification || !signUpLoaded || !signUp) {
+      setError("Najpierw rozpocznij rejestrację, aby wysłać kolejny kod.");
+      return;
+    }
+
     setIsSubmitting(true);
     setFlash(null);
 
     try {
-      if (mode === "register") {
-        if (!signUpLoaded || !signUp) {
-          setError("Rejestracja przez Google chwilowo niedostępna. Spróbuj ponownie za moment.");
-          return;
-        }
-
-        await signUp.authenticateWithRedirect({
-          strategy: "oauth_google",
-          redirectUrl: "/auth/callback",
-          redirectUrlComplete: "/auth/complete?provider=google",
-        });
-
-        return;
-      }
-
-      if (!signInLoaded || !signIn) {
-        setError("Logowanie przez Google chwilowo niedostępne. Spróbuj ponownie za moment.");
-        return;
-      }
-
-      await signIn.authenticateWithRedirect({
-        strategy: "oauth_google",
-        redirectUrl: "/auth/callback",
-        redirectUrlComplete: "/auth/complete?provider=google",
-      });
-    } catch {
-      setError("Nie udało się uruchomić logowania przez Google.");
+      await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
+      setInfo(`Wysłaliśmy nowy kod na ${pendingVerification.email}.`);
+    } catch (error) {
+      setError(getClerkErrorMessage(error, "Nie udało się wysłać nowego kodu. Spróbuj ponownie."));
     }
   };
 
@@ -188,15 +267,9 @@ export const AuthForms = ({ mode, initialFlash, requiresOrganizationSetup }: Aut
     setFlash(null);
 
     try {
-      const response = await fetch("/api/auth/bootstrap", {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-        },
-        body: JSON.stringify({ organizationName }),
-      });
+      const configured = await finishBootstrap(organizationName);
 
-      if (!response.ok) {
+      if (!configured) {
         setError("Nie udało się utworzyć organizacji. Spróbuj ponownie za chwilę.");
         return;
       }
@@ -208,134 +281,207 @@ export const AuthForms = ({ mode, initialFlash, requiresOrganizationSetup }: Aut
     }
   };
 
+  const heading = requiresOrganizationSetup
+    ? {
+        eyebrow: "Konfiguracja konta",
+        title: "Dokończ konfigurację",
+        description: "Podaj nazwę organizacji, a przygotujemy Twój panel organizatora.",
+      }
+    : pendingVerification
+      ? {
+          eyebrow: "Weryfikacja adresu e-mail",
+          title: "Wpisz kod",
+          description: `Kod został wysłany na ${pendingVerification.email}.`,
+        }
+      : activeMode === "register"
+        ? {
+            eyebrow: "Rejestracja",
+            title: "Utwórz konto",
+            description: "Załóż konto organizatora i dokończ konfigurację w kilku krokach.",
+          }
+        : {
+            eyebrow: "Logowanie",
+            title: "Witaj ponownie",
+            description: "Zaloguj się do panelu organizatora.",
+          };
+
   if (requiresOrganizationSetup) {
     return (
       <>
+        <div className="wf-auth-header">
+          <div className="wf-auth-subtitle">{heading.eyebrow}</div>
+          <h1>{heading.title}</h1>
+          <p className="wf-page-subtitle" style={{ marginTop: 0 }}>
+            {heading.description}
+          </p>
+        </div>
+
         {flash ? <div className={`wf-flash ${flash.type}`}>{flash.message}</div> : null}
 
-        <form className="wf-form-stack wf-auth-form" onSubmit={handleOrganizationSetup}>
-          <label className="wf-field">
-            <span className="wf-field-label">Nazwa Organizacji</span>
-            <span className="wf-input-shell">
-              <Building2 className="wf-input-icon" size={18} />
-              <input
-                className="wf-input wf-input-with-icon"
-                name="organizationName"
-                placeholder="np. Wojticore Health"
-                type="text"
-              />
-            </span>
-          </label>
+        <div className="wf-auth-stage" key="setup">
+          <form className="wf-form-stack wf-auth-form wf-auth-stage-panel" onSubmit={handleOrganizationSetup}>
+            <label className="wf-field">
+              <span className="wf-field-label">Nazwa Organizacji</span>
+              <span className="wf-input-shell">
+                <Building2 className="wf-input-icon" size={18} />
+                <input
+                  className="wf-input wf-input-with-icon"
+                  name="organizationName"
+                  placeholder="np. Wojticore Health"
+                  type="text"
+                />
+              </span>
+            </label>
 
-          <div className="wf-auth-setup-note">
-            To konto jest już zalogowane. Ten krok przygotuje organizację i pierwszy dostęp do dashboardu.
-          </div>
+            <div className="wf-auth-setup-note">
+              To konto jest już zalogowane. Ten krok przygotuje organizację i pierwszy dostęp do dashboardu.
+            </div>
 
-          <button className="wf-btn wf-btn-primary wf-btn-block" disabled={isSubmitting} type="submit">
-            {isSubmitting ? "Przygotowywanie panelu..." : "Dokończ konfigurację"}
-            <ArrowRight size={18} />
-          </button>
+            <button className="wf-btn wf-btn-primary wf-btn-block" disabled={isSubmitting} type="submit">
+              {isSubmitting ? "Przygotowywanie panelu..." : "Dokończ konfigurację"}
+              <ArrowRight size={18} />
+            </button>
 
-          <LogoutButton />
-        </form>
+            <LogoutButton />
+          </form>
+        </div>
       </>
     );
   }
 
   return (
     <>
-      <div className="wf-tab-row">
-        <Link className={`wf-tab-link${mode === "login" ? " is-active" : ""}`} href="/auth?mode=login">
-          Logowanie
-        </Link>
-        <Link className={`wf-tab-link${mode === "register" ? " is-active" : ""}`} href="/auth?mode=register">
-          Rejestracja
-        </Link>
+      <div className="wf-auth-header">
+        <div className="wf-auth-subtitle">{heading.eyebrow}</div>
+        <h1>{heading.title}</h1>
+        <p className="wf-page-subtitle" style={{ marginTop: 0 }}>
+          {heading.description}
+        </p>
       </div>
+
+      {!pendingVerification ? (
+        <div className="wf-tab-row" role="tablist" aria-label="Przełącznik formularzy logowania i rejestracji">
+          <button
+            aria-selected={activeMode === "login"}
+            className={`wf-tab-link${activeMode === "login" ? " is-active" : ""}`}
+            onClick={() => handleModeChange("login")}
+            role="tab"
+            type="button"
+          >
+            Logowanie
+          </button>
+          <button
+            aria-selected={activeMode === "register"}
+            className={`wf-tab-link${activeMode === "register" ? " is-active" : ""}`}
+            onClick={() => handleModeChange("register")}
+            role="tab"
+            type="button"
+          >
+            Rejestracja
+          </button>
+        </div>
+      ) : null}
 
       {flash ? <div className={`wf-flash ${flash.type}`}>{flash.message}</div> : null}
 
-      {mode === "login" ? (
-        <form className="wf-form-stack wf-auth-form" onSubmit={handleLogin}>
-          <button className="wf-auth-social-button" disabled={isSubmitting} onClick={handleGoogleAuth} type="button">
-            <span className="wf-google-mark">G</span>
-            Kontynuuj przez Google
-          </button>
+      <div className="wf-auth-stage" key={pendingVerification ? "verification" : activeMode}>
+        {pendingVerification ? (
+          <form className="wf-form-stack wf-auth-form wf-auth-stage-panel" onSubmit={handleVerifyEmail}>
+            <div className="wf-auth-verification-note">
+              <ShieldCheck size={18} />
+              <span>Wpisz kod z wiadomości e-mail, aby aktywować konto i dokończyć konfigurację organizacji.</span>
+            </div>
 
-          <div className="wf-auth-separator">
-            <span>lub użyj adresu e-mail</span>
-          </div>
+            <label className="wf-field">
+              <span className="wf-field-label">Kod weryfikacyjny</span>
+              <span className="wf-input-shell">
+                <Mail className="wf-input-icon" size={18} />
+                <input
+                  autoComplete="one-time-code"
+                  className="wf-input wf-input-with-icon"
+                  inputMode="numeric"
+                  name="code"
+                  placeholder="Wpisz kod z e-maila"
+                  type="text"
+                />
+              </span>
+            </label>
 
-          <label className="wf-field">
-            <span className="wf-field-label">E-mail</span>
-            <span className="wf-input-shell">
-              <Mail className="wf-input-icon" size={18} />
-              <input className="wf-input wf-input-with-icon" name="email" placeholder="adres@email.com" type="email" />
-            </span>
-          </label>
-          <label className="wf-field">
-            <span className="wf-field-label">Hasło</span>
-            <span className="wf-input-shell">
-              <Lock className="wf-input-icon" size={18} />
-              <input className="wf-input wf-input-with-icon" name="password" placeholder="••••••••" type="password" />
-            </span>
-          </label>
-          <div className="wf-auth-form-meta">
-            <span className="wf-footer-muted">Bezpieczne logowanie</span>
-            <Link className="wf-link-button" href="/password-reset">
-              Nie pamiętasz hasła?
-            </Link>
-          </div>
-          <button className="wf-btn wf-btn-primary wf-btn-block" disabled={isSubmitting} type="submit">
-            {isSubmitting ? "Logowanie..." : "Zaloguj się"}
-            <ArrowRight size={18} />
-          </button>
-        </form>
-      ) : (
-        <form className="wf-form-stack wf-auth-form" onSubmit={handleRegister}>
-          <button className="wf-auth-social-button" disabled={isSubmitting} onClick={handleGoogleAuth} type="button">
-            <span className="wf-google-mark">G</span>
-            Utwórz konto przez Google
-          </button>
+            <div className="wf-auth-form-meta wf-auth-secondary-row">
+              <button className="wf-link-button" disabled={isSubmitting} onClick={handleResendVerificationCode} type="button">
+                Wyślij kod ponownie
+              </button>
+            </div>
 
-          <div className="wf-auth-separator">
-            <span>lub utwórz konto przez e-mail</span>
-          </div>
-
-          <label className="wf-field">
-            <span className="wf-field-label">Nazwa Organizacji</span>
-            <span className="wf-input-shell">
-              <Building2 className="wf-input-icon" size={18} />
-              <input className="wf-input wf-input-with-icon" name="organizationName" placeholder="Wprowadź nazwę" type="text" />
-            </span>
-          </label>
-          <label className="wf-field">
-            <span className="wf-field-label">E-mail</span>
-            <span className="wf-input-shell">
-              <Mail className="wf-input-icon" size={18} />
-              <input className="wf-input wf-input-with-icon" name="email" placeholder="adres@email.com" type="email" />
-            </span>
-          </label>
-          <label className="wf-field">
-            <span className="wf-field-label">Hasło</span>
-            <span className="wf-input-shell">
-              <Lock className="wf-input-icon" size={18} />
-              <input className="wf-input wf-input-with-icon" name="password" placeholder="••••••••" type="password" />
-            </span>
-          </label>
-          <label className="wf-field">
-            <span className="wf-field-label">Potwierdź Hasło</span>
-            <span className="wf-input-shell">
-              <Lock className="wf-input-icon" size={18} />
-              <input className="wf-input wf-input-with-icon" name="confirmPassword" placeholder="••••••••" type="password" />
-            </span>
-          </label>
-          <button className="wf-btn wf-btn-primary wf-btn-block" disabled={isSubmitting} type="submit">
-            {isSubmitting ? "Tworzenie konta..." : "Utwórz konto"}
-            <ArrowRight size={18} />
-          </button>
-        </form>
-      )}
+            <button className="wf-btn wf-btn-primary wf-btn-block" disabled={isSubmitting} type="submit">
+              {isSubmitting ? "Potwierdzanie..." : "Potwierdź adres e-mail"}
+              <ArrowRight size={18} />
+            </button>
+          </form>
+        ) : activeMode === "login" ? (
+          <form className="wf-form-stack wf-auth-form wf-auth-stage-panel" onSubmit={handleLogin}>
+            <label className="wf-field">
+              <span className="wf-field-label">E-mail</span>
+              <span className="wf-input-shell">
+                <Mail className="wf-input-icon" size={18} />
+                <input className="wf-input wf-input-with-icon" name="email" placeholder="adres@email.com" type="email" />
+              </span>
+            </label>
+            <label className="wf-field">
+              <span className="wf-field-label">Hasło</span>
+              <span className="wf-input-shell">
+                <Lock className="wf-input-icon" size={18} />
+                <input className="wf-input wf-input-with-icon" name="password" placeholder="••••••••" type="password" />
+              </span>
+            </label>
+            <div className="wf-auth-form-meta">
+              <span className="wf-footer-muted">Bezpieczne logowanie</span>
+              <Link className="wf-link-button" href="/password-reset">
+                Nie pamiętasz hasła?
+              </Link>
+            </div>
+            <button className="wf-btn wf-btn-primary wf-btn-block" disabled={isSubmitting} type="submit">
+              {isSubmitting ? "Logowanie..." : "Zaloguj się"}
+              <ArrowRight size={18} />
+            </button>
+          </form>
+        ) : (
+          <form className="wf-form-stack wf-auth-form wf-auth-stage-panel" onSubmit={handleRegister}>
+            <label className="wf-field">
+              <span className="wf-field-label">Nazwa Organizacji</span>
+              <span className="wf-input-shell">
+                <Building2 className="wf-input-icon" size={18} />
+                <input className="wf-input wf-input-with-icon" name="organizationName" placeholder="Wprowadź nazwę" type="text" />
+              </span>
+            </label>
+            <label className="wf-field">
+              <span className="wf-field-label">E-mail</span>
+              <span className="wf-input-shell">
+                <Mail className="wf-input-icon" size={18} />
+                <input className="wf-input wf-input-with-icon" name="email" placeholder="adres@email.com" type="email" />
+              </span>
+            </label>
+            <label className="wf-field">
+              <span className="wf-field-label">Hasło</span>
+              <span className="wf-input-shell">
+                <Lock className="wf-input-icon" size={18} />
+                <input className="wf-input wf-input-with-icon" name="password" placeholder="••••••••" type="password" />
+              </span>
+            </label>
+            <label className="wf-field">
+              <span className="wf-field-label">Potwierdź Hasło</span>
+              <span className="wf-input-shell">
+                <Lock className="wf-input-icon" size={18} />
+                <input className="wf-input wf-input-with-icon" name="confirmPassword" placeholder="••••••••" type="password" />
+              </span>
+            </label>
+            <button className="wf-btn wf-btn-primary wf-btn-block" disabled={isSubmitting} type="submit">
+              {isSubmitting ? "Tworzenie konta..." : "Utwórz konto"}
+              <ArrowRight size={18} />
+            </button>
+          </form>
+        )}
+      </div>
     </>
   );
 };

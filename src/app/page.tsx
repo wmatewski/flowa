@@ -192,7 +192,7 @@ export default function HomePage() {
             </div>
             <span>Wojticore Flowa</span>
           </div>
-          <div>© 2024 Wojticore Flowa. Open-source dla organizatorów i edukatorów.</div>
+          <div>© 2026 Wojticore Flowa. Open-source dla organizatorów i edukatorów.</div>
           <nav className="wf-footer-nav">
             <Link href="/guides">Dokumentacja</Link>
             <Link href="/auth?mode=register">Rejestracja</Link>
