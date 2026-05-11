@@ -34,6 +34,9 @@ const hasValidDateTime = (value: string | null | undefined) => {
   return !Number.isNaN(new Date(value).getTime());
 };
 
+const getEntryDateLabel = (value: string | null | undefined) =>
+  hasValidDateTime(value) ? "Data wejścia" : "Data wejścia (wg czasu zapisu)";
+
 export default async function SessionAnalyticsPage({
   params,
   searchParams,
@@ -229,7 +232,7 @@ export default async function SessionAnalyticsPage({
                     <strong>{selectedParticipant.label}</strong>
                   </div>
                   <div className="wf-member-row">
-                    <span>{hasValidDateTime(selectedParticipant.enteredAt) ? "Data wejścia" : "Data wejścia (wg czasu zapisu)"}</span>
+                    <span>{getEntryDateLabel(selectedParticipant.enteredAt)}</span>
                     <strong>{formatDateTimeWithSeconds(selectedParticipant.enteredAt ?? selectedParticipant.submittedAt)}</strong>
                   </div>
                   <div className="wf-member-row">
