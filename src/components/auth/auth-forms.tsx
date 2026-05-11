@@ -1,9 +1,9 @@
 "use client";
 
-import { ArrowRight, Building2, Lock, Mail } from "lucide-react";
+import { ArrowRight, Building2, Lock, Mail, UserRound } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { startTransition, useEffect, useRef, useState } from "react";
+import { startTransition, useState } from "react";
 
 import { useClerk, useSignIn, useSignUp } from "@clerk/nextjs";
 
@@ -11,38 +11,13 @@ import { LogoutButton } from "@/components/auth/logout-button";
 import type { FlashMessage } from "@/lib/types";
 
 type AuthMode = "login" | "register";
+type LoginStage = "identifier" | "options";
+
 interface AuthFormsProps {
   mode: AuthMode;
   initialFlash: FlashMessage | null;
   requiresOrganizationSetup: boolean;
 }
-
-type PendingVerification =
-  | {
-      flow: "sign-up";
-      email: string;
-      organizationName: string;
-    }
-  | {
-      flow: "sign-in";
-      email: string;
-      emailAddressId: string;
-    };
-
-interface VerificationCodeInputProps {
-  disabled: boolean;
-  idPrefix: string;
-  onCodeChange?: () => void;
-  onComplete: (code: string) => Promise<void> | void;
-}
-
-interface EmailCodeFactor {
-  strategy: "email_code";
-  emailAddressId: string;
-  safeIdentifier: string;
-}
-
-const OTP_LENGTH = 6;
 
 const getClerkErrorMessage = (error: unknown, fallback: string) => {
   if (typeof error !== "object" || error == null || !("errors" in error)) {
@@ -55,147 +30,12 @@ const getClerkErrorMessage = (error: unknown, fallback: string) => {
   return message ? String(message) : fallback;
 };
 
-const getEmailCodeFactor = (factors: unknown[] | null | undefined): EmailCodeFactor | null => {
-  const factor = factors?.find((candidate) => {
-    if (typeof candidate !== "object" || candidate == null || !("strategy" in candidate)) {
-      return false;
-    }
-
-    return candidate.strategy === "email_code";
-  });
-
-  if (!factor || typeof factor !== "object") {
-    return null;
+const getVerifyRedirectUrl = () => {
+  if (typeof window === "undefined") {
+    return "/auth/verify";
   }
 
-  return factor as EmailCodeFactor;
-};
-
-const VerificationCodeInput = ({ disabled, idPrefix, onCodeChange, onComplete }: VerificationCodeInputProps) => {
-  const [digits, setDigits] = useState<string[]>(Array.from({ length: OTP_LENGTH }, () => ""));
-  const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
-  const lastSubmittedCodeRef = useRef<string | null>(null);
-
-  useEffect(() => {
-    if (disabled) {
-      return;
-    }
-
-    inputRefs.current[0]?.focus();
-  }, [disabled]);
-
-  useEffect(() => {
-    const code = digits.join("");
-
-    if (disabled || digits.some((digit) => !digit) || code.length !== OTP_LENGTH) {
-      return;
-    }
-
-    if (lastSubmittedCodeRef.current === code) {
-      return;
-    }
-
-    lastSubmittedCodeRef.current = code;
-    void onComplete(code);
-  }, [digits, disabled, onComplete]);
-
-  const updateDigits = (nextDigits: string[]) => {
-    lastSubmittedCodeRef.current = null;
-    setDigits(nextDigits);
-    onCodeChange?.();
-  };
-
-  const applyChunk = (startIndex: number, rawValue: string) => {
-    const chunk = rawValue.replace(/\D/g, "").slice(0, OTP_LENGTH - startIndex);
-
-    if (!chunk) {
-      const nextDigits = [...digits];
-      nextDigits[startIndex] = "";
-      updateDigits(nextDigits);
-      return;
-    }
-
-    const nextDigits = [...digits];
-
-    for (const [offset, character] of chunk.split("").entries()) {
-      nextDigits[startIndex + offset] = character;
-    }
-
-    updateDigits(nextDigits);
-
-    const nextFocusIndex = Math.min(startIndex + chunk.length, OTP_LENGTH - 1);
-    inputRefs.current[nextFocusIndex]?.focus();
-  };
-
-  const handleChange = (index: number, value: string) => {
-    applyChunk(index, value);
-  };
-
-  const handleKeyDown = (index: number, event: React.KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === "Backspace") {
-      event.preventDefault();
-
-      const nextDigits = [...digits];
-
-      if (nextDigits[index]) {
-        nextDigits[index] = "";
-        updateDigits(nextDigits);
-        return;
-      }
-
-      if (index === 0) {
-        return;
-      }
-
-      nextDigits[index - 1] = "";
-      updateDigits(nextDigits);
-      inputRefs.current[index - 1]?.focus();
-      return;
-    }
-
-    if (event.key === "ArrowLeft" && index > 0) {
-      event.preventDefault();
-      inputRefs.current[index - 1]?.focus();
-      return;
-    }
-
-    if (event.key === "ArrowRight" && index < OTP_LENGTH - 1) {
-      event.preventDefault();
-      inputRefs.current[index + 1]?.focus();
-    }
-  };
-
-  const handlePaste = (index: number, event: React.ClipboardEvent<HTMLInputElement>) => {
-    event.preventDefault();
-    applyChunk(index, event.clipboardData.getData("text"));
-  };
-
-  return (
-    <div className="wf-auth-code-shell">
-      <div className="wf-auth-code-row" role="group" aria-label="Kod weryfikacyjny">
-        {digits.map((digit, index) => (
-          <input
-            aria-label={`Cyfra ${index + 1} kodu`}
-            autoComplete={index === 0 ? "one-time-code" : "off"}
-            className="wf-input wf-auth-code-slot"
-            disabled={disabled}
-            id={`${idPrefix}-${index}`}
-            inputMode="numeric"
-            key={`${idPrefix}-${index}`}
-            maxLength={OTP_LENGTH}
-            onChange={(event) => handleChange(index, event.target.value)}
-            onKeyDown={(event) => handleKeyDown(index, event)}
-            onPaste={(event) => handlePaste(index, event)}
-            ref={(element) => {
-              inputRefs.current[index] = element;
-            }}
-            type="text"
-            value={digit}
-          />
-        ))}
-      </div>
-    </div>
-  );
+  return new URL("/auth/verify", window.location.origin).toString();
 };
 
 export const AuthForms = ({ mode, initialFlash, requiresOrganizationSetup }: AuthFormsProps) => {
@@ -204,9 +44,10 @@ export const AuthForms = ({ mode, initialFlash, requiresOrganizationSetup }: Aut
   const { isLoaded: signInLoaded, signIn, setActive: setSignInActive } = useSignIn();
   const { isLoaded: signUpLoaded, signUp, setActive: setSignUpActive } = useSignUp();
   const [activeMode, setActiveMode] = useState<AuthMode>(mode);
-  const [flash, setFlash] = useState<FlashMessage | null>(initialFlash?.type === "error" ? initialFlash : null);
+  const [flash, setFlash] = useState<FlashMessage | null>(initialFlash);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [pendingVerification, setPendingVerification] = useState<PendingVerification | null>(null);
+  const [loginStage, setLoginStage] = useState<LoginStage>("identifier");
+  const [loginEmail, setLoginEmail] = useState("");
 
   const setError = (message: string) => {
     setFlash({
@@ -244,48 +85,22 @@ export const AuthForms = ({ mode, initialFlash, requiresOrganizationSetup }: Aut
     router.refresh();
   };
 
-  const completeOrganizerSignUp = async (sessionId: string, organizationName: string) => {
-    await setSignUpActive?.({ session: sessionId });
-
-    const configured = await finishBootstrap(organizationName);
-
-    if (!configured) {
-      setError("Nie udało się przygotować organizacji.");
+  const sendSignUpVerificationLink = async () => {
+    if (!signUp) {
       return;
     }
 
-    if (configured.clerkOrganizationId) {
-      await clerk.setActive({ organization: configured.clerkOrganizationId });
-    }
-
-    router.push("/admin");
-    router.refresh();
+    await signUp.prepareEmailAddressVerification({
+      strategy: "email_link",
+      redirectUrl: getVerifyRedirectUrl(),
+    });
   };
 
-  const prepareLoginCodeVerification = async (factors: unknown[] | null | undefined, fallbackEmail: string) => {
-    if (!signIn) {
-      return false;
-    }
-
-    const emailCodeFactor = getEmailCodeFactor(factors);
-
-    if (!emailCodeFactor) {
-      return false;
-    }
-
-    await signIn.prepareFirstFactor({
-      strategy: "email_code",
-      emailAddressId: emailCodeFactor.emailAddressId,
-    });
-
-    setPendingVerification({
-      flow: "sign-in",
-      email: emailCodeFactor.safeIdentifier ?? fallbackEmail,
-      emailAddressId: emailCodeFactor.emailAddressId,
-    });
-    setIsSubmitting(false);
-
-    return true;
+  const completeOrganizerSignUp = async (sessionId: string) => {
+    await setSignUpActive?.({ session: sessionId });
+    await sendSignUpVerificationLink().catch(() => undefined);
+    router.push("/auth?registered=1");
+    router.refresh();
   };
 
   const handleModeChange = (nextMode: AuthMode) => {
@@ -295,13 +110,30 @@ export const AuthForms = ({ mode, initialFlash, requiresOrganizationSetup }: Aut
 
     startTransition(() => {
       setActiveMode(nextMode);
-      setPendingVerification(null);
+      setLoginStage("identifier");
+      setLoginEmail("");
       setFlash(null);
       setIsSubmitting(false);
     });
   };
 
-  const handleLogin = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleLoginIdentifier = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const formData = new FormData(event.currentTarget);
+    const email = String(formData.get("email") ?? "").trim();
+
+    if (!email) {
+      setError("Podaj adres e-mail.");
+      return;
+    }
+
+    clearFlash();
+    setLoginEmail(email);
+    setLoginStage("options");
+  };
+
+  const handlePasswordLogin = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     if (!signInLoaded || !signIn || !setSignInActive) {
@@ -310,11 +142,10 @@ export const AuthForms = ({ mode, initialFlash, requiresOrganizationSetup }: Aut
     }
 
     const formData = new FormData(event.currentTarget);
-    const email = String(formData.get("email") ?? "").trim();
     const password = String(formData.get("password") ?? "");
 
-    if (!email || !password) {
-      setError("Podaj adres e-mail i hasło.");
+    if (!loginEmail || !password) {
+      setError("Podaj hasło, aby się zalogować.");
       return;
     }
 
@@ -324,7 +155,7 @@ export const AuthForms = ({ mode, initialFlash, requiresOrganizationSetup }: Aut
     try {
       const passwordAttempt = await signIn.create({
         strategy: "password",
-        identifier: email,
+        identifier: loginEmail,
         password,
       });
 
@@ -333,18 +164,45 @@ export const AuthForms = ({ mode, initialFlash, requiresOrganizationSetup }: Aut
         return;
       }
 
-      const codePrepared = await prepareLoginCodeVerification(
-        passwordAttempt.supportedFirstFactors ?? signIn.supportedFirstFactors,
-        email,
-      );
-
-      if (codePrepared) {
-        return;
-      }
-
       setError("Nie udało się dokończyć logowania.");
     } catch (error) {
       setError(getClerkErrorMessage(error, "Logowanie nie powiodło się. Sprawdź dane konta."));
+    }
+  };
+
+  const handleMagicLinkLogin = async () => {
+    if (!signInLoaded || !signIn) {
+      setError("Logowanie chwilowo niedostępne.");
+      return;
+    }
+
+    if (!loginEmail) {
+      setError("Podaj adres e-mail.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    setFlash(null);
+
+    try {
+      const attempt = await signIn.create({
+        strategy: "email_link",
+        identifier: loginEmail,
+        redirectUrl: getVerifyRedirectUrl(),
+      });
+
+      if (attempt.status === "complete" && attempt.createdSessionId) {
+        await completeOrganizerSignIn(attempt.createdSessionId);
+        return;
+      }
+
+      setFlash({
+        type: "info",
+        message: `Wysłaliśmy magic link na ${loginEmail}. Otwórz go, aby dokończyć logowanie.`,
+      });
+      setIsSubmitting(false);
+    } catch (error) {
+      setError(getClerkErrorMessage(error, "Nie udało się wysłać magic linka."));
     }
   };
 
@@ -357,12 +215,13 @@ export const AuthForms = ({ mode, initialFlash, requiresOrganizationSetup }: Aut
     }
 
     const formData = new FormData(event.currentTarget);
-    const organizationName = String(formData.get("organizationName") ?? "").trim();
+    const firstName = String(formData.get("firstName") ?? "").trim();
+    const lastName = String(formData.get("lastName") ?? "").trim();
     const email = String(formData.get("email") ?? "").trim();
     const password = String(formData.get("password") ?? "");
     const confirmPassword = String(formData.get("confirmPassword") ?? "");
 
-    if (!organizationName || !email || !password || !confirmPassword) {
+    if (!firstName || !lastName || !email || !password || !confirmPassword) {
       setError("Uzupełnij wszystkie pola.");
       return;
     }
@@ -382,108 +241,26 @@ export const AuthForms = ({ mode, initialFlash, requiresOrganizationSetup }: Aut
 
     try {
       const attempt = await signUp.create({
+        firstName,
+        lastName,
         emailAddress: email,
         password,
       });
 
       if (attempt.status === "complete" && attempt.createdSessionId) {
-        await completeOrganizerSignUp(attempt.createdSessionId, organizationName);
+        await completeOrganizerSignUp(attempt.createdSessionId);
         return;
       }
 
-      await attempt.prepareEmailAddressVerification({ strategy: "email_code" });
-      setPendingVerification({
-        flow: "sign-up",
-        email,
-        organizationName,
+      await sendSignUpVerificationLink();
+      setFlash({
+        type: "info",
+        message: `Konto zostało utworzone. Sprawdź skrzynkę ${email}, aby potwierdzić adres e-mail.`,
       });
+      setActiveMode("login");
       setIsSubmitting(false);
     } catch (error) {
       setError(getClerkErrorMessage(error, "Nie udało się utworzyć konta."));
-    }
-  };
-
-  const handleVerificationComplete = async (code: string) => {
-    if (!pendingVerification) {
-      return;
-    }
-
-    setIsSubmitting(true);
-    setFlash(null);
-
-    try {
-      if (pendingVerification.flow === "sign-up") {
-        if (!signUpLoaded || !signUp || !setSignUpActive) {
-          setError("Weryfikacja chwilowo niedostępna.");
-          return;
-        }
-
-        const verificationAttempt = await signUp.attemptEmailAddressVerification({ code });
-        const sessionId = verificationAttempt.createdSessionId ?? signUp.createdSessionId;
-
-        if (!sessionId) {
-          setError("Kod jest nieprawidłowy.");
-          return;
-        }
-
-        await completeOrganizerSignUp(sessionId, pendingVerification.organizationName);
-        return;
-      }
-
-      if (!signInLoaded || !signIn || !setSignInActive) {
-        setError("Weryfikacja chwilowo niedostępna.");
-        return;
-      }
-
-      const verificationAttempt = await signIn.attemptFirstFactor({
-        strategy: "email_code",
-        code,
-      });
-      const sessionId = verificationAttempt.createdSessionId ?? signIn.createdSessionId;
-
-      if (!sessionId) {
-        setError("Kod jest nieprawidłowy.");
-        return;
-      }
-
-      await completeOrganizerSignIn(sessionId);
-    } catch (error) {
-      setError(getClerkErrorMessage(error, "Kod jest nieprawidłowy."));
-    }
-  };
-
-  const handleResendVerificationCode = async () => {
-    if (!pendingVerification) {
-      return;
-    }
-
-    setIsSubmitting(true);
-    setFlash(null);
-
-    try {
-      if (pendingVerification.flow === "sign-up") {
-        if (!signUpLoaded || !signUp) {
-          setError("Nie udało się wysłać kodu.");
-          return;
-        }
-
-        await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
-        setIsSubmitting(false);
-        return;
-      }
-
-      if (!signInLoaded || !signIn) {
-        setError("Nie udało się wysłać kodu.");
-        return;
-      }
-
-      await signIn.prepareFirstFactor({
-        strategy: "email_code",
-        emailAddressId: pendingVerification.emailAddressId,
-      });
-      setIsSubmitting(false);
-    } catch (error) {
-      setError(getClerkErrorMessage(error, "Nie udało się wysłać kodu."));
     }
   };
 
@@ -523,26 +300,25 @@ export const AuthForms = ({ mode, initialFlash, requiresOrganizationSetup }: Aut
   const heading = requiresOrganizationSetup
     ? {
         eyebrow: "Konfiguracja konta",
-        title: "Dokończ konfigurację",
-        description: "Podaj nazwę organizacji.",
+        title: "Utwórz organizację",
+        description: "Na tym etapie podajesz wyłącznie nazwę organizacji w Clerk.",
       }
-    : pendingVerification
+    : activeMode === "login" && loginStage === "options"
       ? {
-          eyebrow:
-            pendingVerification.flow === "sign-up" ? "Weryfikacja adresu e-mail" : "Potwierdzenie logowania",
-          title: "Wpisz kod",
-          description: `Kod został wysłany na ${pendingVerification.email}.`,
+          eyebrow: "Logowanie",
+          title: "Wybierz metodę logowania",
+          description: `Kontynuujesz dla ${loginEmail}. Możesz wpisać hasło albo poprosić o magic link.`,
         }
       : activeMode === "register"
         ? {
             eyebrow: "Rejestracja",
             title: "Utwórz konto",
-            description: "Załóż konto organizatora.",
+            description: "Załóż konto organizatora bez podawania nazwy organizacji na starcie.",
           }
         : {
             eyebrow: "Logowanie",
             title: "Witaj ponownie",
-            description: "Zaloguj się do panelu organizatora.",
+            description: "Najpierw podaj adres e-mail, a potem wybierz sposób logowania.",
           };
 
   if (requiresOrganizationSetup) {
@@ -574,7 +350,7 @@ export const AuthForms = ({ mode, initialFlash, requiresOrganizationSetup }: Aut
             </label>
 
             <button className="wf-btn wf-btn-primary wf-btn-block" disabled={isSubmitting} type="submit">
-              {isSubmitting ? "Przygotowywanie panelu..." : "Dokończ konfigurację"}
+              {isSubmitting ? "Tworzenie organizacji..." : "Utwórz organizację"}
               <ArrowRight size={18} />
             </button>
 
@@ -595,49 +371,32 @@ export const AuthForms = ({ mode, initialFlash, requiresOrganizationSetup }: Aut
         </p>
       </div>
 
-      {!pendingVerification ? (
-        <div className="wf-tab-row" role="tablist" aria-label="Przełącznik formularzy logowania i rejestracji">
-          <button
-            aria-selected={activeMode === "login"}
-            className={`wf-tab-link${activeMode === "login" ? " is-active" : ""}`}
-            onClick={() => handleModeChange("login")}
-            role="tab"
-            type="button"
-          >
-            Logowanie
-          </button>
-          <button
-            aria-selected={activeMode === "register"}
-            className={`wf-tab-link${activeMode === "register" ? " is-active" : ""}`}
-            onClick={() => handleModeChange("register")}
-            role="tab"
-            type="button"
-          >
-            Rejestracja
-          </button>
-        </div>
-      ) : null}
+      <div className="wf-tab-row" role="tablist" aria-label="Przełącznik formularzy logowania i rejestracji">
+        <button
+          aria-selected={activeMode === "login"}
+          className={`wf-tab-link${activeMode === "login" ? " is-active" : ""}`}
+          onClick={() => handleModeChange("login")}
+          role="tab"
+          type="button"
+        >
+          Logowanie
+        </button>
+        <button
+          aria-selected={activeMode === "register"}
+          className={`wf-tab-link${activeMode === "register" ? " is-active" : ""}`}
+          onClick={() => handleModeChange("register")}
+          role="tab"
+          type="button"
+        >
+          Rejestracja
+        </button>
+      </div>
 
       {flash ? <div className={`wf-flash ${flash.type}`}>{flash.message}</div> : null}
 
-      <div className="wf-auth-stage" key={pendingVerification ? pendingVerification.flow : activeMode}>
-        {pendingVerification ? (
-          <div className="wf-form-stack wf-auth-form wf-auth-stage-panel">
-            <VerificationCodeInput
-              disabled={isSubmitting}
-              idPrefix={`wf-${pendingVerification.flow}-code`}
-              onCodeChange={clearFlash}
-              onComplete={handleVerificationComplete}
-            />
-
-            <div className="wf-auth-form-meta wf-auth-secondary-row">
-              <button className="wf-link-button" disabled={isSubmitting} onClick={handleResendVerificationCode} type="button">
-                Wyślij kod ponownie
-              </button>
-            </div>
-          </div>
-        ) : activeMode === "login" ? (
-          <form className="wf-form-stack wf-auth-form wf-auth-stage-panel" onSubmit={handleLogin}>
+      <div className="wf-auth-stage" key={`${activeMode}-${loginStage}`}>
+        {activeMode === "login" && loginStage === "identifier" ? (
+          <form className="wf-form-stack wf-auth-form wf-auth-stage-panel" onSubmit={handleLoginIdentifier}>
             <label className="wf-field">
               <span className="wf-field-label">E-mail</span>
               <span className="wf-input-shell">
@@ -645,32 +404,71 @@ export const AuthForms = ({ mode, initialFlash, requiresOrganizationSetup }: Aut
                 <input className="wf-input wf-input-with-icon" name="email" placeholder="adres@email.com" type="email" />
               </span>
             </label>
-            <label className="wf-field">
-              <span className="wf-field-label">Hasło</span>
-              <span className="wf-input-shell">
-                <Lock className="wf-input-icon" size={18} />
-                <input className="wf-input wf-input-with-icon" name="password" placeholder="••••••••" type="password" />
-              </span>
-            </label>
+
             <div className="wf-auth-form-meta wf-auth-secondary-row">
               <Link className="wf-link-button" href="/password-reset">
                 Nie pamiętasz hasła?
               </Link>
             </div>
+
             <button className="wf-btn wf-btn-primary wf-btn-block" disabled={isSubmitting} type="submit">
-              {isSubmitting ? "Logowanie..." : "Zaloguj się"}
+              Dalej
               <ArrowRight size={18} />
             </button>
           </form>
+        ) : activeMode === "login" ? (
+          <div className="wf-form-stack wf-auth-form wf-auth-stage-panel">
+            <form className="wf-form-stack" onSubmit={handlePasswordLogin}>
+              <label className="wf-field">
+                <span className="wf-field-label">E-mail</span>
+                <input className="wf-input" disabled value={loginEmail} />
+              </label>
+
+              <label className="wf-field">
+                <span className="wf-field-label">Hasło</span>
+                <span className="wf-input-shell">
+                  <Lock className="wf-input-icon" size={18} />
+                  <input className="wf-input wf-input-with-icon" name="password" placeholder="••••••••" type="password" />
+                </span>
+              </label>
+
+              <div className="wf-auth-form-meta wf-auth-secondary-row">
+                <button className="wf-link-button" onClick={() => setLoginStage("identifier")} type="button">
+                  Zmień adres e-mail
+                </button>
+                <Link className="wf-link-button" href="/password-reset">
+                  Nie pamiętasz hasła?
+                </Link>
+              </div>
+
+              <button className="wf-btn wf-btn-primary wf-btn-block" disabled={isSubmitting} type="submit">
+                {isSubmitting ? "Logowanie..." : "Zaloguj się hasłem"}
+                <ArrowRight size={18} />
+              </button>
+            </form>
+
+            <button className="wf-btn wf-btn-secondary wf-btn-block" disabled={isSubmitting} onClick={handleMagicLinkLogin} type="button">
+              {isSubmitting ? "Wysyłanie..." : "Wyślij magic link"}
+            </button>
+          </div>
         ) : (
           <form className="wf-form-stack wf-auth-form wf-auth-stage-panel" onSubmit={handleRegister}>
             <label className="wf-field">
-              <span className="wf-field-label">Nazwa Organizacji</span>
+              <span className="wf-field-label">Imię</span>
               <span className="wf-input-shell">
-                <Building2 className="wf-input-icon" size={18} />
-                <input className="wf-input wf-input-with-icon" name="organizationName" placeholder="Wprowadź nazwę" type="text" />
+                <UserRound className="wf-input-icon" size={18} />
+                <input className="wf-input wf-input-with-icon" name="firstName" placeholder="Wprowadź imię" type="text" />
               </span>
             </label>
+
+            <label className="wf-field">
+              <span className="wf-field-label">Nazwisko</span>
+              <span className="wf-input-shell">
+                <UserRound className="wf-input-icon" size={18} />
+                <input className="wf-input wf-input-with-icon" name="lastName" placeholder="Wprowadź nazwisko" type="text" />
+              </span>
+            </label>
+
             <label className="wf-field">
               <span className="wf-field-label">E-mail</span>
               <span className="wf-input-shell">
@@ -678,6 +476,7 @@ export const AuthForms = ({ mode, initialFlash, requiresOrganizationSetup }: Aut
                 <input className="wf-input wf-input-with-icon" name="email" placeholder="adres@email.com" type="email" />
               </span>
             </label>
+
             <label className="wf-field">
               <span className="wf-field-label">Hasło</span>
               <span className="wf-input-shell">
@@ -685,6 +484,7 @@ export const AuthForms = ({ mode, initialFlash, requiresOrganizationSetup }: Aut
                 <input className="wf-input wf-input-with-icon" name="password" placeholder="••••••••" type="password" />
               </span>
             </label>
+
             <label className="wf-field">
               <span className="wf-field-label">Potwierdź Hasło</span>
               <span className="wf-input-shell">
@@ -692,10 +492,15 @@ export const AuthForms = ({ mode, initialFlash, requiresOrganizationSetup }: Aut
                 <input className="wf-input wf-input-with-icon" name="confirmPassword" placeholder="••••••••" type="password" />
               </span>
             </label>
+
             <button className="wf-btn wf-btn-primary wf-btn-block" disabled={isSubmitting} type="submit">
               {isSubmitting ? "Tworzenie konta..." : "Utwórz konto"}
               <ArrowRight size={18} />
             </button>
+
+            <p className="wf-page-subtitle" style={{ margin: 0 }}>
+              Po utworzeniu konta wyślemy link do weryfikacji e-mail. Nazwę organizacji dodasz dopiero po zalogowaniu.
+            </p>
           </form>
         )}
       </div>

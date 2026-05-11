@@ -1,14 +1,19 @@
 import { redirect } from "next/navigation";
 
 import { auth } from "@clerk/nextjs/server";
+import { EmailVerificationBanner } from "@/components/auth/email-verification-banner";
 import { AuthForms } from "@/components/auth/auth-forms";
-import { activatePendingMemberships, getAuthenticatedUser } from "@/lib/admin-auth";
-import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import {
+  activatePendingMemberships,
+  getAuthenticatedUser,
+  getEmailVerificationStatus,
+} from "@/lib/admin-auth";
+import { getSessionOrganizationIds } from "@/lib/clerk-session";
 import type { FlashMessage } from "@/lib/types";
 
 const getFlashMessage = (params: Record<string, string | string[] | undefined>): FlashMessage | null => {
   if (params.error === "missing-credentials") {
-    return { type: "error", message: "Podaj adres e-mail i hasło, aby się zalogować." };
+    return { type: "error", message: "Podaj adres e-mail, aby przejść do logowania." };
   }
 
   if (params.error === "invalid-credentials") {
@@ -16,7 +21,7 @@ const getFlashMessage = (params: Record<string, string | string[] | undefined>):
   }
 
   if (params.error === "missing-registration-fields") {
-    return { type: "error", message: "Uzupełnij nazwę organizacji, e-mail i oba pola hasła." };
+    return { type: "error", message: "Uzupełnij imię, nazwisko, e-mail i oba pola hasła." };
   }
 
   if (params.error === "weak-password") {
@@ -29,6 +34,13 @@ const getFlashMessage = (params: Record<string, string | string[] | undefined>):
 
   if (params.error === "registration-failed") {
     return { type: "error", message: "Nie udało się utworzyć konta organizatora." };
+  }
+
+  if (params.error === "email-verification-expired") {
+    return {
+      type: "error",
+      message: "Minęło 14 dni od utworzenia konta. Zweryfikuj adres e-mail, aby nadal korzystać z panelu.",
+    };
   }
 
   if (params.error === "not-authorized") {
@@ -48,7 +60,7 @@ const getFlashMessage = (params: Record<string, string | string[] | undefined>):
   if (params.registered === "1") {
     return {
       type: "info",
-      message: "Konto zostało utworzone. Jeśli wymagane jest potwierdzenie e-mail, dokończ je i wróć do logowania.",
+      message: "Konto zostało utworzone. Sprawdź skrzynkę, wysłaliśmy link do weryfikacji adresu e-mail.",
     };
   }
 
@@ -70,33 +82,39 @@ export default async function AuthPage({
   const params = await searchParams;
   const mode = params.mode === "register" ? "register" : "login";
   const flash = getFlashMessage(params);
-  const { userId } = await auth();
-  let activeMembershipCount = 0;
+  const { userId, orgId, sessionClaims } = await auth();
+  const sessionOrganizationIds = getSessionOrganizationIds(
+    sessionClaims as Record<string, unknown> | null | undefined,
+    orgId,
+  );
+  let verificationStatus: ReturnType<typeof getEmailVerificationStatus> = null;
+  let signedInEmail: string | null = null;
 
   if (userId) {
     const user = await getAuthenticatedUser();
     await activatePendingMemberships(user);
+    verificationStatus = getEmailVerificationStatus(user);
+    signedInEmail = user.email;
 
-    const adminClient = createSupabaseAdminClient();
-    const { count } = await adminClient
-      .from("memberships")
-      .select("id", { count: "exact", head: true })
-      .eq("user_id", user.id)
-      .eq("status", "active");
-
-    activeMembershipCount = count ?? 0;
-
-    if (activeMembershipCount > 0) {
+    if (sessionOrganizationIds.length > 0) {
       redirect("/admin");
     }
   }
 
-  const requiresOrganizationSetup = Boolean(userId) && activeMembershipCount === 0;
+  const requiresOrganizationSetup = Boolean(userId) && sessionOrganizationIds.length === 0;
 
   return (
     <main className="wf-auth-layout">
       <section className="wf-auth-panel">
         <section className="wf-auth-card">
+          {verificationStatus && signedInEmail ? (
+            <EmailVerificationBanner
+              daysRemaining={verificationStatus.daysRemaining}
+              email={signedInEmail}
+              expired={verificationStatus.isExpired}
+            />
+          ) : null}
+
           <AuthForms initialFlash={flash} mode={mode} requiresOrganizationSetup={requiresOrganizationSetup} />
         </section>
       </section>

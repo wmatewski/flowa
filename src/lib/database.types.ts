@@ -43,33 +43,6 @@ export interface Database {
         };
         Relationships: [];
       };
-      organizations: {
-        Row: {
-          id: string;
-          name: string;
-          slug: string;
-          created_by: string;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          id?: string;
-          name: string;
-          slug: string;
-          created_by: string;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          id?: string;
-          name?: string;
-          slug?: string;
-          created_by?: string;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Relationships: [];
-      };
       memberships: {
         Row: {
           id: string;

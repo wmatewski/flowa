@@ -216,7 +216,7 @@ export const inviteAdminAction = async (formData: FormData) => {
     redirectUrl: `${publicEnv.appUrl}/auth?mode=register`,
     publicMetadata: {
       invitedBy: user.id,
-      localOrganizationId: organization.id,
+      organizationId: organization.id,
       source: "flowa-organization-panel",
     },
   });

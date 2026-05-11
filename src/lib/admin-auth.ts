@@ -3,6 +3,8 @@ import "server-only";
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 
+import { getClerkOrganizationSummary } from "@/lib/clerk-organizations";
+import { getSessionOrganizationIds, getSessionVerificationClaim } from "@/lib/clerk-session";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import type { Membership, Organization, Profile } from "@/lib/types";
 
@@ -10,7 +12,18 @@ export interface AuthenticatedUser {
   id: string;
   email: string;
   displayName: string;
+  createdAt: string;
+  emailVerified: boolean;
 }
+
+export interface EmailVerificationStatus {
+  daysRemaining: number;
+  expiresAt: string;
+  isExpired: boolean;
+}
+
+const EMAIL_VERIFICATION_GRACE_DAYS = 14;
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 const normalizeEmail = (value: string | null | undefined) =>
   String(value ?? "").trim().toLowerCase();
@@ -25,21 +38,24 @@ const deriveDisplayName = (user: AuthenticatedUser) => {
   return normalizeEmail(user.email).split("@")[0] ?? "Organizator";
 };
 
-const getClerkLocalOrganizationId = async (orgId: string | null | undefined) => {
-  if (!orgId) {
+export const getEmailVerificationStatus = (user: Pick<AuthenticatedUser, "createdAt" | "emailVerified">) => {
+  if (user.emailVerified) {
     return null;
   }
 
-  const client = await clerkClient();
-  const organization = await client.organizations.getOrganization({ organizationId: orgId });
-  const localOrganizationId = (organization.publicMetadata as { localOrganizationId?: unknown } | null)
-    ?.localOrganizationId;
+  const createdAtTimestamp = new Date(user.createdAt).getTime();
+  const expiresAtTimestamp = createdAtTimestamp + EMAIL_VERIFICATION_GRACE_DAYS * DAY_MS;
+  const msRemaining = expiresAtTimestamp - Date.now();
 
-  return typeof localOrganizationId === "string" ? localOrganizationId : null;
+  return {
+    daysRemaining: Math.max(0, Math.ceil(msRemaining / DAY_MS)),
+    expiresAt: new Date(expiresAtTimestamp).toISOString(),
+    isExpired: msRemaining <= 0,
+  } satisfies EmailVerificationStatus;
 };
 
 export const getAuthenticatedUser = async (): Promise<AuthenticatedUser> => {
-  const { userId } = await auth();
+  const { userId, sessionClaims } = await auth();
 
   if (!userId) {
     redirect("/auth");
@@ -53,6 +69,9 @@ export const getAuthenticatedUser = async (): Promise<AuthenticatedUser> => {
       : user.emailAddresses.find((address) => address.id === user.primaryEmailAddressId) ??
         user.emailAddresses[0];
   const email = normalizeEmail(primaryAddress?.emailAddress);
+  const verificationClaim = getSessionVerificationClaim(
+    sessionClaims as Record<string, unknown> | null | undefined,
+  );
 
   if (!email) {
     throw new Error("Authenticated Clerk user is missing an e-mail address.");
@@ -62,6 +81,8 @@ export const getAuthenticatedUser = async (): Promise<AuthenticatedUser> => {
     id: user.id,
     email,
     displayName: [user.firstName, user.lastName].filter(Boolean).join(" "),
+    createdAt: new Date((user as { createdAt?: Date | string | number }).createdAt ?? Date.now()).toISOString(),
+    emailVerified: verificationClaim ?? String(primaryAddress?.verification?.status ?? "") === "verified",
   };
 };
 
@@ -137,13 +158,21 @@ export const getAuthenticatedAdmin = async (): Promise<{
   membership: Membership;
   memberships: Membership[];
 }> => {
-  const { orgId } = await auth();
+  const { orgId, sessionClaims } = await auth();
   const user = await getAuthenticatedUser();
+  const verificationStatus = getEmailVerificationStatus(user);
+
+  if (verificationStatus?.isExpired) {
+    redirect("/auth?error=email-verification-expired");
+  }
 
   await activatePendingMemberships(user);
 
   const profile = await ensureProfileForUser(user);
-  const clerkLocalOrganizationId = await getClerkLocalOrganizationId(orgId);
+  const sessionOrganizationIds = getSessionOrganizationIds(
+    sessionClaims as Record<string, unknown> | null | undefined,
+    orgId,
+  );
 
   const adminClient = createSupabaseAdminClient();
   const { data, error } = await adminClient
@@ -163,33 +192,18 @@ export const getAuthenticatedAdmin = async (): Promise<{
     redirect("/auth");
   }
 
-  const organizationIds = [...new Set(memberships.map((membership) => membership.organization_id))];
-  const { data: organizationRows, error: organizationError } = await adminClient
-    .from("organizations")
-    .select("id, name, slug, created_by, created_at, updated_at")
-    .in("id", organizationIds);
-
-  if (organizationError) {
-    throw organizationError;
-  }
-
-  const organizations = (organizationRows as Organization[] | null) ?? [];
-  const targetOrganizationId =
-    (clerkLocalOrganizationId && organizations.find((organization) => organization.id === clerkLocalOrganizationId)?.id) ||
-    (profile.default_organization_id &&
-    organizations.some((organization) => organization.id === profile.default_organization_id)
-      ? profile.default_organization_id
-      : memberships.find((membership) => membership.role === "owner")?.organization_id ??
-        memberships[0]?.organization_id);
+  const targetOrganizationId = sessionOrganizationIds.find((organizationId) =>
+    memberships.some((membership) => membership.organization_id === organizationId),
+  );
 
   if (!targetOrganizationId) {
     redirect("/auth?error=not-authorized");
   }
 
-  const organization = organizations.find((item) => item.id === targetOrganizationId);
+  const organization = await getClerkOrganizationSummary(targetOrganizationId);
   const membership = memberships.find((item) => item.organization_id === targetOrganizationId);
 
-  if (!organization || !membership) {
+  if (!membership) {
     redirect("/auth?error=not-authorized");
   }
 

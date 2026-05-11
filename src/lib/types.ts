@@ -8,7 +8,6 @@ export type AgeMode = Database["flowa"]["Enums"]["age_mode"];
 export type ResultTone = "optimal" | "warning" | "critical";
 
 export type Profile = Database["flowa"]["Tables"]["profiles"]["Row"];
-export type Organization = Database["flowa"]["Tables"]["organizations"]["Row"];
 export type Membership = Database["flowa"]["Tables"]["memberships"]["Row"];
 export type Session = Database["flowa"]["Tables"]["sessions"]["Row"];
 export type SessionCollaborator = Database["flowa"]["Tables"]["session_collaborators"]["Row"];
@@ -16,6 +15,15 @@ export type SessionSubmission = Database["flowa"]["Tables"]["session_submissions
 export type ActivityLog = Database["flowa"]["Tables"]["activity_log"]["Row"];
 export type SessionOverview = Database["flowa"]["Views"]["session_overview"]["Row"];
 export type SessionAgeStatistic = Database["flowa"]["Views"]["session_age_statistics"]["Row"];
+
+export interface Organization {
+  id: string;
+  name: string;
+  slug: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
 
 export interface FlashMessage {
   type: "success" | "error" | "info";

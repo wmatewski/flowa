@@ -14,6 +14,7 @@ import {
   getVisibleSessionIds,
   type SessionAccessContext,
 } from "@/lib/session-access";
+import { getClerkOrganizationSummary } from "@/lib/clerk-organizations";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import type {
   ActivityLog,
@@ -41,7 +42,6 @@ import { redirect } from "next/navigation";
 const profileColumns = "user_id, email, display_name, default_organization_id, created_at, updated_at";
 const membershipColumns =
   "id, organization_id, user_id, invited_email, role, status, created_by, created_at, updated_at";
-const organizationColumns = "id, name, slug, created_by, created_at, updated_at";
 const sessionColumns =
   "id, organization_id, slug, name, description, screen_time_limit_minutes, age_mode, fixed_age, status, created_by, starts_at, ends_at, created_at, updated_at";
 const sessionOverviewColumns =
@@ -601,11 +601,7 @@ export const getPublicSessionExperienceData = async (
 
   const session = sessionRow as Session;
   const [organizationResult, latestSubmissionResult, cohortResult] = await Promise.all([
-    supabase
-      .from("organizations")
-      .select(organizationColumns)
-      .eq("id", session.organization_id)
-      .single(),
+    getClerkOrganizationSummary(session.organization_id),
     supabase
       .from("latest_session_participants")
       .select(latestParticipantColumns)
@@ -619,10 +615,6 @@ export const getPublicSessionExperienceData = async (
       .limit(1000),
   ]);
 
-  if (organizationResult.error) {
-    throw organizationResult.error;
-  }
-
   if (latestSubmissionResult.error) {
     throw latestSubmissionResult.error;
   }
@@ -635,7 +627,7 @@ export const getPublicSessionExperienceData = async (
   const cohortEntries = (cohortResult.data as SessionSubmission[] | null) ?? [];
 
   return {
-    organization: organizationResult.data as Organization,
+    organization: organizationResult,
     session,
     latestSubmission,
     participantCount: cohortEntries.length,
