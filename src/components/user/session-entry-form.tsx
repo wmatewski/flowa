@@ -36,7 +36,7 @@ const formatTimeInput = (value: string) => {
     return digits;
   }
 
-  return `${digits.slice(0, digits.length - 2)}:${digits.slice(-2)}`;
+  return `${digits.slice(0, 2)}:${digits.slice(2)}`;
 };
 
 export const SessionEntryForm = ({
@@ -109,9 +109,12 @@ export const SessionEntryForm = ({
             name="screenTimeValue"
             onChange={(event) => setScreenTimeValue(formatTimeInput(event.target.value))}
             pattern="[0-9:]*"
-            placeholder="np. 1:30"
+            placeholder="np. 04:50"
             value={screenTimeValue}
           />
+          <span className="wf-field-hint">
+            Format GG:MM, np. 04:50 lub 11:50. Po wpisaniu dwóch cyfr dwukropek zostanie dodany automatycznie.
+          </span>
         </label>
 
         <button className="wf-btn wf-btn-primary wf-btn-block wf-btn-large" type="submit">
@@ -126,6 +129,18 @@ export const SessionEntryForm = ({
           </summary>
           <div className="wf-accordion-body">
             <div>
+              <div className="wf-chip-row" style={{ marginBottom: 16 }}>
+                {operatingSystemOrder.map((candidate) => (
+                  <button
+                    className={`wf-chip-button${candidate === operatingSystem ? " is-active" : ""}`}
+                    key={candidate}
+                    onClick={() => setOperatingSystem(candidate)}
+                    type="button"
+                  >
+                    {getOperatingSystemConfig(candidate).label}
+                  </button>
+                ))}
+              </div>
               <div className="wf-accordion-title">{operatingSystemConfig.label}</div>
               <ol className="wf-steps-list">
                 {operatingSystemConfig.steps.map((step) => (
