@@ -49,7 +49,7 @@ export default function AuthCompletePage() {
       <section className="wf-auth-panel">
         <section className="wf-auth-card wf-auth-loading-shell">
           <div className="wf-auth-header">
-            <div className="wf-auth-subtitle">Clerk OAuth</div>
+            <div className="wf-auth-subtitle">Konfiguracja</div>
             <h1>Przygotowujemy konto</h1>
             <p className="wf-page-subtitle" style={{ marginTop: 0 }}>
               Sprawdzamy profil i aktywujemy dostęp do organizacji lub konfiguracji nowego konta.

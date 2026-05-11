@@ -111,7 +111,7 @@ export const AuthForms = ({ mode, initialFlash, requiresOrganizationSetup }: Aut
 
       if (attempt.status !== "complete" || !attempt.createdSessionId) {
         setError(
-          "Konto wymaga dodatkowej weryfikacji w Clerk. Włącz tryb bez weryfikacji e-mail lub dodaj własny ekran potwierdzenia.",
+          "Konto wymaga dodatkowego potwierdzenia adresu e-mail. Dokończ weryfikację i wróć tutaj.",
         );
         return;
       }
@@ -228,7 +228,7 @@ export const AuthForms = ({ mode, initialFlash, requiresOrganizationSetup }: Aut
           </label>
 
           <div className="wf-auth-setup-note">
-            To konto jest już zalogowane w Clerk. Ten krok przygotuje organizację i pierwszy dostęp do dashboardu.
+            To konto jest już zalogowane. Ten krok przygotuje organizację i pierwszy dostęp do dashboardu.
           </div>
 
           <button className="wf-btn wf-btn-primary wf-btn-block" disabled={isSubmitting} type="submit">
@@ -281,7 +281,7 @@ export const AuthForms = ({ mode, initialFlash, requiresOrganizationSetup }: Aut
             </span>
           </label>
           <div className="wf-auth-form-meta">
-            <span className="wf-footer-muted">Logowanie przez Clerk</span>
+            <span className="wf-footer-muted">Bezpieczne logowanie</span>
             <Link className="wf-link-button" href="/password-reset">
               Nie pamiętasz hasła?
             </Link>

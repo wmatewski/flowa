@@ -52,7 +52,7 @@ export default function HomePage() {
             <h1>Twoje zdrowie cyfrowe pod kontrolą.</h1>
             <p>
               Darmowe narzędzie do prowadzenia ankiet o czasie przed ekranem, z panelem organizatora,
-              wynikami na żywo i bezpiecznym przepływem danych opartym o Clerk.
+              wynikami na żywo i bezpiecznym dostępem do panelu organizatora.
             </p>
             <div className="wf-hero-actions">
               <Link className="wf-btn wf-btn-primary" href="/auth?mode=register">

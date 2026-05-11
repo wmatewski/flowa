@@ -113,7 +113,7 @@ export default async function AuthPage({
             <div className="wf-auth-visual-points">
               <div className="wf-auth-visual-point">
                 <ShieldCheck size={18} />
-                <span>Dostęp oparty o Clerk i filtrowanie ankiet per użytkownik.</span>
+                <span>Bezpieczny dostęp do ankiet i danych organizacji.</span>
               </div>
               <div className="wf-auth-visual-point">
                 <Radio size={18} />
@@ -142,7 +142,7 @@ export default async function AuthPage({
               </h1>
               <p className="wf-page-subtitle" style={{ marginTop: 0 }}>
                 {requiresOrganizationSetup
-                  ? "Masz już aktywną sesję Clerk. Podaj nazwę organizacji, a przygotujemy Twój panel organizatora."
+                  ? "Jesteś już zalogowany(a). Podaj nazwę organizacji, a przygotujemy Twój panel organizatora."
                   : mode === "register"
                     ? "Załóż konto i uruchom pierwszą ankietę w kilka minut."
                     : "Zaloguj się do panelu sterowania, aby kontynuować pracę."}

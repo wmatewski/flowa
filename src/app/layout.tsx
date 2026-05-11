@@ -9,12 +9,14 @@ const manrope = Manrope({
   subsets: ["latin", "latin-ext"],
   variable: "--font-manrope",
   display: "swap",
+  weight: ["600", "700", "800"],
 });
 
 const inter = Inter({
   subsets: ["latin", "latin-ext"],
   variable: "--font-inter",
   display: "swap",
+  weight: ["400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {
@@ -30,7 +32,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pl">
-      <body className={`${manrope.variable} ${inter.variable}`}>
+      <body className={`${inter.className} ${manrope.variable} ${inter.variable}`}>
         <ClerkProvider>{children}</ClerkProvider>
       </body>
     </html>
