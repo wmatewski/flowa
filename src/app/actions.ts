@@ -95,14 +95,14 @@ export const submitSessionEntryAction = async (formData: FormData) => {
     submittedOperatingSystem && submittedOperatingSystem !== "unknown" && isOperatingSystem(submittedOperatingSystem)
     ? submittedOperatingSystem
     : detectedOperatingSystem;
-  const trackedSessionId = String(formData.get("trackedSessionId") ?? "").trim() || null;
 
   const supabase = createSupabaseAdminClient();
-  const { data: sessionRow, error: sessionError } = await supabase
+  const { data: sessionRowRaw, error: sessionError } = await supabase
     .from("sessions")
     .select("id, name, organization_id")
     .eq("id", sessionId)
     .maybeSingle();
+  const sessionRow = sessionRowRaw as { id: string; name: string; organization_id: string } | null;
 
   if (sessionError || !sessionRow) {
     redirect(`/flow/${sessionSlug}?error=save-failed&age=${age}`);

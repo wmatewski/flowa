@@ -1,22 +1,22 @@
 import "server-only";
 
-import type { User } from "@supabase/supabase-js";
+import { auth, clerkClient } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { Membership, Organization, Profile } from "@/lib/types";
+
+export interface AuthenticatedUser {
+  id: string;
+  email: string;
+  displayName: string;
+}
 
 const normalizeEmail = (value: string | null | undefined) =>
   String(value ?? "").trim().toLowerCase();
 
-const deriveDisplayName = (user: User) => {
-  const fullName =
-    typeof user.user_metadata?.full_name === "string"
-      ? user.user_metadata.full_name
-      : typeof user.user_metadata?.name === "string"
-        ? user.user_metadata.name
-        : null;
+const deriveDisplayName = (user: AuthenticatedUser) => {
+  const fullName = user.displayName;
 
   if (fullName?.trim()) {
     return fullName.trim();
@@ -25,7 +25,34 @@ const deriveDisplayName = (user: User) => {
   return normalizeEmail(user.email).split("@")[0] ?? "Organizator";
 };
 
-export const ensureProfileForUser = async (user: User): Promise<Profile> => {
+const getClerkUser = async (): Promise<AuthenticatedUser> => {
+  const { userId } = await auth();
+
+  if (!userId) {
+    redirect("/auth");
+  }
+
+  const client = await clerkClient();
+  const user = await client.users.getUser(userId);
+  const primaryAddress =
+    user.primaryEmailAddressId == null
+      ? user.emailAddresses[0]
+      : user.emailAddresses.find((address) => address.id === user.primaryEmailAddressId) ??
+        user.emailAddresses[0];
+  const email = normalizeEmail(primaryAddress?.emailAddress);
+
+  if (!email) {
+    throw new Error("Authenticated Clerk user is missing an e-mail address.");
+  }
+
+  return {
+    id: user.id,
+    email,
+    displayName: [user.firstName, user.lastName].filter(Boolean).join(" "),
+  };
+};
+
+export const ensureProfileForUser = async (user: AuthenticatedUser): Promise<Profile> => {
   const email = normalizeEmail(user.email);
 
   if (!email) {
@@ -53,7 +80,7 @@ export const ensureProfileForUser = async (user: User): Promise<Profile> => {
   return data as Profile;
 };
 
-export const activatePendingMemberships = async (user: User) => {
+export const activatePendingMemberships = async (user: AuthenticatedUser) => {
   const email = normalizeEmail(user.email);
 
   if (!email) {
@@ -91,20 +118,13 @@ export const activatePendingMemberships = async (user: User) => {
 };
 
 export const getAuthenticatedAdmin = async (): Promise<{
-  user: User;
+  user: AuthenticatedUser;
   profile: Profile;
   organization: Organization;
   membership: Membership;
   memberships: Membership[];
 }> => {
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/auth");
-  }
+  const user = await getClerkUser();
 
   await activatePendingMemberships(user);
 

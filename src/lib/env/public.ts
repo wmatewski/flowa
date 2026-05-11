@@ -13,10 +13,9 @@ const recommendedDailyLimitMinutes = Number(
 export const publicEnv = {
   appUrl: process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
   projectDomain: process.env.NEXT_PUBLIC_PROJECT_DOMAIN ?? "",
-  supabaseUrl: required("NEXT_PUBLIC_SUPABASE_URL", process.env.NEXT_PUBLIC_SUPABASE_URL),
-  supabasePublishableKey: required(
-    "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+  clerkPublishableKey: required(
+    "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY",
+    process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
   ),
   sessionCookieName:
     process.env.NEXT_PUBLIC_SESSION_COOKIE_NAME ?? "flowa_session_id",

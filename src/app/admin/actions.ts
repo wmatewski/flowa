@@ -1,22 +1,39 @@
 "use server";
 
+import { clerkClient } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 
-import {
-  activatePendingMemberships,
-  ensureProfileForUser,
-  getAuthenticatedAdmin,
-} from "@/lib/admin-auth";
-import type { Database, Json } from "@/lib/database.types";
-import { getAdminInviteRedirectUrl } from "@/lib/env/server";
+import { getAuthenticatedAdmin } from "@/lib/admin-auth";
+import type { Json } from "@/lib/database.types";
+import { publicEnv } from "@/lib/env/public";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import type { MembershipRole } from "@/lib/types";
 
-type MembershipRole = Database["flowa"]["Enums"]["membership_role"];
-type SessionAgeMode = Database["flowa"]["Enums"]["age_mode"];
-type SessionInsert = Database["flowa"]["Tables"]["sessions"]["Insert"];
-type SessionUpdate = Database["flowa"]["Tables"]["sessions"]["Update"];
-type SessionCollaboratorInsert = Database["flowa"]["Tables"]["session_collaborators"]["Insert"];
+type SessionAgeMode = "fixed" | "variable";
+type SessionInsert = {
+  organization_id: string;
+  slug: string;
+  name: string;
+  description: string;
+  screen_time_limit_minutes: number;
+  age_mode: SessionAgeMode;
+  fixed_age: number | null;
+  status: "active";
+  created_by: string;
+};
+type SessionUpdate = {
+  organization_id: string;
+  name: string;
+  description: string;
+  screen_time_limit_minutes: number;
+  age_mode: SessionAgeMode;
+  fixed_age: number | null;
+};
+type SessionCollaboratorInsert = {
+  session_id: string;
+  membership_id: string;
+  role: MembershipRole;
+};
 
 const normalizeEmail = (value: FormDataEntryValue | string | null | undefined) =>
   String(value ?? "")
@@ -99,135 +116,6 @@ const logOrganizationActivity = async (input: {
   });
 };
 
-export const loginAdminAction = async (formData: FormData) => {
-  const email = normalizeEmail(formData.get("email"));
-  const password = String(formData.get("password") ?? "");
-
-  if (!email || !password) {
-    redirect("/auth?error=missing-credentials");
-  }
-
-  const supabase = await createSupabaseServerClient();
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
-
-  if (error) {
-    redirect("/auth?error=invalid-credentials");
-  }
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/auth?error=invalid-credentials");
-  }
-
-  await activatePendingMemberships(user);
-  await ensureProfileForUser(user);
-
-  redirect("/admin");
-};
-
-export const logoutAdminAction = async () => {
-  const supabase = await createSupabaseServerClient();
-  await supabase.auth.signOut();
-  redirect("/auth");
-};
-
-export const registerOrganizerAction = async (formData: FormData) => {
-  const organizationName = String(formData.get("organizationName") ?? "").trim();
-  const email = normalizeEmail(formData.get("email"));
-  const password = String(formData.get("password") ?? "");
-  const confirmPassword = String(formData.get("confirmPassword") ?? "");
-
-  if (!organizationName || !email || !password || !confirmPassword) {
-    redirect("/auth?error=missing-registration-fields");
-  }
-
-  if (password.length < 8) {
-    redirect("/auth?error=weak-password");
-  }
-
-  if (password !== confirmPassword) {
-    redirect("/auth?error=password-mismatch");
-  }
-
-  const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      data: {
-        organizationName,
-      },
-    },
-  });
-
-  if (error || !data.user?.id) {
-    redirect("/auth?error=registration-failed");
-  }
-
-  const adminClient = createSupabaseAdminClient();
-  const organizationSlug = await ensureUniqueSlug("organizations", organizationName);
-
-  await ensureProfileForUser(data.user);
-
-  const { data: organizationRow, error: organizationError } = await adminClient
-    .from("organizations")
-    .insert({
-      name: organizationName,
-      slug: organizationSlug,
-      created_by: data.user.id,
-    })
-    .select("id, name, slug, created_by, created_at, updated_at")
-    .single();
-
-  if (organizationError) {
-    throw organizationError;
-  }
-
-  const organizationId = organizationRow.id;
-
-  const { error: membershipError } = await adminClient.from("memberships").upsert(
-    {
-      organization_id: organizationId,
-      user_id: data.user.id,
-      invited_email: email,
-      role: "owner",
-      status: "active",
-      created_by: data.user.id,
-    },
-    { onConflict: "organization_id,invited_email" },
-  );
-
-  if (membershipError) {
-    throw membershipError;
-  }
-
-  await adminClient
-    .from("profiles")
-    .update({ default_organization_id: organizationId })
-    .eq("user_id", data.user.id);
-
-  await logOrganizationActivity({
-    organizationId,
-    actorUserId: data.user.id,
-    activityType: "organization_created",
-    title: `Utworzono organizację \"${organizationName}\"`,
-    description: "Nowe konto organizatora zostało przygotowane i przypisane do organizacji.",
-  });
-
-  if (!data.session) {
-    const signInResult = await supabase.auth.signInWithPassword({ email, password });
-
-    if (signInResult.error) {
-      redirect("/auth?registered=1");
-    }
-  }
-
-  redirect("/admin");
-};
-
 export const inviteAdminAction = async (formData: FormData) => {
   const email = normalizeEmail(formData.get("email"));
   const role = parseRole(formData.get("role"));
@@ -246,31 +134,24 @@ export const inviteAdminAction = async (formData: FormData) => {
   const adminClient = createSupabaseAdminClient();
   let existingUserId: string | null = null;
 
-  const listedUsers = await adminClient.auth.admin.listUsers({
-    page: 1,
-    perPage: 200,
+  const clerk = await clerkClient();
+  const listedUsers = await clerk.users.getUserList({
+    emailAddress: [email],
+    limit: 1,
   });
 
-  if (!listedUsers.error) {
-    existingUserId =
-      listedUsers.data.users.find((candidate) => normalizeEmail(candidate.email) === email)?.id ?? null;
-  }
+  existingUserId = listedUsers.data[0]?.id ?? null;
 
   if (!existingUserId) {
-    const inviteResult = await adminClient.auth.admin.inviteUserByEmail(email, {
-      redirectTo: getAdminInviteRedirectUrl(),
-      data: {
+    await clerk.invitations.createInvitation({
+      emailAddress: email,
+      redirectUrl: `${publicEnv.appUrl}/auth?mode=register`,
+      publicMetadata: {
         invitedBy: user.id,
         organizationId: organization.id,
         source: "flowa-organization-panel",
       },
     });
-
-    if (inviteResult.error) {
-      redirect("/admin/organization?error=invite-failed");
-    }
-
-    existingUserId = inviteResult.data.user?.id ?? null;
   }
 
   if (existingUserId) {
@@ -285,7 +166,17 @@ export const inviteAdminAction = async (formData: FormData) => {
   }
 
   const membershipResult = await adminClient
-    .from("memberships")
+    .from<{
+      id: string;
+      organization_id: string;
+      user_id: string | null;
+      invited_email: string;
+      role: MembershipRole;
+      status: "invited" | "active" | "disabled";
+      created_by: string | null;
+      created_at: string;
+      updated_at: string;
+    }>("memberships")
     .upsert(
     {
       organization_id: organization.id,
@@ -506,37 +397,4 @@ export const deleteSessionAction = async (formData: FormData) => {
   });
 
   redirect("/admin/sessions?deleted=1");
-};
-
-export const setAdminPasswordAction = async (formData: FormData) => {
-  const password = String(formData.get("password") ?? "");
-  const confirmPassword = String(formData.get("confirmPassword") ?? "");
-
-  if (password.length < 8) {
-    redirect("/admin/setup-password?error=weak-password");
-  }
-
-  if (password !== confirmPassword) {
-    redirect("/admin/setup-password?error=password-mismatch");
-  }
-
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/auth?error=session-expired");
-  }
-
-  const { error } = await supabase.auth.updateUser({ password });
-
-  if (error) {
-    redirect("/admin/setup-password?error=update-failed");
-  }
-
-  await activatePendingMemberships(user);
-  await ensureProfileForUser(user);
-
-  redirect("/admin?password=updated");
 };

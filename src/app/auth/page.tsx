@@ -2,9 +2,9 @@ import { Leaf, Info } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { loginAdminAction, registerOrganizerAction } from "@/app/admin/actions";
+import { auth } from "@clerk/nextjs/server";
+import { AuthForms } from "@/components/auth/auth-forms";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { FlashMessage } from "@/lib/types";
 
 const getFlashMessage = (params: Record<string, string | string[] | undefined>): FlashMessage | null => {
@@ -57,17 +57,14 @@ export default async function AuthPage({
   const params = await searchParams;
   const mode = params.mode === "register" ? "register" : "login";
   const flash = getFlashMessage(params);
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { userId } = await auth();
 
-  if (user) {
+  if (userId) {
     const adminClient = createSupabaseAdminClient();
     const { count } = await adminClient
       .from("memberships")
       .select("id", { count: "exact", head: true })
-      .eq("user_id", user.id)
+      .eq("user_id", userId)
       .eq("status", "active");
 
     if ((count ?? 0) > 0) {
@@ -89,54 +86,7 @@ export default async function AuthPage({
             <div className="wf-auth-subtitle">Panel Organizatora</div>
           </div>
 
-          <div className="wf-tab-row">
-            <Link className={`wf-tab-link${mode === "login" ? " is-active" : ""}`} href="/auth?mode=login">
-              Logowanie
-            </Link>
-            <Link className={`wf-tab-link${mode === "register" ? " is-active" : ""}`} href="/auth?mode=register">
-              Rejestracja
-            </Link>
-          </div>
-
-          {flash ? <div className={`wf-flash ${flash.type}`}>{flash.message}</div> : null}
-
-          {mode === "login" ? (
-            <form action={loginAdminAction} className="wf-form-stack">
-              <label className="wf-field">
-                <span className="wf-field-label">E-mail</span>
-                <input className="wf-input" name="email" placeholder="adres@email.com" type="email" />
-              </label>
-              <label className="wf-field">
-                <span className="wf-field-label">Hasło</span>
-                <input className="wf-input" name="password" placeholder="••••••••" type="password" />
-              </label>
-              <button className="wf-btn wf-btn-primary wf-btn-block" type="submit">
-                Zaloguj się
-              </button>
-            </form>
-          ) : (
-            <form action={registerOrganizerAction} className="wf-form-stack">
-              <label className="wf-field">
-                <span className="wf-field-label">Nazwa Organizacji</span>
-                <input className="wf-input" name="organizationName" placeholder="Wprowadź nazwę" type="text" />
-              </label>
-              <label className="wf-field">
-                <span className="wf-field-label">E-mail</span>
-                <input className="wf-input" name="email" placeholder="adres@email.com" type="email" />
-              </label>
-              <label className="wf-field">
-                <span className="wf-field-label">Hasło</span>
-                <input className="wf-input" name="password" placeholder="••••••••" type="password" />
-              </label>
-              <label className="wf-field">
-                <span className="wf-field-label">Potwierdź Hasło</span>
-                <input className="wf-input" name="confirmPassword" placeholder="••••••••" type="password" />
-              </label>
-              <button className="wf-btn wf-btn-primary wf-btn-block" type="submit">
-                Utwórz konto
-              </button>
-            </form>
-          )}
+            <AuthForms initialFlash={flash} mode={mode} />
 
           <div className="wf-auth-helper">
             <Info size={18} />

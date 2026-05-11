@@ -1,6 +1,7 @@
-import { CalendarRange, LayoutDashboard, LogOut, Settings, Users } from "lucide-react";
+import { CalendarRange, LayoutDashboard, Settings, Users } from "lucide-react";
 import Link from "next/link";
 
+import { LogoutButton } from "@/components/auth/logout-button";
 import { formatMembershipRole } from "@/lib/format";
 import type { MembershipRole } from "@/lib/types";
 
@@ -8,7 +9,6 @@ interface AdminShellProps {
   email: string;
   organizationName: string;
   role: MembershipRole;
-  logoutAction: () => Promise<void>;
   children: React.ReactNode;
 }
 
@@ -16,7 +16,6 @@ export const AdminShell = ({
   email,
   organizationName,
   role,
-  logoutAction,
   children,
 }: AdminShellProps) => {
   return (
@@ -51,12 +50,7 @@ export const AdminShell = ({
           <div className="wf-admin-org-name">{organizationName}</div>
           <div className="wf-admin-profile-email">{email}</div>
           <div className="wf-pill wf-pill-soft">{formatMembershipRole(role)}</div>
-          <form action={logoutAction}>
-            <button className="wf-btn wf-btn-primary wf-btn-block" type="submit">
-              <LogOut size={18} />
-              Wyloguj
-            </button>
-          </form>
+          <LogoutButton />
         </div>
       </aside>
 
