@@ -31,7 +31,7 @@ const getClerkLocalOrganizationId = async (orgId: string | null | undefined) => 
   }
 
   const client = await clerkClient();
-  const organization = await client.organizations.getOrganization(orgId);
+  const organization = await client.organizations.getOrganization({ organizationId: orgId });
   const localOrganizationId = (organization.publicMetadata as { localOrganizationId?: unknown } | null)
     ?.localOrganizationId;
 
