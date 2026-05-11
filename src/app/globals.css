@@ -1965,20 +1965,29 @@ h6,
   animation: wf-auth-stage-in 180ms ease;
 }
 
-.wf-auth-secondary-row {
-  justify-content: flex-end;
+.wf-auth-code-shell {
+  display: grid;
+  gap: 12px;
 }
 
-.wf-auth-verification-note {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 14px 16px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  background: var(--surface-soft);
-  color: var(--text-muted);
-  line-height: 1.6;
+.wf-auth-code-row {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.wf-auth-code-slot {
+  min-height: 58px;
+  padding: 0;
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.wf-auth-secondary-row {
+  justify-content: flex-end;
 }
 
 .wf-auth-loading-shell {
@@ -2630,6 +2639,15 @@ h6,
 
   .wf-auth-stage {
     min-height: 0;
+  }
+
+  .wf-auth-code-row {
+    gap: 8px;
+  }
+
+  .wf-auth-code-slot {
+    min-height: 52px;
+    font-size: 1.25rem;
   }
 
   .wf-session-sidebar {

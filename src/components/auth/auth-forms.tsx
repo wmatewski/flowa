@@ -1,9 +1,9 @@
 "use client";
 
-import { ArrowRight, Building2, Lock, Mail, ShieldCheck } from "lucide-react";
+import { ArrowRight, Building2, Lock, Mail } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { startTransition, useState } from "react";
+import { startTransition, useEffect, useRef, useState } from "react";
 
 import { useSignIn, useSignUp } from "@clerk/nextjs";
 
@@ -11,17 +11,38 @@ import { LogoutButton } from "@/components/auth/logout-button";
 import type { FlashMessage } from "@/lib/types";
 
 type AuthMode = "login" | "register";
-
 interface AuthFormsProps {
   mode: AuthMode;
   initialFlash: FlashMessage | null;
   requiresOrganizationSetup: boolean;
 }
 
-interface PendingVerification {
-  email: string;
-  organizationName: string;
+type PendingVerification =
+  | {
+      flow: "sign-up";
+      email: string;
+      organizationName: string;
+    }
+  | {
+      flow: "sign-in";
+      email: string;
+      emailAddressId: string;
+    };
+
+interface VerificationCodeInputProps {
+  disabled: boolean;
+  idPrefix: string;
+  onCodeChange?: () => void;
+  onComplete: (code: string) => Promise<void> | void;
 }
+
+interface EmailCodeFactor {
+  strategy: "email_code";
+  emailAddressId: string;
+  safeIdentifier: string;
+}
+
+const OTP_LENGTH = 6;
 
 const getClerkErrorMessage = (error: unknown, fallback: string) => {
   if (typeof error !== "object" || error == null || !("errors" in error)) {
@@ -34,12 +55,155 @@ const getClerkErrorMessage = (error: unknown, fallback: string) => {
   return message ? String(message) : fallback;
 };
 
+const getEmailCodeFactor = (factors: unknown[] | null | undefined): EmailCodeFactor | null => {
+  const factor = factors?.find((candidate) => {
+    if (typeof candidate !== "object" || candidate == null || !("strategy" in candidate)) {
+      return false;
+    }
+
+    return candidate.strategy === "email_code";
+  });
+
+  if (!factor || typeof factor !== "object") {
+    return null;
+  }
+
+  return factor as EmailCodeFactor;
+};
+
+const VerificationCodeInput = ({ disabled, idPrefix, onCodeChange, onComplete }: VerificationCodeInputProps) => {
+  const [digits, setDigits] = useState<string[]>(Array.from({ length: OTP_LENGTH }, () => ""));
+  const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
+  const lastSubmittedCodeRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (disabled) {
+      return;
+    }
+
+    inputRefs.current[0]?.focus();
+  }, [disabled]);
+
+  useEffect(() => {
+    const code = digits.join("");
+
+    if (disabled || digits.some((digit) => !digit) || code.length !== OTP_LENGTH) {
+      return;
+    }
+
+    if (lastSubmittedCodeRef.current === code) {
+      return;
+    }
+
+    lastSubmittedCodeRef.current = code;
+    void onComplete(code);
+  }, [digits, disabled, onComplete]);
+
+  const updateDigits = (nextDigits: string[]) => {
+    lastSubmittedCodeRef.current = null;
+    setDigits(nextDigits);
+    onCodeChange?.();
+  };
+
+  const applyChunk = (startIndex: number, rawValue: string) => {
+    const chunk = rawValue.replace(/\D/g, "").slice(0, OTP_LENGTH - startIndex);
+
+    if (!chunk) {
+      const nextDigits = [...digits];
+      nextDigits[startIndex] = "";
+      updateDigits(nextDigits);
+      return;
+    }
+
+    const nextDigits = [...digits];
+
+    for (const [offset, character] of chunk.split("").entries()) {
+      nextDigits[startIndex + offset] = character;
+    }
+
+    updateDigits(nextDigits);
+
+    const nextFocusIndex = Math.min(startIndex + chunk.length, OTP_LENGTH - 1);
+    inputRefs.current[nextFocusIndex]?.focus();
+  };
+
+  const handleChange = (index: number, value: string) => {
+    applyChunk(index, value);
+  };
+
+  const handleKeyDown = (index: number, event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Backspace") {
+      event.preventDefault();
+
+      const nextDigits = [...digits];
+
+      if (nextDigits[index]) {
+        nextDigits[index] = "";
+        updateDigits(nextDigits);
+        return;
+      }
+
+      if (index === 0) {
+        return;
+      }
+
+      nextDigits[index - 1] = "";
+      updateDigits(nextDigits);
+      inputRefs.current[index - 1]?.focus();
+      return;
+    }
+
+    if (event.key === "ArrowLeft" && index > 0) {
+      event.preventDefault();
+      inputRefs.current[index - 1]?.focus();
+      return;
+    }
+
+    if (event.key === "ArrowRight" && index < OTP_LENGTH - 1) {
+      event.preventDefault();
+      inputRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handlePaste = (index: number, event: React.ClipboardEvent<HTMLInputElement>) => {
+    event.preventDefault();
+    applyChunk(index, event.clipboardData.getData("text"));
+  };
+
+  return (
+    <div className="wf-auth-code-shell">
+      <div className="wf-auth-code-row" role="group" aria-label="Kod weryfikacyjny">
+        {digits.map((digit, index) => (
+          <input
+            aria-label={`Cyfra ${index + 1} kodu`}
+            autoComplete={index === 0 ? "one-time-code" : "off"}
+            className="wf-input wf-auth-code-slot"
+            disabled={disabled}
+            id={`${idPrefix}-${index}`}
+            inputMode="numeric"
+            key={`${idPrefix}-${index}`}
+            maxLength={OTP_LENGTH}
+            onChange={(event) => handleChange(index, event.target.value)}
+            onKeyDown={(event) => handleKeyDown(index, event)}
+            onPaste={(event) => handlePaste(index, event)}
+            ref={(element) => {
+              inputRefs.current[index] = element;
+            }}
+            type="text"
+            value={digit}
+          />
+        ))}
+      </div>
+    </div>
+  );
+};
+
 export const AuthForms = ({ mode, initialFlash, requiresOrganizationSetup }: AuthFormsProps) => {
   const router = useRouter();
   const { isLoaded: signInLoaded, signIn, setActive: setSignInActive } = useSignIn();
   const { isLoaded: signUpLoaded, signUp, setActive: setSignUpActive } = useSignUp();
   const [activeMode, setActiveMode] = useState<AuthMode>(mode);
-  const [flash, setFlash] = useState<FlashMessage | null>(initialFlash);
+  const [flash, setFlash] = useState<FlashMessage | null>(initialFlash?.type === "error" ? initialFlash : null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [pendingVerification, setPendingVerification] = useState<PendingVerification | null>(null);
 
@@ -51,12 +215,10 @@ export const AuthForms = ({ mode, initialFlash, requiresOrganizationSetup }: Aut
     setIsSubmitting(false);
   };
 
-  const setInfo = (message: string) => {
-    setFlash({
-      type: "info",
-      message,
-    });
-    setIsSubmitting(false);
+  const clearFlash = () => {
+    if (flash) {
+      setFlash(null);
+    }
   };
 
   const finishBootstrap = async (organizationName?: string) => {
@@ -69,6 +231,53 @@ export const AuthForms = ({ mode, initialFlash, requiresOrganizationSetup }: Aut
     });
 
     return response.ok;
+  };
+
+  const completeOrganizerSignIn = async (sessionId: string) => {
+    await setSignInActive?.({ session: sessionId });
+    await fetch("/api/auth/bootstrap", { method: "POST" });
+    router.push("/admin");
+    router.refresh();
+  };
+
+  const completeOrganizerSignUp = async (sessionId: string, organizationName: string) => {
+    await setSignUpActive?.({ session: sessionId });
+
+    const configured = await finishBootstrap(organizationName);
+
+    if (!configured) {
+      setError("Nie udało się przygotować organizacji.");
+      return;
+    }
+
+    router.push("/admin");
+    router.refresh();
+  };
+
+  const prepareLoginCodeVerification = async (factors: unknown[] | null | undefined, fallbackEmail: string) => {
+    if (!signIn) {
+      return false;
+    }
+
+    const emailCodeFactor = getEmailCodeFactor(factors);
+
+    if (!emailCodeFactor) {
+      return false;
+    }
+
+    await signIn.prepareFirstFactor({
+      strategy: "email_code",
+      emailAddressId: emailCodeFactor.emailAddressId,
+    });
+
+    setPendingVerification({
+      flow: "sign-in",
+      email: emailCodeFactor.safeIdentifier ?? fallbackEmail,
+      emailAddressId: emailCodeFactor.emailAddressId,
+    });
+    setIsSubmitting(false);
+
+    return true;
   };
 
   const handleModeChange = (nextMode: AuthMode) => {
@@ -88,7 +297,7 @@ export const AuthForms = ({ mode, initialFlash, requiresOrganizationSetup }: Aut
     event.preventDefault();
 
     if (!signInLoaded || !signIn || !setSignInActive) {
-      setError("Logowanie chwilowo niedostępne. Spróbuj ponownie za moment.");
+      setError("Logowanie chwilowo niedostępne.");
       return;
     }
 
@@ -97,7 +306,7 @@ export const AuthForms = ({ mode, initialFlash, requiresOrganizationSetup }: Aut
     const password = String(formData.get("password") ?? "");
 
     if (!email || !password) {
-      setError("Podaj adres e-mail i hasło, aby się zalogować.");
+      setError("Podaj adres e-mail i hasło.");
       return;
     }
 
@@ -105,20 +314,30 @@ export const AuthForms = ({ mode, initialFlash, requiresOrganizationSetup }: Aut
     setFlash(null);
 
     try {
-      const attempt = await signIn.create({
+      const initialAttempt = await signIn.create({
         identifier: email,
+      });
+
+      const passwordAttempt = await signIn.attemptFirstFactor({
+        strategy: "password",
         password,
       });
 
-      if (attempt.status !== "complete" || !attempt.createdSessionId) {
-        setError("Logowanie wymaga dodatkowej weryfikacji. Skontaktuj się z administratorem.");
+      if (passwordAttempt.status === "complete" && passwordAttempt.createdSessionId) {
+        await completeOrganizerSignIn(passwordAttempt.createdSessionId);
         return;
       }
 
-      await setSignInActive({ session: attempt.createdSessionId });
-      await fetch("/api/auth/bootstrap", { method: "POST" });
-      router.push("/admin");
-      router.refresh();
+      const codePrepared = await prepareLoginCodeVerification(
+        passwordAttempt.supportedFirstFactors ?? initialAttempt.supportedFirstFactors,
+        email,
+      );
+
+      if (codePrepared) {
+        return;
+      }
+
+      setError("Nie udało się dokończyć logowania.");
     } catch (error) {
       setError(getClerkErrorMessage(error, "Logowanie nie powiodło się. Sprawdź dane konta."));
     }
@@ -128,7 +347,7 @@ export const AuthForms = ({ mode, initialFlash, requiresOrganizationSetup }: Aut
     event.preventDefault();
 
     if (!signUpLoaded || !signUp || !setSignUpActive) {
-      setError("Rejestracja chwilowo niedostępna. Spróbuj ponownie za moment.");
+      setError("Rejestracja chwilowo niedostępna.");
       return;
     }
 
@@ -139,7 +358,7 @@ export const AuthForms = ({ mode, initialFlash, requiresOrganizationSetup }: Aut
     const confirmPassword = String(formData.get("confirmPassword") ?? "");
 
     if (!organizationName || !email || !password || !confirmPassword) {
-      setError("Uzupełnij nazwę organizacji, e-mail i oba pola hasła.");
+      setError("Uzupełnij wszystkie pola.");
       return;
     }
 
@@ -163,46 +382,24 @@ export const AuthForms = ({ mode, initialFlash, requiresOrganizationSetup }: Aut
       });
 
       if (attempt.status === "complete" && attempt.createdSessionId) {
-        await setSignUpActive({ session: attempt.createdSessionId });
-
-        const configured = await finishBootstrap(organizationName);
-
-        if (!configured) {
-          setError("Konto utworzone, ale nie udało się skonfigurować organizacji.");
-          return;
-        }
-
-        router.push("/admin");
-        router.refresh();
+        await completeOrganizerSignUp(attempt.createdSessionId, organizationName);
         return;
       }
 
       await attempt.prepareEmailAddressVerification({ strategy: "email_code" });
-      setPendingVerification({ email, organizationName });
-      setInfo(`Wysłaliśmy kod weryfikacyjny na ${email}. Wpisz go poniżej, aby aktywować konto.`);
+      setPendingVerification({
+        flow: "sign-up",
+        email,
+        organizationName,
+      });
+      setIsSubmitting(false);
     } catch (error) {
-      setError(getClerkErrorMessage(error, "Nie udało się utworzyć konta organizatora."));
+      setError(getClerkErrorMessage(error, "Nie udało się utworzyć konta."));
     }
   };
 
-  const handleVerifyEmail = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
+  const handleVerificationComplete = async (code: string) => {
     if (!pendingVerification) {
-      setError("Najpierw utwórz konto, aby przejść do weryfikacji adresu e-mail.");
-      return;
-    }
-
-    if (!signUpLoaded || !signUp || !setSignUpActive) {
-      setError("Weryfikacja chwilowo niedostępna. Spróbuj ponownie za moment.");
-      return;
-    }
-
-    const formData = new FormData(event.currentTarget);
-    const code = String(formData.get("code") ?? "").trim();
-
-    if (!code) {
-      setError("Wpisz kod weryfikacyjny z wiadomości e-mail.");
       return;
     }
 
@@ -210,34 +407,49 @@ export const AuthForms = ({ mode, initialFlash, requiresOrganizationSetup }: Aut
     setFlash(null);
 
     try {
-      const verificationAttempt = await signUp.attemptEmailAddressVerification({ code });
+      if (pendingVerification.flow === "sign-up") {
+        if (!signUpLoaded || !signUp || !setSignUpActive) {
+          setError("Weryfikacja chwilowo niedostępna.");
+          return;
+        }
+
+        const verificationAttempt = await signUp.attemptEmailAddressVerification({ code });
+
+        if (verificationAttempt.status !== "complete" || !verificationAttempt.createdSessionId) {
+          setError("Kod jest nieprawidłowy.");
+          return;
+        }
+
+        await completeOrganizerSignUp(
+          verificationAttempt.createdSessionId,
+          pendingVerification.organizationName,
+        );
+        return;
+      }
+
+      if (!signInLoaded || !signIn || !setSignInActive) {
+        setError("Weryfikacja chwilowo niedostępna.");
+        return;
+      }
+
+      const verificationAttempt = await signIn.attemptFirstFactor({
+        strategy: "email_code",
+        code,
+      });
 
       if (verificationAttempt.status !== "complete" || !verificationAttempt.createdSessionId) {
-        setError("Nie udało się potwierdzić adresu e-mail. Sprawdź kod i spróbuj ponownie.");
+        setError("Kod jest nieprawidłowy.");
         return;
       }
 
-      await setSignUpActive({ session: verificationAttempt.createdSessionId });
-
-      const configured = await finishBootstrap(pendingVerification.organizationName);
-
-      if (!configured) {
-        setError("Adres e-mail został potwierdzony, ale nie udało się skonfigurować organizacji.");
-        return;
-      }
-
-      router.push("/admin");
-      router.refresh();
+      await completeOrganizerSignIn(verificationAttempt.createdSessionId);
     } catch (error) {
-      setError(
-        getClerkErrorMessage(error, "Nie udało się potwierdzić adresu e-mail. Sprawdź kod i spróbuj ponownie."),
-      );
+      setError(getClerkErrorMessage(error, "Kod jest nieprawidłowy."));
     }
   };
 
   const handleResendVerificationCode = async () => {
-    if (!pendingVerification || !signUpLoaded || !signUp) {
-      setError("Najpierw rozpocznij rejestrację, aby wysłać kolejny kod.");
+    if (!pendingVerification) {
       return;
     }
 
@@ -245,10 +457,29 @@ export const AuthForms = ({ mode, initialFlash, requiresOrganizationSetup }: Aut
     setFlash(null);
 
     try {
-      await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
-      setInfo(`Wysłaliśmy nowy kod na ${pendingVerification.email}.`);
+      if (pendingVerification.flow === "sign-up") {
+        if (!signUpLoaded || !signUp) {
+          setError("Nie udało się wysłać kodu.");
+          return;
+        }
+
+        await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
+        setIsSubmitting(false);
+        return;
+      }
+
+      if (!signInLoaded || !signIn) {
+        setError("Nie udało się wysłać kodu.");
+        return;
+      }
+
+      await signIn.prepareFirstFactor({
+        strategy: "email_code",
+        emailAddressId: pendingVerification.emailAddressId,
+      });
+      setIsSubmitting(false);
     } catch (error) {
-      setError(getClerkErrorMessage(error, "Nie udało się wysłać nowego kodu. Spróbuj ponownie."));
+      setError(getClerkErrorMessage(error, "Nie udało się wysłać kodu."));
     }
   };
 
@@ -259,7 +490,7 @@ export const AuthForms = ({ mode, initialFlash, requiresOrganizationSetup }: Aut
     const organizationName = String(formData.get("organizationName") ?? "").trim();
 
     if (!organizationName) {
-      setError("Podaj nazwę organizacji, aby dokończyć konfigurację konta.");
+      setError("Podaj nazwę organizacji.");
       return;
     }
 
@@ -270,14 +501,14 @@ export const AuthForms = ({ mode, initialFlash, requiresOrganizationSetup }: Aut
       const configured = await finishBootstrap(organizationName);
 
       if (!configured) {
-        setError("Nie udało się utworzyć organizacji. Spróbuj ponownie za chwilę.");
+        setError("Nie udało się utworzyć organizacji.");
         return;
       }
 
       router.push("/admin");
       router.refresh();
     } catch {
-      setError("Nie udało się utworzyć organizacji. Spróbuj ponownie za chwilę.");
+      setError("Nie udało się utworzyć organizacji.");
     }
   };
 
@@ -285,11 +516,12 @@ export const AuthForms = ({ mode, initialFlash, requiresOrganizationSetup }: Aut
     ? {
         eyebrow: "Konfiguracja konta",
         title: "Dokończ konfigurację",
-        description: "Podaj nazwę organizacji, a przygotujemy Twój panel organizatora.",
+        description: "Podaj nazwę organizacji.",
       }
     : pendingVerification
       ? {
-          eyebrow: "Weryfikacja adresu e-mail",
+          eyebrow:
+            pendingVerification.flow === "sign-up" ? "Weryfikacja adresu e-mail" : "Potwierdzenie logowania",
           title: "Wpisz kod",
           description: `Kod został wysłany na ${pendingVerification.email}.`,
         }
@@ -297,7 +529,7 @@ export const AuthForms = ({ mode, initialFlash, requiresOrganizationSetup }: Aut
         ? {
             eyebrow: "Rejestracja",
             title: "Utwórz konto",
-            description: "Załóż konto organizatora i dokończ konfigurację w kilku krokach.",
+            description: "Załóż konto organizatora.",
           }
         : {
             eyebrow: "Logowanie",
@@ -332,10 +564,6 @@ export const AuthForms = ({ mode, initialFlash, requiresOrganizationSetup }: Aut
                 />
               </span>
             </label>
-
-            <div className="wf-auth-setup-note">
-              To konto jest już zalogowane. Ten krok przygotuje organizację i pierwszy dostęp do dashboardu.
-            </div>
 
             <button className="wf-btn wf-btn-primary wf-btn-block" disabled={isSubmitting} type="submit">
               {isSubmitting ? "Przygotowywanie panelu..." : "Dokończ konfigurację"}
@@ -384,40 +612,22 @@ export const AuthForms = ({ mode, initialFlash, requiresOrganizationSetup }: Aut
 
       {flash ? <div className={`wf-flash ${flash.type}`}>{flash.message}</div> : null}
 
-      <div className="wf-auth-stage" key={pendingVerification ? "verification" : activeMode}>
+      <div className="wf-auth-stage" key={pendingVerification ? pendingVerification.flow : activeMode}>
         {pendingVerification ? (
-          <form className="wf-form-stack wf-auth-form wf-auth-stage-panel" onSubmit={handleVerifyEmail}>
-            <div className="wf-auth-verification-note">
-              <ShieldCheck size={18} />
-              <span>Wpisz kod z wiadomości e-mail, aby aktywować konto i dokończyć konfigurację organizacji.</span>
-            </div>
-
-            <label className="wf-field">
-              <span className="wf-field-label">Kod weryfikacyjny</span>
-              <span className="wf-input-shell">
-                <Mail className="wf-input-icon" size={18} />
-                <input
-                  autoComplete="one-time-code"
-                  className="wf-input wf-input-with-icon"
-                  inputMode="numeric"
-                  name="code"
-                  placeholder="Wpisz kod z e-maila"
-                  type="text"
-                />
-              </span>
-            </label>
+          <div className="wf-form-stack wf-auth-form wf-auth-stage-panel">
+            <VerificationCodeInput
+              disabled={isSubmitting}
+              idPrefix={`wf-${pendingVerification.flow}-code`}
+              onCodeChange={clearFlash}
+              onComplete={handleVerificationComplete}
+            />
 
             <div className="wf-auth-form-meta wf-auth-secondary-row">
               <button className="wf-link-button" disabled={isSubmitting} onClick={handleResendVerificationCode} type="button">
                 Wyślij kod ponownie
               </button>
             </div>
-
-            <button className="wf-btn wf-btn-primary wf-btn-block" disabled={isSubmitting} type="submit">
-              {isSubmitting ? "Potwierdzanie..." : "Potwierdź adres e-mail"}
-              <ArrowRight size={18} />
-            </button>
-          </form>
+          </div>
         ) : activeMode === "login" ? (
           <form className="wf-form-stack wf-auth-form wf-auth-stage-panel" onSubmit={handleLogin}>
             <label className="wf-field">
@@ -434,8 +644,7 @@ export const AuthForms = ({ mode, initialFlash, requiresOrganizationSetup }: Aut
                 <input className="wf-input wf-input-with-icon" name="password" placeholder="••••••••" type="password" />
               </span>
             </label>
-            <div className="wf-auth-form-meta">
-              <span className="wf-footer-muted">Bezpieczne logowanie</span>
+            <div className="wf-auth-form-meta wf-auth-secondary-row">
               <Link className="wf-link-button" href="/password-reset">
                 Nie pamiętasz hasła?
               </Link>
