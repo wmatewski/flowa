@@ -61,6 +61,7 @@ export default async function SessionAnalyticsPage({
     data.participants.find((participant) => participant.id === selectedParticipantId) ?? null;
   const maxBarValue = Math.max(...data.ageStatistics.map((stat) => stat.average_minutes ?? 0), 1);
   const maxParticipantTime = data.participants[0]?.screenTimeMinutes ?? 0;
+  const entryDateLabel = selectedParticipant?.enteredAt ? "Data wejścia" : "Data wejścia (wg czasu zapisu)";
 
   return (
     <div className="wf-page">
@@ -221,7 +222,7 @@ export default async function SessionAnalyticsPage({
                     <strong>{selectedParticipant.label}</strong>
                   </div>
                   <div className="wf-member-row">
-                    <span>Data wejścia</span>
+                    <span>{entryDateLabel}</span>
                     <strong>{formatDateTimeWithSeconds(selectedParticipant.enteredAt ?? selectedParticipant.submittedAt)}</strong>
                   </div>
                   <div className="wf-member-row">

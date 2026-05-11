@@ -167,6 +167,9 @@ const getWebglGpu = () => {
   return [vendor, renderer].filter(Boolean).join(" ").trim() || null;
 };
 
+const formatScreenDetails = () =>
+  `${window.screen.width}x${window.screen.height} | viewport ${window.innerWidth}x${window.innerHeight} | dpr ${window.devicePixelRatio}`;
+
 export const ScreenTimeStepForm = ({
   age,
   initialMinutes,
@@ -189,6 +192,7 @@ export const ScreenTimeStepForm = ({
     } catch {
       currentStartedAt = new Date().toISOString();
     }
+
     if (participantEnteredAtRef.current) {
       participantEnteredAtRef.current.value = currentStartedAt;
     }
@@ -201,7 +205,7 @@ export const ScreenTimeStepForm = ({
       deviceTypeLabel: deviceType,
       operatingSystemLabel: parseOperatingSystemLabel(navigator.userAgent, operatingSystem),
       browserLabel: parseBrowserLabel(navigator.userAgent, deviceType),
-      screenDetails: `${window.screen.width}x${window.screen.height} | viewport ${window.innerWidth}x${window.innerHeight} | dpr ${window.devicePixelRatio}`,
+      screenDetails: formatScreenDetails(),
       orientation: window.screen.orientation?.type ?? null,
       browserLanguage: navigator.language || null,
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || null,

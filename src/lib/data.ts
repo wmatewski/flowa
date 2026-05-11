@@ -120,14 +120,6 @@ interface ClerkMembershipUserData {
   }> | null;
 }
 
-interface ClerkMembershipSummary {
-  id: string;
-  role: string | null;
-  createdAt?: unknown;
-  created_at?: unknown;
-  publicUserData?: ClerkMembershipUserData | null;
-}
-
 const buildMemberList = async (organizationId: string): Promise<OrganizationMember[]> => {
   const clerk = await clerkClient();
   const result = await clerk.organizations.getOrganizationMembershipList({
@@ -135,8 +127,8 @@ const buildMemberList = async (organizationId: string): Promise<OrganizationMemb
     limit: 100,
   });
 
-  return ((result.data as ClerkMembershipSummary[] | undefined) ?? []).map((membership) => {
-    const userData = membership.publicUserData ?? {};
+  return (result.data ?? []).map((membership) => {
+    const userData = (membership.publicUserData ?? {}) as ClerkMembershipUserData;
     const email = String(
       userData.identifier ??
         userData.emailAddress ??
@@ -159,7 +151,7 @@ const buildMemberList = async (organizationId: string): Promise<OrganizationMemb
       initials: formatInitials(displayName),
       role: mapOrganizationRole(membership.role),
       status: "active",
-      createdAt: toIsoString(membership.createdAt ?? membership.created_at),
+      createdAt: toIsoString(membership.createdAt),
     } satisfies OrganizationMember;
   });
 };
