@@ -16,11 +16,11 @@ import {
   type SessionAccessContext,
 } from "@/lib/session-access";
 import { getClerkOrganizationSummary } from "@/lib/clerk-organizations";
+import { normalizeParticipantMetadata } from "@/lib/participant-metadata";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import type {
   ActivityLog,
   DashboardActivity,
-  Organization,
   OrganizationMember,
   OrganizationMembersData,
   OrganizerDashboardData,
@@ -42,7 +42,7 @@ const sessionColumns =
 const sessionOverviewColumns =
   "session_id, organization_id, slug, name, status, screen_time_limit_minutes, created_at, starts_at, ends_at, participant_count, average_minutes, maximum_minutes, latest_submission_at";
 const latestParticipantColumns =
-  "id, session_id, participant_key, age, screen_time_minutes, detected_os, ip_address, user_agent, submitted_at, entry_date";
+  "id, session_id, participant_key, age, screen_time_minutes, detected_os, ip_address, entered_at, client_metadata, user_agent, submitted_at, entry_date";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -425,6 +425,11 @@ export const getSessionStatisticsData = async (
       entry.screen_time_minutes,
       session.screen_time_limit_minutes,
     ),
+    detectedOperatingSystem: entry.detected_os,
+    enteredAt: entry.entered_at,
+    ipAddress: entry.ip_address,
+    userAgent: entry.user_agent,
+    clientMetadata: normalizeParticipantMetadata(entry.client_metadata),
     submittedAt: entry.submitted_at,
   })) satisfies SessionParticipantRow[];
   return {

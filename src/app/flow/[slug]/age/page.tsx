@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { SessionEntryState } from "@/components/user/session-entry-state";
 import type { Database } from "@/lib/database.types";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import type { FlashMessage } from "@/lib/types";
@@ -43,6 +44,7 @@ export default async function FlowAgePage({
 
   return (
     <main className="wf-step-shell">
+      <SessionEntryState sessionSlug={slug} />
       <div className="wf-step-container">
         <div className="wf-step-topbar">
           <Link className="wf-brand" href="/">

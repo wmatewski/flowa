@@ -2,6 +2,7 @@ import { cookies, headers } from "next/headers";
 import Link from "next/link";
 import { CheckCircle2 } from "lucide-react";
 
+import { SessionEntryState } from "@/components/user/session-entry-state";
 import { getPublicSessionExperienceData } from "@/lib/data";
 import { publicEnv } from "@/lib/env/public";
 import { formatMinutes } from "@/lib/format";
@@ -30,6 +31,7 @@ export default async function FlowSubmittedPage({
 
   return (
     <main className="wf-step-shell">
+      <SessionEntryState mode="reset" sessionSlug={slug} />
       <div className="wf-step-container">
         <div className="wf-step-topbar">
           <Link className="wf-brand" href="/">

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ArrowRight, Smartphone } from "lucide-react";
 
+import { SessionEntryState } from "@/components/user/session-entry-state";
 import { getPublicSessionExperienceData } from "@/lib/data";
 import { publicEnv } from "@/lib/env/public";
 import { detectOperatingSystem, getOperatingSystemConfig, isOperatingSystem, operatingSystemOrder } from "@/lib/os";
@@ -35,6 +36,7 @@ export default async function FlowSessionPage({
 
   return (
     <main className="wf-step-shell">
+      <SessionEntryState sessionSlug={slug} />
       <div className="wf-step-container">
         <div className="wf-step-topbar">
           <Link className="wf-brand" href="/">

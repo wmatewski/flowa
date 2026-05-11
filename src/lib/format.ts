@@ -24,6 +24,17 @@ export const formatDateTime = (value: string) =>
     timeStyle: "short",
   }).format(new Date(value));
 
+export const formatDateTimeWithSeconds = (value: string | null | undefined) => {
+  if (!value) {
+    return "Brak danych";
+  }
+
+  return new Intl.DateTimeFormat("pl-PL", {
+    dateStyle: "medium",
+    timeStyle: "medium",
+  }).format(new Date(value));
+};
+
 export const formatDate = (value: string) =>
   new Intl.DateTimeFormat("pl-PL", {
     dateStyle: "medium",

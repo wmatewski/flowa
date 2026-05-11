@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { Clock3 } from "lucide-react";
 
 import { submitSessionEntryAction } from "@/app/actions";
+import { SessionEntryState } from "@/components/user/session-entry-state";
 import { ScreenTimeStepForm } from "@/components/user/screen-time-step-form";
 import { getPublicSessionExperienceData } from "@/lib/data";
 import { publicEnv } from "@/lib/env/public";
@@ -53,6 +54,7 @@ export default async function FlowTimePage({
 
   return (
     <main className="wf-step-shell">
+      <SessionEntryState sessionSlug={slug} />
       <div className="wf-step-container">
         <div className="wf-step-topbar">
           <Link className="wf-brand" href="/">
