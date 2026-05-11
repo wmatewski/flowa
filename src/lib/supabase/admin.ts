@@ -12,7 +12,7 @@ type SupabaseLikeResult<T> = {
 
 type Operation = "select" | "insert" | "update" | "delete";
 
-const flowaSchema = "flowa";
+const flowaSchema = "public";
 
 const isSafeIdentifier = (value: string) => /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(value);
 
