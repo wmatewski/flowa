@@ -1,5 +1,9 @@
 import type { ParticipantClientMetadata } from "@/lib/types";
 
+const MAX_CPU_CORES = 256;
+const MAX_FONT_COUNT = 100000;
+const MAX_PLUGIN_COUNT = 10000;
+
 const toRecord = (value: unknown) => {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     return null;
@@ -32,6 +36,9 @@ const toNumberValue = (value: unknown, minimum: number, maximum: number) => {
 
 const toBooleanValue = (value: unknown) => (typeof value === "boolean" ? value : null);
 
+const hasAnyValidMetadata = (metadata: ParticipantClientMetadata) =>
+  Object.values(metadata).some((item) => item !== null);
+
 export const normalizeParticipantMetadata = (value: unknown): ParticipantClientMetadata | null => {
   const record = toRecord(value);
 
@@ -51,16 +58,16 @@ export const normalizeParticipantMetadata = (value: unknown): ParticipantClientM
     platform: toStringValue(record.platform, 64),
     fullUserAgent: toStringValue(record.fullUserAgent, 1024),
     memoryLabel: toStringValue(record.memoryLabel, 32),
-    cpuCores: toNumberValue(record.cpuCores, 1, 256),
+    cpuCores: toNumberValue(record.cpuCores, 1, MAX_CPU_CORES),
     touchScreen: toBooleanValue(record.touchScreen),
     cookiesEnabled: toBooleanValue(record.cookiesEnabled),
     webglGpu: toStringValue(record.webglGpu, 256),
-    fontCount: toNumberValue(record.fontCount, 0, 100000),
-    pluginsCount: toNumberValue(record.pluginsCount, 0, 10000),
+    fontCount: toNumberValue(record.fontCount, 0, MAX_FONT_COUNT),
+    pluginsCount: toNumberValue(record.pluginsCount, 0, MAX_PLUGIN_COUNT),
     webdriverDetected: toBooleanValue(record.webdriverDetected),
   };
 
-  return Object.values(metadata).some((item) => item !== null) ? metadata : null;
+  return hasAnyValidMetadata(metadata) ? metadata : null;
 };
 
 export const parseParticipantMetadata = (value: FormDataEntryValue | null | undefined) => {

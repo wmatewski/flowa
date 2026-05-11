@@ -7,6 +7,9 @@ import { LiveResultsTable } from "@/components/session/live-results-table";
 import { getPublicLiveSessionData } from "@/lib/data";
 import { publicEnv } from "@/lib/env/public";
 
+const QR_CODE_SIZE_DEFAULT = 320;
+const QR_CODE_SIZE_EMBED = 256;
+
 export default async function PublicLiveSessionPage({
   params,
   searchParams,
@@ -21,9 +24,10 @@ export default async function PublicLiveSessionPage({
   const baseUrl = publicEnv.appUrl.replace(/\/$/, "");
   const liveUrl = `${baseUrl}/flow/${slug}/live`;
   const publicUrl = `${baseUrl}/ankieta/${slug}`;
+  const qrCodeSize = embed ? QR_CODE_SIZE_EMBED : QR_CODE_SIZE_DEFAULT;
   const qrCodeDataUrl = await (await import("qrcode")).toDataURL(publicUrl, {
     margin: 1,
-    width: embed ? 256 : 320,
+    width: qrCodeSize,
     color: {
       dark: "#1a1c1e",
       light: "#ffffff",
@@ -72,9 +76,9 @@ export default async function PublicLiveSessionPage({
           <Image
             alt={`Kod QR dla ${data.session.name}`}
             className="wf-qr-image"
-            height={embed ? 256 : 320}
+            height={qrCodeSize}
             src={qrCodeDataUrl}
-            width={embed ? 256 : 320}
+            width={qrCodeSize}
           />
 
           {!embed ? (

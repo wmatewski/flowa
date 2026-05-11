@@ -69,6 +69,7 @@ const osLabelFallback: Record<OperatingSystem, string> = {
   unknown: "Nieznany system",
   windows: "Windows",
 };
+const MOBILE_VIEWPORT_MAX_WIDTH = 900;
 
 interface NavigatorWithClientHints extends Navigator {
   deviceMemory?: number;
@@ -81,7 +82,7 @@ const detectDeviceType = (userAgent: string, hasTouch: boolean, viewportWidth: n
     return "Tablet";
   }
 
-  if (/(mobi|iphone|ipod|android)/i.test(value) || (hasTouch && viewportWidth < 900)) {
+  if (/(mobi|iphone|ipod|android)/i.test(value) || (hasTouch && viewportWidth < MOBILE_VIEWPORT_MAX_WIDTH)) {
     return "Mobile";
   }
 
