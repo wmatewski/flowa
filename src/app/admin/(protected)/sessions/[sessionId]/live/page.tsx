@@ -23,9 +23,9 @@ export default async function SessionLivePage({
     sessionId,
   );
   const baseUrl = publicEnv.appUrl.replace(/\/$/, "");
-  const liveUrl = `${baseUrl}/flow/${session.slug}/live`;
+  const liveUrl = `${baseUrl}/ankieta/${session.slug}/live`;
   const embedUrl = `${liveUrl}?embed=1`;
-  const publicUrl = `${baseUrl}/flow/${session.slug}`;
+  const publicUrl = `${baseUrl}/ankieta/${session.slug}`;
   const iframeCode = `<iframe src="${embedUrl}" title="${session.name} - wyniki na żywo" width="1280" height="720" style="border:0;width:100%;height:100%"></iframe>`;
 
   return (
@@ -38,7 +38,7 @@ export default async function SessionLivePage({
         </div>
 
         <div className="wf-card-actions">
-          <Link className="wf-btn wf-btn-secondary" href={`/flow/${session.slug}/live`}>
+          <Link className="wf-btn wf-btn-secondary" href={`/ankieta/${session.slug}/live`}>
             Otwórz publiczny live
           </Link>
           <CopyButton className="wf-btn wf-btn-primary" label="Kopiuj URL embed" value={embedUrl} />
@@ -55,7 +55,7 @@ export default async function SessionLivePage({
           </div>
 
           <div className="wf-live-frame-shell">
-            <iframe className="wf-live-frame" src={`/flow/${session.slug}/live?embed=1`} title={`${session.name} live embed`} />
+            <iframe className="wf-live-frame" src={`/ankieta/${session.slug}/live?embed=1`} title={`${session.name} live embed`} />
           </div>
         </article>
 

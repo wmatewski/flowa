@@ -20,6 +20,8 @@ type SessionInsert = {
   screen_time_limit_minutes: number;
   age_mode: SessionAgeMode;
   fixed_age: number | null;
+  age_recommendations_enabled: boolean;
+  age_recommendations: Json;
   status: "active";
   created_by: string;
 };
@@ -30,6 +32,8 @@ type SessionUpdate = {
   screen_time_limit_minutes: number;
   age_mode: SessionAgeMode;
   fixed_age: number | null;
+  age_recommendations_enabled?: boolean;
+  age_recommendations?: Json;
 };
 type SessionCollaboratorInsert = {
   session_id: string;
@@ -88,6 +92,42 @@ const parsePositiveNumber = (value: FormDataEntryValue | null, fallback: number)
   }
 
   return Math.floor(parsed);
+};
+
+const parseAgeRecommendations = (value: FormDataEntryValue | null): Json => {
+  if (!value) {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(String(value));
+
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+
+    return parsed
+      .map((item) => {
+        if (typeof item !== "object" || item == null) {
+          return null;
+        }
+
+        const label = String((item as { label?: unknown }).label ?? "").trim();
+        const recommendedMinutes = Number((item as { recommendedMinutes?: unknown }).recommendedMinutes);
+
+        if (!label || Number.isNaN(recommendedMinutes) || recommendedMinutes <= 0) {
+          return null;
+        }
+
+        return {
+          label,
+          recommendedMinutes: Math.floor(recommendedMinutes),
+        };
+      })
+      .filter(Boolean);
+  } catch {
+    return [];
+  }
 };
 
 const parseRole = (value: FormDataEntryValue | null): MembershipRole => {
@@ -251,6 +291,10 @@ export const createSessionAction = async (formData: FormData) => {
   const { user, organization } = await getAuthenticatedAdmin();
   const defaultName = `Nowa sesja ${new Date().toLocaleDateString("pl-PL")}`;
   const name = String(formData.get("name") ?? defaultName).trim() || defaultName;
+  const ageMode: SessionAgeMode = String(formData.get("ageMode") ?? "variable") === "fixed" ? "fixed" : "variable";
+  const fixedAge = ageMode === "fixed" ? parsePositiveNumber(formData.get("fixedAge"), 18) : null;
+  const ageRecommendationsEnabled = String(formData.get("ageRecommendationsEnabled") ?? "") === "1";
+  const ageRecommendations = parseAgeRecommendations(formData.get("ageRecommendations"));
   const slug = await ensureUniqueSlug("sessions", name);
   const adminClient = createSupabaseAdminClient();
   const { data, error } = await adminClient
@@ -261,7 +305,10 @@ export const createSessionAction = async (formData: FormData) => {
       name,
       description: "Sesja przygotowana w panelu Wojticore Flowa.",
       screen_time_limit_minutes: 60,
-      age_mode: "variable",
+      age_mode: ageMode,
+      fixed_age: fixedAge,
+      age_recommendations_enabled: ageRecommendationsEnabled,
+      age_recommendations: ageRecommendations,
       status: "active",
       created_by: user.id,
     })
@@ -293,6 +340,12 @@ export const saveSessionSettingsAction = async (formData: FormData) => {
     String(formData.get("ageMode") ?? "variable") === "fixed" ? "fixed" : "variable";
   const fixedAge = ageMode === "fixed" ? parsePositiveNumber(formData.get("fixedAge"), 18) : null;
   const limitMinutes = Math.min(parsePositiveNumber(formData.get("limitMinutes"), 60), 1440);
+  const ageRecommendationsEnabled = formData.has("ageRecommendationsEnabled")
+    ? String(formData.get("ageRecommendationsEnabled") ?? "") === "1"
+    : undefined;
+  const ageRecommendations = formData.has("ageRecommendations")
+    ? parseAgeRecommendations(formData.get("ageRecommendations"))
+    : undefined;
   const collaboratorMembershipIds = formData
     .getAll("collaboratorMembershipIds")
     .map((value) => String(value))
@@ -328,14 +381,28 @@ export const saveSessionSettingsAction = async (formData: FormData) => {
     fixed_age: fixedAge,
   };
 
+  const createAgePayload = {
+    age_recommendations_enabled: ageRecommendationsEnabled ?? true,
+    age_recommendations: ageRecommendations ?? [],
+  };
+
+  const updateAgePayload = {
+    ...(ageRecommendationsEnabled === undefined ? {} : { age_recommendations_enabled: ageRecommendationsEnabled }),
+    ...(ageRecommendations === undefined ? {} : { age_recommendations: ageRecommendations }),
+  };
+
   const insertPayload: SessionInsert = {
     ...basePayload,
+    ...createAgePayload,
     slug: await ensureUniqueSlug("sessions", name),
     status: "active",
     created_by: user.id,
   };
 
-  const updatePayload: SessionUpdate = basePayload;
+  const updatePayload: SessionUpdate = {
+    ...basePayload,
+    ...updateAgePayload,
+  };
 
   const sessionResult = sessionId
     ? await adminClient

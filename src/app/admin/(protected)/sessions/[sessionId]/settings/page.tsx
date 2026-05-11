@@ -73,7 +73,7 @@ export default async function SessionSettingsPage({
     data.sessionCollaboratorIds.includes(member.membershipId),
   );
   const baseUrl = publicEnv.appUrl.replace(/\/$/, "");
-  const publicUrl = `${baseUrl}/flow/${data.session.slug}`;
+  const publicUrl = `${baseUrl}/ankieta/${data.session.slug}`;
   const liveUrl = `${publicUrl}/live`;
 
   return (
@@ -102,7 +102,7 @@ export default async function SessionSettingsPage({
         <article className="wf-hero-preview-card">
           <span className="wf-table-muted">Status</span>
           <div className={`wf-status-chip ${getStatusTone(data.session.status)}`}>{formatSessionStatus(data.session.status)}</div>
-          <span className="wf-table-muted">Publiczna ścieżka: /flow/{data.session.slug}</span>
+          <span className="wf-table-muted">Publiczna ścieżka: /ankieta/{data.session.slug}</span>
         </article>
         <article className="wf-hero-preview-card">
           <span className="wf-table-muted">Uczestnicy</span>

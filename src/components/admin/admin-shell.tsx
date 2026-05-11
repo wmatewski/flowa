@@ -9,6 +9,7 @@ import { formatMembershipRole } from "@/lib/format";
 import type { MembershipRole } from "@/lib/types";
 
 interface AdminShellProps {
+  displayName: string;
   email: string;
   organizationName: string;
   role: MembershipRole;
@@ -16,18 +17,20 @@ interface AdminShellProps {
 }
 
 export const AdminShell = ({
+  displayName,
   email,
   organizationName,
   role,
   children,
 }: AdminShellProps) => {
   const pathname = usePathname();
-  const initials = organizationName
+  const initials = (displayName || organizationName || email)
     .split(/\s+/)
     .filter(Boolean)
     .slice(0, 2)
     .map((part) => part[0]?.toUpperCase() ?? "")
     .join("") || "WF";
+  const userLabel = displayName.trim() || email.split("@")[0] || "Organizator";
 
   const navItems = [
     {
@@ -96,23 +99,6 @@ export const AdminShell = ({
             );
           })}
         </nav>
-
-        <div className="wf-admin-profile-card">
-          <div className="wf-admin-profile-head">
-            <div className="wf-admin-avatar">{initials}</div>
-            <div className="wf-admin-profile-copy">
-              <div className="wf-admin-org-name">{organizationName}</div>
-              <div className="wf-admin-profile-email">{email}</div>
-            </div>
-          </div>
-          <div className="wf-card-actions">
-            <div className="wf-pill wf-pill-soft">{formatMembershipRole(role)}</div>
-            <Link className="wf-btn wf-btn-secondary" href="/admin/sessions/new">
-              Nowa ankieta
-            </Link>
-          </div>
-          <LogoutButton />
-        </div>
       </aside>
 
       <section className="wf-admin-main">
@@ -129,12 +115,34 @@ export const AdminShell = ({
           </div>
 
           <div className="wf-admin-header-meta">
-            <div className="wf-admin-header-contact">
-              <span>{email}</span>
-              <span className="wf-admin-header-separator" />
-              <span>Wojticore Flowa</span>
+            <div className="wf-admin-user-menu">
+              <button aria-label="Menu konta" className="wf-admin-user-trigger" type="button">
+                <div className="wf-admin-avatar">{initials}</div>
+              </button>
+
+              <div className="wf-admin-user-panel" role="menu">
+                <div className="wf-admin-user-panel-top">
+                  <div className="wf-admin-avatar">{initials}</div>
+                  <div className="wf-admin-user-copy">
+                    <strong className="wf-admin-user-name">{userLabel}</strong>
+                    <span className="wf-admin-profile-email">{email}</span>
+                  </div>
+                </div>
+
+                <div className="wf-admin-user-details">
+                  <div className="wf-admin-user-detail-row">
+                    <span className="wf-table-muted">Organizacja</span>
+                    <strong>{organizationName}</strong>
+                  </div>
+                  <div className="wf-admin-user-detail-row">
+                    <span className="wf-table-muted">Rola</span>
+                    <strong>{formatMembershipRole(role)}</strong>
+                  </div>
+                </div>
+
+                <LogoutButton />
+              </div>
             </div>
-            <div className="wf-admin-avatar">{initials}</div>
           </div>
         </header>
 

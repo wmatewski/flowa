@@ -124,6 +124,7 @@ export const getAuthenticatedAdmin = async (): Promise<{
   membership: Membership;
   memberships: Membership[];
 }> => {
+  const { orgId } = await auth();
   const user = await getAuthenticatedUser();
 
   await activatePendingMemberships(user);
@@ -151,7 +152,7 @@ export const getAuthenticatedAdmin = async (): Promise<{
   const organizationIds = [...new Set(memberships.map((membership) => membership.organization_id))];
   const { data: organizationRows, error: organizationError } = await adminClient
     .from("organizations")
-    .select("id, name, slug, created_by, created_at, updated_at")
+    .select("id, clerk_organization_id, name, slug, created_by, created_at, updated_at")
     .in("id", organizationIds);
 
   if (organizationError) {
@@ -160,11 +161,12 @@ export const getAuthenticatedAdmin = async (): Promise<{
 
   const organizations = (organizationRows as Organization[] | null) ?? [];
   const targetOrganizationId =
-    profile.default_organization_id &&
+    (orgId && organizations.find((organization) => organization.clerk_organization_id === orgId)?.id) ||
+    (profile.default_organization_id &&
     organizations.some((organization) => organization.id === profile.default_organization_id)
       ? profile.default_organization_id
       : memberships.find((membership) => membership.role === "owner")?.organization_id ??
-        memberships[0]?.organization_id;
+        memberships[0]?.organization_id);
 
   if (!targetOrganizationId) {
     redirect("/auth?error=not-authorized");

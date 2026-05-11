@@ -90,7 +90,7 @@ export const SessionWorkspaceShell = ({
 
         <div className="wf-session-sidebar-meta">
           <div className="wf-small-label">Publiczny link</div>
-          <Link className="wf-btn wf-btn-secondary wf-btn-block" href={`/flow/${sessionSlug}`}>
+          <Link className="wf-btn wf-btn-secondary wf-btn-block" href={`/ankieta/${sessionSlug}`}>
             Otwórz ankietę
           </Link>
           <Link className="wf-btn wf-btn-primary wf-btn-block" href={`/admin/sessions/${sessionId}/live`}>

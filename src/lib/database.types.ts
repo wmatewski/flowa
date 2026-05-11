@@ -46,6 +46,7 @@ export interface Database {
       organizations: {
         Row: {
           id: string;
+          clerk_organization_id: string | null;
           name: string;
           slug: string;
           created_by: string;
@@ -54,6 +55,7 @@ export interface Database {
         };
         Insert: {
           id?: string;
+          clerk_organization_id?: string | null;
           name: string;
           slug: string;
           created_by: string;
@@ -62,6 +64,7 @@ export interface Database {
         };
         Update: {
           id?: string;
+          clerk_organization_id?: string | null;
           name?: string;
           slug?: string;
           created_by?: string;
@@ -116,6 +119,8 @@ export interface Database {
           screen_time_limit_minutes: number;
           age_mode: Database["flowa"]["Enums"]["age_mode"];
           fixed_age: number | null;
+          age_recommendations_enabled: boolean;
+          age_recommendations: Json;
           status: Database["flowa"]["Enums"]["session_status"];
           created_by: string;
           starts_at: string;
@@ -132,6 +137,8 @@ export interface Database {
           screen_time_limit_minutes?: number;
           age_mode?: Database["flowa"]["Enums"]["age_mode"];
           fixed_age?: number | null;
+          age_recommendations_enabled?: boolean;
+          age_recommendations?: Json;
           status?: Database["flowa"]["Enums"]["session_status"];
           created_by: string;
           starts_at?: string;
@@ -148,6 +155,8 @@ export interface Database {
           screen_time_limit_minutes?: number;
           age_mode?: Database["flowa"]["Enums"]["age_mode"];
           fixed_age?: number | null;
+          age_recommendations_enabled?: boolean;
+          age_recommendations?: Json;
           status?: Database["flowa"]["Enums"]["session_status"];
           created_by?: string;
           starts_at?: string;

@@ -76,6 +76,7 @@ create table if not exists flowa.profiles (
 
 create table if not exists flowa.organizations (
   id uuid primary key default gen_random_uuid(),
+  clerk_organization_id text unique,
   name text not null,
   slug text not null unique,
   created_by text not null,
@@ -106,6 +107,8 @@ create table if not exists flowa.sessions (
   screen_time_limit_minutes integer not null default 60 check (screen_time_limit_minutes between 1 and 1440),
   age_mode flowa.age_mode not null default 'variable',
   fixed_age integer,
+  age_recommendations_enabled boolean not null default true,
+  age_recommendations jsonb not null default '[]'::jsonb,
   status flowa.session_status not null default 'active',
   created_by text not null,
   starts_at timestamptz not null default timezone('utc', now()),

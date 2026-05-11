@@ -25,8 +25,8 @@ export default async function SessionOverviewPage({
     sessionId,
   );
   const baseUrl = publicEnv.appUrl.replace(/\/$/, "");
-  const publicUrl = `${baseUrl}/flow/${data.session.slug}`;
-  const liveUrl = `${baseUrl}/flow/${data.session.slug}/live`;
+  const publicUrl = `${baseUrl}/ankieta/${data.session.slug}`;
+  const liveUrl = `${baseUrl}/ankieta/${data.session.slug}/live`;
   const embedUrl = `${liveUrl}?embed=1`;
   const qrCodeDataUrl = await (await import("qrcode")).toDataURL(publicUrl, {
     margin: 1,

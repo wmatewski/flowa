@@ -191,7 +191,7 @@ export default async function SessionAnalyticsPage({
             <h3>Link sesji</h3>
             <p>Udostępnij uczestnikom publiczny adres do rejestracji czasu przed ekranem.</p>
             <div className="wf-field" style={{ marginTop: 16 }}>
-              <input className="wf-input" readOnly type="text" value={`/flow/${data.session.slug}`} />
+              <input className="wf-input" readOnly type="text" value={`/ankieta/${data.session.slug}`} />
             </div>
           </article>
         </aside>

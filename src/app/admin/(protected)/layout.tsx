@@ -10,6 +10,7 @@ export default async function ProtectedAdminLayout({
 
   return (
     <AdminShell
+      displayName={user.displayName || user.email}
       email={user.email || "organizator"}
       organizationName={organization.name}
       role={membership.role}

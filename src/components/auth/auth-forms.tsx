@@ -412,7 +412,7 @@ export const AuthForms = ({ mode, initialFlash, requiresOrganizationSetup }: Aut
         const verificationAttempt = await signUp.attemptEmailAddressVerification({ code });
         const sessionId = verificationAttempt.createdSessionId ?? signUp.createdSessionId;
 
-        if (verificationAttempt.verifications.emailAddress.status !== "verified" || !sessionId) {
+        if (!sessionId) {
           setError("Kod jest nieprawidłowy.");
           return;
         }
@@ -432,7 +432,7 @@ export const AuthForms = ({ mode, initialFlash, requiresOrganizationSetup }: Aut
       });
       const sessionId = verificationAttempt.createdSessionId ?? signIn.createdSessionId;
 
-      if (verificationAttempt.status !== "complete" || !sessionId) {
+      if (!sessionId) {
         setError("Kod jest nieprawidłowy.");
         return;
       }

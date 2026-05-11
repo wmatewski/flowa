@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { saveSessionSettingsAction } from "@/app/admin/actions";
+import { SessionAgeControls } from "@/components/admin/session-age-controls";
 import type { FlashMessage } from "@/lib/types";
 
 const getFlashMessage = (params: Record<string, string | string[] | undefined>): FlashMessage | null => {
@@ -43,27 +44,7 @@ export default async function NewSessionPage({
             <textarea className="wf-textarea" defaultValue="Sesja przygotowana w panelu Wojticore Flowa." name="description" />
           </label>
 
-          <label className="wf-field">
-            <span className="wf-field-label">Limit czasu przed ekranem (minuty)</span>
-            <input className="wf-input" defaultValue="60" min="1" name="limitMinutes" type="number" />
-          </label>
-
-          <div className="wf-field">
-            <span className="wf-field-label">Tryb wieku</span>
-            <label className="wf-inline-meta" style={{ color: "var(--text)" }}>
-              <input defaultChecked name="ageMode" type="radio" value="variable" />
-              Wiek podaje uczestnik
-            </label>
-            <label className="wf-inline-meta" style={{ color: "var(--text)" }}>
-              <input name="ageMode" type="radio" value="fixed" />
-              Stały wiek dla całej sesji
-            </label>
-          </div>
-
-          <label className="wf-field">
-            <span className="wf-field-label">Stały wiek</span>
-            <input className="wf-input" defaultValue="18" min="1" name="fixedAge" type="number" />
-          </label>
+          <SessionAgeControls defaultAgeMode="variable" defaultFixedAge={18} defaultLimitMinutes={60} />
 
           <div className="wf-card-actions">
             <button className="wf-btn wf-btn-primary" type="submit">
