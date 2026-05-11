@@ -233,7 +233,7 @@ export default async function SessionAnalyticsPage({
                   </div>
                   <div className="wf-member-row">
                     <span>{getEntryDateLabel(selectedParticipant.enteredAt)}</span>
-                    <strong>{formatDateTimeWithSeconds(selectedParticipant.enteredAt ?? selectedParticipant.submittedAt)}</strong>
+                    <strong>{formatDateTimeWithSeconds(selectedParticipant.enteredAt)}</strong>
                   </div>
                   <div className="wf-member-row">
                     <span>Data zatwierdzenia wyniku</span>

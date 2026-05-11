@@ -1,6 +1,7 @@
 import { QrCode } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import QRCode from "qrcode";
 
 import { CopyButton } from "@/components/session/copy-button";
 import { LiveResultsTable } from "@/components/session/live-results-table";
@@ -25,7 +26,7 @@ export default async function PublicLiveSessionPage({
   const liveUrl = `${baseUrl}/flow/${slug}/live`;
   const publicUrl = `${baseUrl}/ankieta/${slug}`;
   const qrCodeSize = embed ? QR_CODE_SIZE_EMBED : QR_CODE_SIZE_DEFAULT;
-  const qrCodeDataUrl = await (await import("qrcode")).toDataURL(publicUrl, {
+  const qrCodeDataUrl = await QRCode.toDataURL(publicUrl, {
     margin: 1,
     width: qrCodeSize,
     color: {

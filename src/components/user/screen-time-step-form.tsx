@@ -191,8 +191,13 @@ export const ScreenTimeStepForm = ({
 
     try {
       const storageKey = getSessionEntryStorageKey(sessionSlug);
-      currentStartedAt = window.sessionStorage.getItem(storageKey) ?? currentStartedAt;
-      window.sessionStorage.setItem(storageKey, currentStartedAt);
+      const storedStartedAt = window.sessionStorage.getItem(storageKey);
+
+      if (storedStartedAt) {
+        currentStartedAt = storedStartedAt;
+      } else {
+        window.sessionStorage.setItem(storageKey, currentStartedAt);
+      }
     } catch {
       currentStartedAt = new Date().toISOString();
     }
@@ -224,7 +229,7 @@ export const ScreenTimeStepForm = ({
       touchScreen: hasTouch,
       cookiesEnabled: navigator.cookieEnabled,
       webglGpu: getWebglGpu(),
-      fontCount: typeof document.fonts?.size === "number" ? document.fonts.size : null,
+      fontCount: document.fonts ? Array.from(document.fonts).length : null,
       pluginsCount: typeof navigator.plugins?.length === "number" ? navigator.plugins.length : null,
       webdriverDetected: typeof navigator.webdriver === "boolean" ? navigator.webdriver : null,
     };
