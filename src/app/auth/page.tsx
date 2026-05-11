@@ -39,10 +39,24 @@ const getFlashMessage = (params: Record<string, string | string[] | undefined>):
     };
   }
 
+  if (params.error === "oauth-failed") {
+    return {
+      type: "error",
+      message: "Logowanie przez Google nie powiodło się. Spróbuj ponownie albo użyj adresu e-mail i hasła.",
+    };
+  }
+
   if (params.registered === "1") {
     return {
       type: "info",
       message: "Konto zostało utworzone. Jeśli wymagane jest potwierdzenie e-mail, dokończ je i wróć do logowania.",
+    };
+  }
+
+  if (params.oauth === "google") {
+    return {
+      type: "info",
+      message: "Logowanie przez Google zakończyło się powodzeniem. Dokończ konfigurację organizacji, aby wejść do panelu.",
     };
   }
 
@@ -58,6 +72,7 @@ export default async function AuthPage({
   const mode = params.mode === "register" ? "register" : "login";
   const flash = getFlashMessage(params);
   const { userId } = await auth();
+  let activeMembershipCount = 0;
 
   if (userId) {
     const adminClient = createSupabaseAdminClient();
@@ -67,10 +82,14 @@ export default async function AuthPage({
       .eq("user_id", userId)
       .eq("status", "active");
 
-    if ((count ?? 0) > 0) {
+    activeMembershipCount = count ?? 0;
+
+    if (activeMembershipCount > 0) {
       redirect("/admin");
     }
   }
+
+  const requiresOrganizationSetup = Boolean(userId) && activeMembershipCount === 0;
 
   return (
     <>
@@ -111,16 +130,30 @@ export default async function AuthPage({
         <section className="wf-auth-panel">
           <section className="wf-auth-card">
             <div className="wf-auth-header">
-              <div className="wf-auth-subtitle">Panel Organizatora</div>
-              <h1>{mode === "register" ? "Utwórz konto" : "Witaj ponownie"}</h1>
+              <div className="wf-auth-subtitle">
+                {requiresOrganizationSetup ? "Konfiguracja konta" : "Panel Organizatora"}
+              </div>
+              <h1>
+                {requiresOrganizationSetup
+                  ? "Dokończ konfigurację"
+                  : mode === "register"
+                    ? "Utwórz konto"
+                    : "Witaj ponownie"}
+              </h1>
               <p className="wf-page-subtitle" style={{ marginTop: 0 }}>
-                {mode === "register"
-                  ? "Załóż konto i uruchom pierwszą ankietę w kilka minut."
-                  : "Zaloguj się do panelu sterowania, aby kontynuować pracę."}
+                {requiresOrganizationSetup
+                  ? "Masz już aktywną sesję Clerk. Podaj nazwę organizacji, a przygotujemy Twój panel organizatora."
+                  : mode === "register"
+                    ? "Załóż konto i uruchom pierwszą ankietę w kilka minut."
+                    : "Zaloguj się do panelu sterowania, aby kontynuować pracę."}
               </p>
             </div>
 
-            <AuthForms initialFlash={flash} mode={mode} />
+            <AuthForms
+              initialFlash={flash}
+              mode={mode}
+              requiresOrganizationSetup={requiresOrganizationSetup}
+            />
 
             <div className="wf-auth-helper">
               <Info size={18} />

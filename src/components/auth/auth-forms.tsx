@@ -7,14 +7,16 @@ import { useState } from "react";
 
 import { useSignIn, useSignUp } from "@clerk/nextjs";
 
+import { LogoutButton } from "@/components/auth/logout-button";
 import type { FlashMessage } from "@/lib/types";
 
 interface AuthFormsProps {
   mode: "login" | "register";
   initialFlash: FlashMessage | null;
+  requiresOrganizationSetup: boolean;
 }
 
-export const AuthForms = ({ mode, initialFlash }: AuthFormsProps) => {
+export const AuthForms = ({ mode, initialFlash, requiresOrganizationSetup }: AuthFormsProps) => {
   const router = useRouter();
   const { isLoaded: signInLoaded, signIn, setActive: setSignInActive } = useSignIn();
   const { isLoaded: signUpLoaded, signUp, setActive: setSignUpActive } = useSignUp();
@@ -136,6 +138,110 @@ export const AuthForms = ({ mode, initialFlash }: AuthFormsProps) => {
     }
   };
 
+  const handleGoogleAuth = async () => {
+    setIsSubmitting(true);
+    setFlash(null);
+
+    try {
+      if (mode === "register") {
+        if (!signUpLoaded || !signUp) {
+          setError("Rejestracja przez Google chwilowo niedostępna. Spróbuj ponownie za moment.");
+          return;
+        }
+
+        await signUp.authenticateWithRedirect({
+          strategy: "oauth_google",
+          redirectUrl: "/auth/callback",
+          redirectUrlComplete: "/auth/complete?provider=google",
+        });
+
+        return;
+      }
+
+      if (!signInLoaded || !signIn) {
+        setError("Logowanie przez Google chwilowo niedostępne. Spróbuj ponownie za moment.");
+        return;
+      }
+
+      await signIn.authenticateWithRedirect({
+        strategy: "oauth_google",
+        redirectUrl: "/auth/callback",
+        redirectUrlComplete: "/auth/complete?provider=google",
+      });
+    } catch {
+      setError("Nie udało się uruchomić logowania przez Google.");
+    }
+  };
+
+  const handleOrganizationSetup = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const formData = new FormData(event.currentTarget);
+    const organizationName = String(formData.get("organizationName") ?? "").trim();
+
+    if (!organizationName) {
+      setError("Podaj nazwę organizacji, aby dokończyć konfigurację konta.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    setFlash(null);
+
+    try {
+      const response = await fetch("/api/auth/bootstrap", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({ organizationName }),
+      });
+
+      if (!response.ok) {
+        setError("Nie udało się utworzyć organizacji. Spróbuj ponownie za chwilę.");
+        return;
+      }
+
+      router.push("/admin");
+      router.refresh();
+    } catch {
+      setError("Nie udało się utworzyć organizacji. Spróbuj ponownie za chwilę.");
+    }
+  };
+
+  if (requiresOrganizationSetup) {
+    return (
+      <>
+        {flash ? <div className={`wf-flash ${flash.type}`}>{flash.message}</div> : null}
+
+        <form className="wf-form-stack wf-auth-form" onSubmit={handleOrganizationSetup}>
+          <label className="wf-field">
+            <span className="wf-field-label">Nazwa Organizacji</span>
+            <span className="wf-input-shell">
+              <Building2 className="wf-input-icon" size={18} />
+              <input
+                className="wf-input wf-input-with-icon"
+                name="organizationName"
+                placeholder="np. Wojticore Health"
+                type="text"
+              />
+            </span>
+          </label>
+
+          <div className="wf-auth-setup-note">
+            To konto jest już zalogowane w Clerk. Ten krok przygotuje organizację i pierwszy dostęp do dashboardu.
+          </div>
+
+          <button className="wf-btn wf-btn-primary wf-btn-block" disabled={isSubmitting} type="submit">
+            {isSubmitting ? "Przygotowywanie panelu..." : "Dokończ konfigurację"}
+            <ArrowRight size={18} />
+          </button>
+
+          <LogoutButton />
+        </form>
+      </>
+    );
+  }
+
   return (
     <>
       <div className="wf-tab-row">
@@ -151,6 +257,15 @@ export const AuthForms = ({ mode, initialFlash }: AuthFormsProps) => {
 
       {mode === "login" ? (
         <form className="wf-form-stack wf-auth-form" onSubmit={handleLogin}>
+          <button className="wf-auth-social-button" disabled={isSubmitting} onClick={handleGoogleAuth} type="button">
+            <span className="wf-google-mark">G</span>
+            Kontynuuj przez Google
+          </button>
+
+          <div className="wf-auth-separator">
+            <span>lub użyj adresu e-mail</span>
+          </div>
+
           <label className="wf-field">
             <span className="wf-field-label">E-mail</span>
             <span className="wf-input-shell">
@@ -178,6 +293,15 @@ export const AuthForms = ({ mode, initialFlash }: AuthFormsProps) => {
         </form>
       ) : (
         <form className="wf-form-stack wf-auth-form" onSubmit={handleRegister}>
+          <button className="wf-auth-social-button" disabled={isSubmitting} onClick={handleGoogleAuth} type="button">
+            <span className="wf-google-mark">G</span>
+            Utwórz konto przez Google
+          </button>
+
+          <div className="wf-auth-separator">
+            <span>lub utwórz konto przez e-mail</span>
+          </div>
+
           <label className="wf-field">
             <span className="wf-field-label">Nazwa Organizacji</span>
             <span className="wf-input-shell">
