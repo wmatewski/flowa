@@ -46,7 +46,6 @@ export interface Database {
       organizations: {
         Row: {
           id: string;
-          clerk_organization_id: string | null;
           name: string;
           slug: string;
           created_by: string;
@@ -55,7 +54,6 @@ export interface Database {
         };
         Insert: {
           id?: string;
-          clerk_organization_id?: string | null;
           name: string;
           slug: string;
           created_by: string;
@@ -64,7 +62,6 @@ export interface Database {
         };
         Update: {
           id?: string;
-          clerk_organization_id?: string | null;
           name?: string;
           slug?: string;
           created_by?: string;

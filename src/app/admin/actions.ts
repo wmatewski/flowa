@@ -1,6 +1,6 @@
 "use server";
 
-import { clerkClient } from "@clerk/nextjs/server";
+import { auth, clerkClient, type OrganizationMembershipRole } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 
 import { getAuthenticatedAdmin } from "@/lib/admin-auth";
@@ -137,6 +137,9 @@ const parseRole = (value: FormDataEntryValue | null): MembershipRole => {
     : "moderator";
 };
 
+const toClerkRole = (role: MembershipRole): OrganizationMembershipRole =>
+  role === "moderator" ? "org:member" : "org:admin";
+
 const logOrganizationActivity = async (input: {
   organizationId: string;
   actorUserId: string | null;
@@ -168,6 +171,7 @@ export const inviteAdminAction = async (formData: FormData) => {
   }
 
   const { user, organization, membership } = await getAuthenticatedAdmin();
+  const { orgId } = await auth();
 
   if (membership.role === "moderator") {
     redirect("/admin/organization?error=forbidden");
@@ -200,17 +204,22 @@ export const inviteAdminAction = async (formData: FormData) => {
 
   existingUserId = listedUsers.data[0]?.id ?? null;
 
-  if (!existingUserId) {
-    await clerk.invitations.createInvitation({
-      emailAddress: email,
-      redirectUrl: `${publicEnv.appUrl}/auth?mode=register`,
-      publicMetadata: {
-        invitedBy: user.id,
-        organizationId: organization.id,
-        source: "flowa-organization-panel",
-      },
-    });
+  if (!orgId) {
+    redirect("/admin/organization?error=forbidden");
   }
+
+  await clerk.organizations.createOrganizationInvitation({
+    organizationId: orgId,
+    emailAddress: email,
+    role: toClerkRole(role),
+    inviterUserId: user.id,
+    redirectUrl: `${publicEnv.appUrl}/auth?mode=register`,
+    publicMetadata: {
+      invitedBy: user.id,
+      localOrganizationId: organization.id,
+      source: "flowa-organization-panel",
+    },
+  });
 
   if (existingUserId) {
     await adminClient.from("profiles").upsert(

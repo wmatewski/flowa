@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { startTransition, useEffect, useRef, useState } from "react";
 
-import { useSignIn, useSignUp } from "@clerk/nextjs";
+import { useClerk, useSignIn, useSignUp } from "@clerk/nextjs";
 
 import { LogoutButton } from "@/components/auth/logout-button";
 import type { FlashMessage } from "@/lib/types";
@@ -200,6 +200,7 @@ const VerificationCodeInput = ({ disabled, idPrefix, onCodeChange, onComplete }:
 
 export const AuthForms = ({ mode, initialFlash, requiresOrganizationSetup }: AuthFormsProps) => {
   const router = useRouter();
+  const clerk = useClerk();
   const { isLoaded: signInLoaded, signIn, setActive: setSignInActive } = useSignIn();
   const { isLoaded: signUpLoaded, signUp, setActive: setSignUpActive } = useSignUp();
   const [activeMode, setActiveMode] = useState<AuthMode>(mode);
@@ -230,7 +231,11 @@ export const AuthForms = ({ mode, initialFlash, requiresOrganizationSetup }: Aut
       body: JSON.stringify(organizationName ? { organizationName } : {}),
     });
 
-    return response.ok;
+    if (!response.ok) {
+      return null;
+    }
+
+    return (await response.json()) as { clerkOrganizationId?: string | null };
   };
 
   const completeOrganizerSignIn = async (sessionId: string) => {
@@ -247,6 +252,10 @@ export const AuthForms = ({ mode, initialFlash, requiresOrganizationSetup }: Aut
     if (!configured) {
       setError("Nie udało się przygotować organizacji.");
       return;
+    }
+
+    if (configured.clerkOrganizationId) {
+      await clerk.setActive({ organization: configured.clerkOrganizationId });
     }
 
     router.push("/admin");
@@ -498,6 +507,10 @@ export const AuthForms = ({ mode, initialFlash, requiresOrganizationSetup }: Aut
       if (!configured) {
         setError("Nie udało się utworzyć organizacji.");
         return;
+      }
+
+      if (configured.clerkOrganizationId) {
+        await clerk.setActive({ organization: configured.clerkOrganizationId });
       }
 
       router.push("/admin");

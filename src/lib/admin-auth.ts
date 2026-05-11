@@ -25,6 +25,19 @@ const deriveDisplayName = (user: AuthenticatedUser) => {
   return normalizeEmail(user.email).split("@")[0] ?? "Organizator";
 };
 
+const getClerkLocalOrganizationId = async (orgId: string | null | undefined) => {
+  if (!orgId) {
+    return null;
+  }
+
+  const client = await clerkClient();
+  const organization = await client.organizations.getOrganization(orgId);
+  const localOrganizationId = (organization.publicMetadata as { localOrganizationId?: unknown } | null)
+    ?.localOrganizationId;
+
+  return typeof localOrganizationId === "string" ? localOrganizationId : null;
+};
+
 export const getAuthenticatedUser = async (): Promise<AuthenticatedUser> => {
   const { userId } = await auth();
 
@@ -130,6 +143,7 @@ export const getAuthenticatedAdmin = async (): Promise<{
   await activatePendingMemberships(user);
 
   const profile = await ensureProfileForUser(user);
+  const clerkLocalOrganizationId = await getClerkLocalOrganizationId(orgId);
 
   const adminClient = createSupabaseAdminClient();
   const { data, error } = await adminClient
@@ -152,7 +166,7 @@ export const getAuthenticatedAdmin = async (): Promise<{
   const organizationIds = [...new Set(memberships.map((membership) => membership.organization_id))];
   const { data: organizationRows, error: organizationError } = await adminClient
     .from("organizations")
-    .select("id, clerk_organization_id, name, slug, created_by, created_at, updated_at")
+    .select("id, name, slug, created_by, created_at, updated_at")
     .in("id", organizationIds);
 
   if (organizationError) {
@@ -161,7 +175,7 @@ export const getAuthenticatedAdmin = async (): Promise<{
 
   const organizations = (organizationRows as Organization[] | null) ?? [];
   const targetOrganizationId =
-    (orgId && organizations.find((organization) => organization.clerk_organization_id === orgId)?.id) ||
+    (clerkLocalOrganizationId && organizations.find((organization) => organization.id === clerkLocalOrganizationId)?.id) ||
     (profile.default_organization_id &&
     organizations.some((organization) => organization.id === profile.default_organization_id)
       ? profile.default_organization_id

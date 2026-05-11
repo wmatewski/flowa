@@ -30,6 +30,24 @@ Mobilna aplikacja webowa w Next.js 16.1.6 do zbierania i analizowania czasu prze
 
 Aplikacja używa własnego schematu `flowa` w bazie Neon oraz identyfikatorów użytkownika z Clerk (`user_id` jako `text`).
 
+## Clerk JWT / claims
+
+Jeśli potrzebujesz tokenu dla zewnętrznej integracji, ustaw w Clerk JWT template np. taki payload:
+
+```json
+{
+	"user_id": "{{user.id}}",
+	"user_email": "{{user.primary_email_address}}",
+	"user_name": "{{user.full_name || user.first_name || user.email_address}}",
+	"org_id": "{{org.id}}",
+	"org_slug": "{{org.slug}}",
+	"org_role": "{{org.role}}",
+	"local_organization_id": "{{org.public_metadata.localOrganizationId}}"
+}
+```
+
+Po stronie Next.js najważniejsze są też standardowe wartości z `auth()`: `orgId`, `orgSlug` i `orgRole`.
+
 ## Konfiguracja lokalna
 
 1. Uzupełnij wartości w `.env.local`.

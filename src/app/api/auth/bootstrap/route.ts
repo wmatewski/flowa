@@ -107,21 +107,13 @@ export async function POST(request: Request) {
   }
 
   if ((count ?? 0) > 0) {
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true, clerkOrganizationId: null });
   }
 
   const organizationSlug = await ensureUniqueSlug(organizationName);
-  const clerk = await clerkClient();
-  const clerkOrganization = await clerk.organizations.createOrganization({
-    name: organizationName,
-    slug: organizationSlug,
-    createdBy: user.id,
-  });
-
   const { data: organizationRow, error: organizationError } = await adminClient
     .from<Pick<OrganizationRow, "id">>("organizations")
     .insert({
-      clerk_organization_id: clerkOrganization.id,
       name: organizationName,
       slug: organizationSlug,
       created_by: user.id,
@@ -130,8 +122,24 @@ export async function POST(request: Request) {
     .single();
 
   if (organizationError || !organizationRow) {
-    await clerk.organizations.deleteOrganization(clerkOrganization.id).catch(() => undefined);
     throw organizationError;
+  }
+
+  const clerk = await clerkClient();
+  let clerkOrganization;
+
+  try {
+    clerkOrganization = await clerk.organizations.createOrganization({
+      name: organizationName,
+      slug: organizationSlug,
+      createdBy: user.id,
+      publicMetadata: {
+        localOrganizationId: organizationRow.id,
+      },
+    });
+  } catch (error) {
+    await adminClient.from("organizations").delete().eq("id", organizationRow.id);
+    throw error;
   }
 
   const { error: membershipError } = await adminClient.from("memberships").upsert(
@@ -147,6 +155,8 @@ export async function POST(request: Request) {
   );
 
   if (membershipError) {
+    await clerk.organizations.deleteOrganization(clerkOrganization.id).catch(() => undefined);
+    await adminClient.from("organizations").delete().eq("id", organizationRow.id);
     throw membershipError;
   }
 
@@ -164,5 +174,5 @@ export async function POST(request: Request) {
     metadata: {},
   });
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, clerkOrganizationId: clerkOrganization.id });
 }

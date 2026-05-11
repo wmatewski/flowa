@@ -41,7 +41,7 @@ import { redirect } from "next/navigation";
 const profileColumns = "user_id, email, display_name, default_organization_id, created_at, updated_at";
 const membershipColumns =
   "id, organization_id, user_id, invited_email, role, status, created_by, created_at, updated_at";
-const organizationColumns = "id, clerk_organization_id, name, slug, created_by, created_at, updated_at";
+const organizationColumns = "id, name, slug, created_by, created_at, updated_at";
 const sessionColumns =
   "id, organization_id, slug, name, description, screen_time_limit_minutes, age_mode, fixed_age, status, created_by, starts_at, ends_at, created_at, updated_at";
 const sessionOverviewColumns =
