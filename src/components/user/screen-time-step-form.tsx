@@ -75,6 +75,9 @@ interface NavigatorWithClientHints extends Navigator {
   deviceMemory?: number;
 }
 
+const formatDeviceMemoryLabel = (deviceMemory: number | undefined) =>
+  typeof deviceMemory === "number" ? `${deviceMemory} GB` : "Niedostępne";
+
 const detectDeviceType = (userAgent: string, hasTouch: boolean, viewportWidth: number) => {
   const value = userAgent.toLowerCase();
 
@@ -119,7 +122,7 @@ const parseOperatingSystemLabel = (userAgent: string, operatingSystem: Operating
   return osLabelFallback[operatingSystem];
 };
 
-const parseBrowserLabel = (userAgent: string, deviceType: string) => {
+const parseBrowserLabelBestEffort = (userAgent: string, deviceType: string) => {
   const browserMatchers = [
     { key: "Edg", label: "Edge" },
     { key: "OPR", label: "Opera" },
@@ -205,7 +208,7 @@ export const ScreenTimeStepForm = ({
     const metadata = {
       deviceTypeLabel: deviceType,
       operatingSystemLabel: parseOperatingSystemLabel(navigator.userAgent, operatingSystem),
-      browserLabel: parseBrowserLabel(navigator.userAgent, deviceType),
+      browserLabel: parseBrowserLabelBestEffort(navigator.userAgent, deviceType),
       screenDetails: formatScreenDetails(),
       orientation: window.screen.orientation?.type ?? null,
       browserLanguage: navigator.language || null,
@@ -216,7 +219,7 @@ export const ScreenTimeStepForm = ({
       }).format(new Date()),
       platform: navigator.platform || null,
       fullUserAgent: navigator.userAgent || null,
-      memoryLabel: typeof memoryValue === "number" ? `${memoryValue} GB` : "Niedostępne",
+      memoryLabel: formatDeviceMemoryLabel(memoryValue),
       cpuCores: typeof navigator.hardwareConcurrency === "number" ? navigator.hardwareConcurrency : null,
       touchScreen: hasTouch,
       cookiesEnabled: navigator.cookieEnabled,

@@ -151,7 +151,7 @@ const buildMemberList = async (organizationId: string): Promise<OrganizationMemb
       initials: formatInitials(displayName),
       role: mapOrganizationRole(membership.role),
       status: "active",
-      createdAt: toIsoString(membership.createdAt ?? 0),
+      createdAt: toIsoString(membership.createdAt ?? Date.now()),
     } satisfies OrganizationMember;
   });
 };
