@@ -42,3 +42,4 @@ coverage
 .vscode
 .idea
 ai_context
+.vercel

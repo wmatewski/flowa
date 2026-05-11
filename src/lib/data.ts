@@ -9,6 +9,11 @@ import {
   percentageDelta,
 } from "@/lib/analytics";
 import { formatInitials } from "@/lib/format";
+import {
+  getAccessibleSession,
+  getVisibleSessionIds,
+  type SessionAccessContext,
+} from "@/lib/session-access";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import type {
   ActivityLog,
@@ -19,16 +24,19 @@ import type {
   OrganizationMembersData,
   OrganizerDashboardData,
   Profile,
+  PublicLiveSessionData,
   Session,
   SessionAgeStatistic,
   SessionCollaborator,
   SessionExperienceData,
+  LiveSessionEntry,
   SessionOverview,
   SessionParticipantRow,
   SessionSettingsData,
   SessionStatisticsData,
   SessionSubmission,
 } from "@/lib/types";
+import { redirect } from "next/navigation";
 
 const profileColumns = "user_id, email, display_name, default_organization_id, created_at, updated_at";
 const membershipColumns =
@@ -158,23 +166,48 @@ const buildDashboardActivities = (
 };
 
 export const getOrganizationDashboardData = async (
-  organizationId: string,
+  access: SessionAccessContext,
 ): Promise<OrganizerDashboardData> => {
   const supabase = createSupabaseAdminClient();
+  const visibleSessionIds = await getVisibleSessionIds(access);
+
+  if (visibleSessionIds?.length === 0) {
+    return {
+      metrics: {
+        totalSessions: 0,
+        totalParticipants: 0,
+        averageMinutes: null,
+        sessionTrend: null,
+        averageTrend: null,
+      },
+      sessions: [],
+      recentActivities: [],
+      members: [],
+    };
+  }
+
+  const sessionOverviewQuery = supabase
+    .from("session_overview")
+    .select(sessionOverviewColumns)
+    .eq("organization_id", access.organizationId)
+    .order("created_at", { ascending: false });
+
+  const activityQuery = supabase
+    .from("activity_log")
+    .select("id, organization_id, session_id, actor_user_id, activity_type, title, description, metadata, created_at")
+    .eq("organization_id", access.organizationId)
+    .order("created_at", { ascending: false })
+    .limit(8);
+
+  if (visibleSessionIds) {
+    sessionOverviewQuery.in("session_id", visibleSessionIds);
+    activityQuery.in("session_id", visibleSessionIds);
+  }
 
   const [sessionOverviewResult, activityResult, members] = await Promise.all([
-    supabase
-      .from("session_overview")
-      .select(sessionOverviewColumns)
-      .eq("organization_id", organizationId)
-      .order("created_at", { ascending: false }),
-    supabase
-      .from("activity_log")
-      .select("id, organization_id, session_id, actor_user_id, activity_type, title, description, metadata, created_at")
-      .eq("organization_id", organizationId)
-      .order("created_at", { ascending: false })
-      .limit(8),
-    buildMemberList(organizationId),
+    sessionOverviewQuery,
+    activityQuery,
+    buildMemberList(access.organizationId),
   ]);
 
   if (sessionOverviewResult.error) {
@@ -234,13 +267,25 @@ export const getOrganizationDashboardData = async (
   };
 };
 
-export const getSessionsListData = async (organizationId: string): Promise<SessionOverview[]> => {
+export const getSessionsListData = async (access: SessionAccessContext): Promise<SessionOverview[]> => {
   const supabase = createSupabaseAdminClient();
-  const { data, error } = await supabase
+  const visibleSessionIds = await getVisibleSessionIds(access);
+
+  if (visibleSessionIds?.length === 0) {
+    return [];
+  }
+
+  const query = supabase
     .from("session_overview")
     .select(sessionOverviewColumns)
-    .eq("organization_id", organizationId)
+    .eq("organization_id", access.organizationId)
     .order("created_at", { ascending: false });
+
+  if (visibleSessionIds) {
+    query.in("session_id", visibleSessionIds);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     throw error;
@@ -249,10 +294,72 @@ export const getSessionsListData = async (organizationId: string): Promise<Sessi
   return (data as SessionOverview[] | null) ?? [];
 };
 
+export const getPublicLiveSessionData = async (
+  slug: string,
+  limit = 25,
+): Promise<PublicLiveSessionData> => {
+  const supabase = createSupabaseAdminClient();
+  const { data: sessionRow, error: sessionError } = await supabase
+    .from("sessions")
+    .select(sessionColumns)
+    .eq("slug", slug)
+    .single();
+
+  if (sessionError) {
+    throw sessionError;
+  }
+
+  const session = sessionRow as Session;
+  const [overviewResult, participantResult] = await Promise.all([
+    supabase
+      .from("session_overview")
+      .select(sessionOverviewColumns)
+      .eq("session_id", session.id)
+      .maybeSingle(),
+    supabase
+      .from("latest_session_participants")
+      .select(latestParticipantColumns)
+      .eq("session_id", session.id)
+      .order("submitted_at", { ascending: false })
+      .limit(limit),
+  ]);
+
+  if (overviewResult.error) {
+    throw overviewResult.error;
+  }
+
+  if (participantResult.error) {
+    throw participantResult.error;
+  }
+
+  const entries = (((participantResult.data as SessionSubmission[] | null) ?? [])).map(
+    (entry) =>
+      ({
+        id: entry.id,
+        age: entry.age,
+        operatingSystem: entry.detected_os,
+        screenTimeMinutes: entry.screen_time_minutes,
+        submittedAt: entry.submitted_at,
+      }) satisfies LiveSessionEntry,
+  );
+
+  return {
+    session,
+    overview: (overviewResult.data as SessionOverview | null) ?? null,
+    entries,
+  };
+};
+
 export const getSessionStatisticsData = async (
-  organizationId: string,
+  access: SessionAccessContext,
   sessionId: string,
 ): Promise<SessionStatisticsData> => {
+  const accessibleSession = await getAccessibleSession(access, sessionId);
+
+  if (!accessibleSession) {
+    redirect("/admin/sessions?error=forbidden");
+  }
+
   const supabase = createSupabaseAdminClient();
 
   const [sessionResult, overviewResult, ageStatsResult, participantResult, collaboratorResult, members] = await Promise.all([
@@ -260,13 +367,13 @@ export const getSessionStatisticsData = async (
       .from("sessions")
       .select(sessionColumns)
       .eq("id", sessionId)
-      .eq("organization_id", organizationId)
+      .eq("organization_id", access.organizationId)
       .single(),
     supabase
       .from("session_overview")
       .select(sessionOverviewColumns)
       .eq("session_id", sessionId)
-      .eq("organization_id", organizationId)
+      .eq("organization_id", access.organizationId)
       .maybeSingle(),
     supabase
       .from("session_age_statistics")
@@ -282,7 +389,7 @@ export const getSessionStatisticsData = async (
       .from("session_collaborators")
       .select("id, session_id, membership_id, role, created_at")
       .eq("session_id", sessionId),
-    buildMemberList(organizationId),
+    buildMemberList(access.organizationId),
   ]);
 
   if (sessionResult.error) {
@@ -339,10 +446,56 @@ export const getSessionStatisticsData = async (
   };
 };
 
+export const getSessionWorkspaceSummary = async (
+  access: SessionAccessContext,
+  sessionId: string,
+): Promise<{ session: Session; overview: SessionOverview | null }> => {
+  const accessibleSession = await getAccessibleSession(access, sessionId);
+
+  if (!accessibleSession) {
+    redirect("/admin/sessions?error=forbidden");
+  }
+
+  const supabase = createSupabaseAdminClient();
+  const [sessionResult, overviewResult] = await Promise.all([
+    supabase
+      .from("sessions")
+      .select(sessionColumns)
+      .eq("id", sessionId)
+      .eq("organization_id", access.organizationId)
+      .single(),
+    supabase
+      .from("session_overview")
+      .select(sessionOverviewColumns)
+      .eq("session_id", sessionId)
+      .eq("organization_id", access.organizationId)
+      .maybeSingle(),
+  ]);
+
+  if (sessionResult.error) {
+    throw sessionResult.error;
+  }
+
+  if (overviewResult.error) {
+    throw overviewResult.error;
+  }
+
+  return {
+    session: sessionResult.data as Session,
+    overview: (overviewResult.data as SessionOverview | null) ?? null,
+  };
+};
+
 export const getSessionSettingsData = async (
-  organizationId: string,
+  access: SessionAccessContext,
   sessionId: string,
 ): Promise<SessionSettingsData> => {
+  const accessibleSession = await getAccessibleSession(access, sessionId);
+
+  if (!accessibleSession) {
+    redirect("/admin/sessions?error=forbidden");
+  }
+
   const supabase = createSupabaseAdminClient();
 
   const [sessionResult, overviewResult, collaboratorResult, members] = await Promise.all([
@@ -350,19 +503,19 @@ export const getSessionSettingsData = async (
       .from("sessions")
       .select(sessionColumns)
       .eq("id", sessionId)
-      .eq("organization_id", organizationId)
+      .eq("organization_id", access.organizationId)
       .single(),
     supabase
       .from("session_overview")
       .select(sessionOverviewColumns)
       .eq("session_id", sessionId)
-      .eq("organization_id", organizationId)
+      .eq("organization_id", access.organizationId)
       .maybeSingle(),
     supabase
       .from("session_collaborators")
       .select("id, session_id, membership_id, role, created_at")
       .eq("session_id", sessionId),
-    buildMemberList(organizationId),
+    buildMemberList(access.organizationId),
   ]);
 
   if (sessionResult.error) {
@@ -388,11 +541,11 @@ export const getSessionSettingsData = async (
 };
 
 export const getOrganizationMembersData = async (
-  organizationId: string,
+  access: SessionAccessContext,
   selectedSessionId?: string,
 ): Promise<OrganizationMembersData> => {
-  const sessions = await getSessionsListData(organizationId);
-  const members = await buildMemberList(organizationId);
+  const sessions = await getSessionsListData(access);
+  const members = await buildMemberList(access.organizationId);
   const currentSession =
     sessions.find((session) => session.session_id === selectedSessionId) ??
     sessions.find((session) => session.status === "active") ??

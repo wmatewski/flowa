@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { getAuthenticatedAdmin } from "@/lib/admin-auth";
 import type { Database, Json } from "@/lib/database.types";
 import { publicEnv } from "@/lib/env/public";
+import { getAccessibleSession } from "@/lib/session-access";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import type { MembershipRole } from "@/lib/types";
 
@@ -130,6 +131,22 @@ export const inviteAdminAction = async (formData: FormData) => {
 
   if (membership.role === "moderator") {
     redirect("/admin/organization?error=forbidden");
+  }
+
+  if (sessionId) {
+    const session = await getAccessibleSession(
+      {
+        organizationId: organization.id,
+        membershipId: membership.id,
+        role: membership.role,
+        userId: user.id,
+      },
+      sessionId,
+    );
+
+    if (!session) {
+      redirect("/admin/organization?error=forbidden");
+    }
   }
 
   const adminClient = createSupabaseAdminClient();
@@ -268,7 +285,7 @@ export const createSessionAction = async (formData: FormData) => {
 };
 
 export const saveSessionSettingsAction = async (formData: FormData) => {
-  const { user, organization } = await getAuthenticatedAdmin();
+  const { user, organization, membership } = await getAuthenticatedAdmin();
   const sessionId = String(formData.get("sessionId") ?? "").trim();
   const name = String(formData.get("name") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim();
@@ -283,6 +300,22 @@ export const saveSessionSettingsAction = async (formData: FormData) => {
 
   if (!name) {
     redirect(sessionId ? `/admin/sessions/${sessionId}/settings?error=missing-name` : "/admin/sessions/new?error=missing-name");
+  }
+
+  if (sessionId) {
+    const session = await getAccessibleSession(
+      {
+        organizationId: organization.id,
+        membershipId: membership.id,
+        role: membership.role,
+        userId: user.id,
+      },
+      sessionId,
+    );
+
+    if (!session) {
+      redirect("/admin/sessions?error=forbidden");
+    }
   }
 
   const adminClient = createSupabaseAdminClient();
@@ -365,19 +398,27 @@ export const saveSessionSettingsAction = async (formData: FormData) => {
 
 export const deleteSessionAction = async (formData: FormData) => {
   const sessionId = String(formData.get("sessionId") ?? "").trim();
-  const { user, organization } = await getAuthenticatedAdmin();
+  const { user, organization, membership } = await getAuthenticatedAdmin();
 
   if (!sessionId) {
     redirect("/admin/sessions?error=missing-session");
   }
 
+  const accessibleSession = await getAccessibleSession(
+    {
+      organizationId: organization.id,
+      membershipId: membership.id,
+      role: membership.role,
+      userId: user.id,
+    },
+    sessionId,
+  );
+
+  if (!accessibleSession) {
+    redirect("/admin/sessions?error=forbidden");
+  }
+
   const adminClient = createSupabaseAdminClient();
-  const { data: sessionRow } = await adminClient
-    .from<Pick<SessionRow, "id" | "name">>("sessions")
-    .select("id, name")
-    .eq("id", sessionId)
-    .eq("organization_id", organization.id)
-    .maybeSingle();
 
   const { error } = await adminClient
     .from("sessions")
@@ -393,7 +434,7 @@ export const deleteSessionAction = async (formData: FormData) => {
     organizationId: organization.id,
     actorUserId: user.id,
     activityType: "session_deleted",
-    title: `Usunięto sesję \"${sessionRow?.name ?? "Sesja"}\"`,
+    title: `Usunięto sesję \"${accessibleSession.name}\"`,
     description: "Sesja została usunięta z organizacji.",
   });
 

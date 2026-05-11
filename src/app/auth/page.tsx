@@ -1,4 +1,4 @@
-import { Leaf, Info } from "lucide-react";
+import { Building2, Info, LockKeyhole, Radio, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -74,45 +74,67 @@ export default async function AuthPage({
 
   return (
     <>
-      <main className="wf-auth-shell">
-        <section className="wf-auth-card">
-          <div className="wf-auth-header">
-            <div className="wf-brand" style={{ justifyContent: "center", display: "flex" }}>
-              <div className="wf-brand-mark">
-                <Leaf size={18} />
-              </div>
-              <span>Wojticore Flowa</span>
-            </div>
-            <div className="wf-auth-subtitle">Panel Organizatora</div>
-          </div>
-
-            <AuthForms initialFlash={flash} mode={mode} />
-
-          <div className="wf-auth-helper">
-            <Info size={18} />
-            <p>
-              Bierzesz udział w sesji? Nie musisz zakładać konta. Wystarczy skorzystać z linku udostępnionego przez organizatora.
-            </p>
-          </div>
-        </section>
-      </main>
-
-      <footer className="wf-footer">
-        <div className="wf-footer-inner">
+      <main className="wf-auth-layout">
+        <section className="wf-auth-visual-panel">
           <div className="wf-brand">
             <div className="wf-brand-mark">
-              <Leaf size={16} />
+              <Building2 size={18} />
             </div>
             <span>Wojticore Flowa</span>
           </div>
-          <div>© 2024 Wojticore Flowa. Wszystkie prawa zastrzeżone.</div>
-          <nav className="wf-footer-nav">
-            <Link href="/guides">Dokumentacja Open-Source</Link>
-            <Link href="/">flowa.wojticore.pl</Link>
-            <Link href="/guides">Polityka Prywatności</Link>
-          </nav>
-        </div>
-      </footer>
+
+          <div className="wf-auth-visual-copy">
+            <div className="wf-badge">Panel organizatora</div>
+            <h1>Precyzja w każdym badaniu.</h1>
+            <p>
+              Zaloguj się do jednolitego dashboardu, w którym zarządzasz ankietami,
+              współtwórcami i widokiem wyników na żywo.
+            </p>
+
+            <div className="wf-auth-visual-points">
+              <div className="wf-auth-visual-point">
+                <ShieldCheck size={18} />
+                <span>Dostęp oparty o Clerk i filtrowanie ankiet per użytkownik.</span>
+              </div>
+              <div className="wf-auth-visual-point">
+                <Radio size={18} />
+                <span>Widok live i embed do prezentacji bez dodatkowych narzędzi.</span>
+              </div>
+              <div className="wf-auth-visual-point">
+                <LockKeyhole size={18} />
+                <span>Jedna przestrzeń robocza dla organizacji i przypisanych sesji.</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="wf-auth-panel">
+          <section className="wf-auth-card">
+            <div className="wf-auth-header">
+              <div className="wf-auth-subtitle">Panel Organizatora</div>
+              <h1>{mode === "register" ? "Utwórz konto" : "Witaj ponownie"}</h1>
+              <p className="wf-page-subtitle" style={{ marginTop: 0 }}>
+                {mode === "register"
+                  ? "Załóż konto i uruchom pierwszą ankietę w kilka minut."
+                  : "Zaloguj się do panelu sterowania, aby kontynuować pracę."}
+              </p>
+            </div>
+
+            <AuthForms initialFlash={flash} mode={mode} />
+
+            <div className="wf-auth-helper">
+              <Info size={18} />
+              <p>
+                Bierzesz udział w sesji? Nie potrzebujesz konta. Otwórz link udostępniony przez organizatora i przejdź przez 4-etapową ankietę.
+              </p>
+            </div>
+
+            <div className="wf-footer-muted">
+              Szukasz instrukcji dla uczestników? <Link href="/guides">Zobacz poradniki</Link>.
+            </div>
+          </section>
+        </section>
+      </main>
     </>
   );
 }

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Manrope } from "next/font/google";
+import { Inter, Manrope } from "next/font/google";
 
 import { ClerkProvider } from "@clerk/nextjs";
 
@@ -8,6 +8,12 @@ import "@/app/globals.css";
 const manrope = Manrope({
   subsets: ["latin", "latin-ext"],
   variable: "--font-manrope",
+  display: "swap",
+});
+
+const inter = Inter({
+  subsets: ["latin", "latin-ext"],
+  variable: "--font-inter",
   display: "swap",
 });
 
@@ -24,7 +30,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pl">
-      <body className={manrope.variable}>
+      <body className={`${manrope.variable} ${inter.variable}`}>
         <ClerkProvider>{children}</ClerkProvider>
       </body>
     </html>

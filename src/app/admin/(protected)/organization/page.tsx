@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 import { inviteAdminAction } from "@/app/admin/actions";
 import { getAuthenticatedAdmin } from "@/lib/admin-auth";
@@ -38,8 +39,21 @@ export default async function OrganizationPage({
 }) {
   const params = await searchParams;
   const selectedSessionId = typeof params.sessionId === "string" ? params.sessionId : undefined;
-  const { organization } = await getAuthenticatedAdmin();
-  const data = await getOrganizationMembersData(organization.id, selectedSessionId);
+  const { organization, membership, user } = await getAuthenticatedAdmin();
+
+  if (membership.role === "moderator") {
+    redirect("/admin/sessions?error=forbidden");
+  }
+
+  const data = await getOrganizationMembersData(
+    {
+      organizationId: organization.id,
+      membershipId: membership.id,
+      role: membership.role,
+      userId: user.id,
+    },
+    selectedSessionId,
+  );
   const flash = getFlashMessage(params);
 
   const buildSessionHref = (sessionId?: string) => {

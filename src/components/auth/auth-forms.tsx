@@ -1,5 +1,6 @@
 "use client";
 
+import { ArrowRight, Building2, Lock, Mail } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -149,39 +150,65 @@ export const AuthForms = ({ mode, initialFlash }: AuthFormsProps) => {
       {flash ? <div className={`wf-flash ${flash.type}`}>{flash.message}</div> : null}
 
       {mode === "login" ? (
-        <form className="wf-form-stack" onSubmit={handleLogin}>
+        <form className="wf-form-stack wf-auth-form" onSubmit={handleLogin}>
           <label className="wf-field">
             <span className="wf-field-label">E-mail</span>
-            <input className="wf-input" name="email" placeholder="adres@email.com" type="email" />
+            <span className="wf-input-shell">
+              <Mail className="wf-input-icon" size={18} />
+              <input className="wf-input wf-input-with-icon" name="email" placeholder="adres@email.com" type="email" />
+            </span>
           </label>
           <label className="wf-field">
             <span className="wf-field-label">Hasło</span>
-            <input className="wf-input" name="password" placeholder="••••••••" type="password" />
+            <span className="wf-input-shell">
+              <Lock className="wf-input-icon" size={18} />
+              <input className="wf-input wf-input-with-icon" name="password" placeholder="••••••••" type="password" />
+            </span>
           </label>
+          <div className="wf-auth-form-meta">
+            <span className="wf-footer-muted">Logowanie przez Clerk</span>
+            <Link className="wf-link-button" href="/password-reset">
+              Nie pamiętasz hasła?
+            </Link>
+          </div>
           <button className="wf-btn wf-btn-primary wf-btn-block" disabled={isSubmitting} type="submit">
             {isSubmitting ? "Logowanie..." : "Zaloguj się"}
+            <ArrowRight size={18} />
           </button>
         </form>
       ) : (
-        <form className="wf-form-stack" onSubmit={handleRegister}>
+        <form className="wf-form-stack wf-auth-form" onSubmit={handleRegister}>
           <label className="wf-field">
             <span className="wf-field-label">Nazwa Organizacji</span>
-            <input className="wf-input" name="organizationName" placeholder="Wprowadź nazwę" type="text" />
+            <span className="wf-input-shell">
+              <Building2 className="wf-input-icon" size={18} />
+              <input className="wf-input wf-input-with-icon" name="organizationName" placeholder="Wprowadź nazwę" type="text" />
+            </span>
           </label>
           <label className="wf-field">
             <span className="wf-field-label">E-mail</span>
-            <input className="wf-input" name="email" placeholder="adres@email.com" type="email" />
+            <span className="wf-input-shell">
+              <Mail className="wf-input-icon" size={18} />
+              <input className="wf-input wf-input-with-icon" name="email" placeholder="adres@email.com" type="email" />
+            </span>
           </label>
           <label className="wf-field">
             <span className="wf-field-label">Hasło</span>
-            <input className="wf-input" name="password" placeholder="••••••••" type="password" />
+            <span className="wf-input-shell">
+              <Lock className="wf-input-icon" size={18} />
+              <input className="wf-input wf-input-with-icon" name="password" placeholder="••••••••" type="password" />
+            </span>
           </label>
           <label className="wf-field">
             <span className="wf-field-label">Potwierdź Hasło</span>
-            <input className="wf-input" name="confirmPassword" placeholder="••••••••" type="password" />
+            <span className="wf-input-shell">
+              <Lock className="wf-input-icon" size={18} />
+              <input className="wf-input wf-input-with-icon" name="confirmPassword" placeholder="••••••••" type="password" />
+            </span>
           </label>
           <button className="wf-btn wf-btn-primary wf-btn-block" disabled={isSubmitting} type="submit">
             {isSubmitting ? "Tworzenie konta..." : "Utwórz konto"}
+            <ArrowRight size={18} />
           </button>
         </form>
       )}

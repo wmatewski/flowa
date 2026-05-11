@@ -26,8 +26,13 @@ export default async function AdminDashboardPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const params = await searchParams;
-  const { organization } = await getAuthenticatedAdmin();
-  const dashboard = await getOrganizationDashboardData(organization.id);
+  const { organization, membership, user } = await getAuthenticatedAdmin();
+  const dashboard = await getOrganizationDashboardData({
+    organizationId: organization.id,
+    membershipId: membership.id,
+    role: membership.role,
+    userId: user.id,
+  });
   const flash = getFlashMessage(params);
 
   return (

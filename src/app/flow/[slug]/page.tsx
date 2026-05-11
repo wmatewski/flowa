@@ -1,27 +1,11 @@
 import { cookies, headers } from "next/headers";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Info, Leaf } from "lucide-react";
+import { ArrowRight, Smartphone } from "lucide-react";
 
-import { submitSessionEntryAction } from "@/app/actions";
-import { SessionEntryForm } from "@/components/user/session-entry-form";
-import { formatMinutes, formatPercentage } from "@/lib/format";
 import { getPublicSessionExperienceData } from "@/lib/data";
 import { publicEnv } from "@/lib/env/public";
-import { detectOperatingSystem } from "@/lib/os";
-import type { FlashMessage } from "@/lib/types";
-
-const getFlashMessage = (params: Record<string, string | string[] | undefined>): FlashMessage | null => {
-  if (params.error === "invalid-time") {
-    return { type: "error", message: "Podaj poprawny czas w formacie godziny:minuty, na przykład 1:30." };
-  }
-
-  if (params.error === "save-failed") {
-    return { type: "error", message: "Nie udało się zapisać danych dla tej sesji." };
-  }
-
-  return null;
-};
+import { detectOperatingSystem, getOperatingSystemConfig, isOperatingSystem, operatingSystemOrder } from "@/lib/os";
 
 export default async function FlowSessionPage({
   params,
@@ -43,71 +27,90 @@ export default async function FlowSessionPage({
   if (!age) {
     redirect(`/flow/${slug}/age`);
   }
-
-  const flash = getFlashMessage(query);
+  const selectedOperatingSystem =
+    typeof query.os === "string" && isOperatingSystem(query.os)
+      ? query.os
+      : data.detectedOperatingSystem;
+  const operatingSystemConfig = getOperatingSystemConfig(selectedOperatingSystem);
 
   return (
-    <>
-      <header className="wf-topbar">
-        <div className="wf-topbar-inner">
+    <main className="wf-step-shell">
+      <div className="wf-step-container">
+        <div className="wf-step-topbar">
           <Link className="wf-brand" href="/">
-            <div className="wf-brand-mark">
-              <Leaf size={16} />
-            </div>
             <span>Wojticore Flowa</span>
           </Link>
-          <Link className="wf-btn wf-btn-secondary" href="/auth">
-            Zaloguj się
+          <Link className="wf-link-button" href="/guides">
+            Pomoc
           </Link>
         </div>
-      </header>
 
-      <main className="wf-flow-shell">
-        <div style={{ maxWidth: 640, margin: "0 auto 28px", textAlign: "center" }}>
-          <div className="wf-badge">{data.session.name}</div>
-          <h1 className="wf-page-title" style={{ marginTop: 16 }}>Twoja sesja</h1>
-          <p className="wf-page-subtitle">
-            {data.organization.name}. Zarejestruj dzisiejszy czas przed ekranem w ramach tej sesji.
-          </p>
+        <div className="wf-step-progress">
+          <div className="wf-inline-meta" style={{ justifyContent: "space-between" }}>
+            <span>Krok 2 z 4</span>
+            <span>Instrukcja</span>
+          </div>
+          <div className="wf-step-progress-bar">
+            <div className="wf-step-progress-fill" style={{ width: "50%" }} />
+          </div>
         </div>
 
-        {flash ? <div className={`wf-flash ${flash.type}`} style={{ maxWidth: 520, margin: "0 auto 24px" }}>{flash.message}</div> : null}
+        <form action={`/flow/${slug}/time`} className="wf-step-card" method="get">
+          <input name="age" type="hidden" value={String(age)} />
 
-        <SessionEntryForm
-          age={age}
-          initialMinutes={data.latestSubmission?.screen_time_minutes ?? null}
-          initialOperatingSystem={data.detectedOperatingSystem}
-          session={data.session}
-          submitAction={submitSessionEntryAction}
-        />
+          <div>
+            <h1 className="wf-step-title">Jak sprawdzić czas przed ekranem?</h1>
+            <p className="wf-step-description">
+              {data.organization.name}. Przejdziemy teraz przez odczyt wyniku na urządzeniu uczestnika.
+            </p>
+          </div>
 
-        {data.participantInsight ? (
-          <section className="wf-flow-card" style={{ marginTop: 24 }}>
-            <div className={`wf-status-chip ${data.participantInsight.tone}`}>
-              {data.participantInsight.label}
+          <section className="wf-step-note">
+            <div className="wf-inline-meta" style={{ color: "var(--text)", fontWeight: 700 }}>
+              <Smartphone size={18} />
+              Wykryty system: {operatingSystemConfig.label}
             </div>
-            <h3 style={{ marginTop: 16 }}>Twoja ostatnia odpowiedź</h3>
-            <p>{data.participantInsight.description}</p>
-            <div className="wf-inline-meta" style={{ marginTop: 18 }}>
-              <span>Twoja wartość: {formatMinutes(data.latestSubmission?.screen_time_minutes)}</span>
-              <span>Średnia sesji: {formatMinutes(data.sessionAverageMinutes)}</span>
-              <span>
-                Różnica: {data.participantInsight.deltaPercentage == null ? "Brak danych" : formatPercentage(data.participantInsight.deltaPercentage)}
-              </span>
+
+            <div className="wf-step-system-row" style={{ marginTop: 12 }}>
+              <div>
+                <strong>{operatingSystemConfig.shortLabel}</strong>
+                <p className="wf-table-muted" style={{ margin: "6px 0 0" }}>{operatingSystemConfig.description}</p>
+              </div>
+              <select className="wf-input wf-step-system-select" defaultValue={selectedOperatingSystem} name="os">
+                {operatingSystemOrder.map((candidate) => (
+                  <option key={candidate} value={candidate}>
+                    {getOperatingSystemConfig(candidate).label}
+                  </option>
+                ))}
+              </select>
             </div>
           </section>
-        ) : null}
 
-        <div className="wf-flow-card" style={{ marginTop: 24 }}>
-          <div className="wf-inline-meta" style={{ color: "var(--text)", fontWeight: 700, marginBottom: 10 }}>
-            <Info size={18} />
-            O sesji
+          <div className="wf-step-list">
+            {operatingSystemConfig.steps.map((step, index) => (
+              <div key={step}>
+                <div className="wf-step-list-item">
+                  <div className="wf-step-index">{index + 1}</div>
+                  <div>{step}</div>
+                </div>
+                {index < operatingSystemConfig.steps.length - 1 ? <div className="wf-step-divider" /> : null}
+              </div>
+            ))}
           </div>
-          <p>
-            Limit tej sesji wynosi {formatMinutes(data.session.screen_time_limit_minutes)}. Dotychczasowe zgłoszenia uczestników: {data.participantCount}.
-          </p>
-        </div>
-      </main>
-    </>
+
+          <div className="wf-step-actions">
+            {data.session.age_mode === "variable" ? (
+              <Link className="wf-btn wf-btn-secondary" href={`/flow/${slug}/age`}>
+                Wróć do wieku
+              </Link>
+            ) : <span />}
+            <button className="wf-btn wf-btn-primary" type="submit">
+              Dalej
+              <ArrowRight size={18} />
+            </button>
+          </div>
+        </form>
+      </div>
+    </main>
   );
 }

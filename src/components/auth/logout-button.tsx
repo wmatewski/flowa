@@ -9,7 +9,7 @@ export const LogoutButton = () => {
 
   return (
     <button
-      className="wf-btn wf-btn-primary wf-btn-block"
+      className="wf-btn wf-btn-secondary wf-btn-block"
       onClick={() => clerk.signOut({ redirectUrl: "/auth" })}
       type="button"
     >

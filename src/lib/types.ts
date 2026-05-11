@@ -127,3 +127,17 @@ export interface SessionExperienceData {
   detectedOperatingSystem: OperatingSystem;
   participantInsight: ParticipantInsight | null;
 }
+
+export interface LiveSessionEntry {
+  id: string;
+  age: number;
+  operatingSystem: OperatingSystem;
+  screenTimeMinutes: number;
+  submittedAt: string;
+}
+
+export interface PublicLiveSessionData {
+  session: Session;
+  overview: SessionOverview | null;
+  entries: LiveSessionEntry[];
+}

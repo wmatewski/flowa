@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import type { Database } from "@/lib/database.types";
@@ -41,33 +42,54 @@ export default async function FlowAgePage({
   const flash = getFlashMessage(query.error ? String(query.error) : undefined);
 
   return (
-    <main className="wf-age-shell">
-      <div className="wf-age-card">
-        <div>
-          <h1>Podaj swój wiek</h1>
-          <p>Abyśmy mogli spersonalizować Twoje doświadczenie w aplikacji.</p>
+    <main className="wf-step-shell">
+      <div className="wf-step-container">
+        <div className="wf-step-topbar">
+          <Link className="wf-brand" href="/">
+            <span>Wojticore Flowa</span>
+          </Link>
+          <Link className="wf-link-button" href="/guides">
+            Pomoc
+          </Link>
         </div>
 
-        {flash ? <div className={`wf-flash ${flash.type}`}>{flash.message}</div> : null}
+        <div className="wf-step-progress">
+          <div className="wf-inline-meta" style={{ justifyContent: "space-between" }}>
+            <span>Krok 1 z 4</span>
+            <span>Wiek</span>
+          </div>
+          <div className="wf-step-progress-bar">
+            <div className="wf-step-progress-fill" style={{ width: "25%" }} />
+          </div>
+        </div>
 
-        <form action={`/flow/${slug}`} className="wf-form-stack" method="get">
-          <label className="wf-age-input-wrap">
-            <input
-              className="wf-time-input wf-age-input"
-              inputMode="numeric"
-              max="120"
-              min="1"
-              name="age"
-              placeholder="25"
-              type="number"
-            />
-            <span className="wf-age-input-suffix">lat</span>
-          </label>
+        <section className="wf-step-card">
+          <div>
+            <h1 className="wf-step-title">Podaj swój wiek</h1>
+            <p className="wf-step-description">Dzięki temu dopasujemy późniejszy wynik do odpowiedniej grupy wiekowej.</p>
+          </div>
 
-          <button className="wf-btn wf-btn-primary wf-btn-block wf-btn-large" type="submit">
-            Dalej
-          </button>
-        </form>
+          {flash ? <div className={`wf-flash ${flash.type}`}>{flash.message}</div> : null}
+
+          <form action={`/flow/${slug}`} className="wf-form-stack" method="get">
+            <label className="wf-field">
+              <span className="wf-field-label">Wiek uczestnika</span>
+              <input
+                className="wf-time-input wf-step-time-input"
+                inputMode="numeric"
+                max="120"
+                min="1"
+                name="age"
+                placeholder="25"
+                type="number"
+              />
+            </label>
+
+            <button className="wf-btn wf-btn-primary wf-btn-block wf-btn-large" type="submit">
+              Dalej
+            </button>
+          </form>
+        </section>
       </div>
     </main>
   );

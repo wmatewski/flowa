@@ -60,6 +60,7 @@ export const submitSessionEntryAction = async (formData: FormData) => {
   const sessionId = String(formData.get("sessionId") ?? "").trim();
   const sessionSlug = String(formData.get("sessionSlug") ?? "").trim();
   const age = Number(formData.get("age") ?? "0");
+  const requestedOperatingSystem = String(formData.get("operatingSystem") ?? "").trim();
   const parsedTime = parseScreenTimeValue(formData.get("screenTimeValue"));
 
   if (!sessionId || !sessionSlug) {
@@ -77,7 +78,8 @@ export const submitSessionEntryAction = async (formData: FormData) => {
     parsedTime.totalMinutes < 0 ||
     parsedTime.totalMinutes > 1440
   ) {
-    redirect(`/flow/${sessionSlug}?error=invalid-time&age=${age}`);
+    const osQuery = requestedOperatingSystem ? `&os=${requestedOperatingSystem}` : "";
+    redirect(`/flow/${sessionSlug}/time?error=invalid-time&age=${age}${osQuery}`);
   }
 
   const headerStore = await headers();
@@ -105,7 +107,8 @@ export const submitSessionEntryAction = async (formData: FormData) => {
   const sessionRow = sessionRowRaw as { id: string; name: string; organization_id: string } | null;
 
   if (sessionError || !sessionRow) {
-    redirect(`/flow/${sessionSlug}?error=save-failed&age=${age}`);
+    const osQuery = requestedOperatingSystem ? `&os=${requestedOperatingSystem}` : "";
+    redirect(`/flow/${sessionSlug}/time?error=save-failed&age=${age}${osQuery}`);
   }
 
   const { error } = await supabase.from("session_submissions").insert({
@@ -119,7 +122,7 @@ export const submitSessionEntryAction = async (formData: FormData) => {
   });
 
   if (error) {
-    redirect(`/flow/${sessionSlug}?error=save-failed&age=${age}`);
+    redirect(`/flow/${sessionSlug}/time?error=save-failed&age=${age}&os=${operatingSystem}`);
   }
 
   await supabase.from("activity_log").insert({
@@ -135,7 +138,7 @@ export const submitSessionEntryAction = async (formData: FormData) => {
     },
   });
 
-  redirect(`/flow/${sessionSlug}/submitted?saved=1&age=${age}`);
+  redirect(`/flow/${sessionSlug}/submitted?saved=1&age=${age}&os=${operatingSystem}`);
 };
 
 export const submitScreenTimeAction = submitSessionEntryAction;
