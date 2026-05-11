@@ -1,5 +1,4 @@
 import { ArrowRight, ChartColumn, Code2, Leaf, Presentation } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 
 export default function HomePage() {
@@ -51,21 +50,6 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div className="wf-hero-media">
-            <Image
-              alt="Podgląd pulpitu Wojticore Flowa"
-              fill
-              sizes="(max-width: 768px) 100vw, 520px"
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuDUa77x_dzhzscRtUoDxS3eAJxiFKbVXzUOO-lTGvDYC01J5LDyUlOV4rP0VqQBdR47MoyKv3XSlEiLAZHX0Q8-aMc5BgOCWLfcefo-yOI1hMvDFzdTHnqeWhqfBqX81v_YuOByRlhab8KCRlWegjqVy_AVmJUwaVjHO0kKYcU3xSkEjMJmcIbB4h8k5MCVKxe4M09NF2i-ouA9RafhROo0de5kwYdVew5LTeNM4tY0Yzuip8GZlSPGhlEhc6dscd5CE0JB-gopa3ux"
-            />
-            <div className="wf-hero-overlay">
-              <div>
-                <div style={{ fontWeight: 700 }}>Poziom Skupienia</div>
-                <div className="wf-footer-muted">Optymalny</div>
-              </div>
-              <div style={{ fontSize: 28, fontWeight: 800, color: "var(--primary)" }}>85%</div>
-            </div>
-          </div>
         </section>
 
         <section className="wf-feature-section">
@@ -129,3 +113,4 @@ export default function HomePage() {
     </>
   );
 }
+
