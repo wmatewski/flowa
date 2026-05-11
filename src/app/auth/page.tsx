@@ -3,12 +3,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@clerk/nextjs/server";
 import { EmailVerificationBanner } from "@/components/auth/email-verification-banner";
 import { AuthForms } from "@/components/auth/auth-forms";
-import {
-  activatePendingMemberships,
-  getAuthenticatedUser,
-  getEmailVerificationStatus,
-} from "@/lib/admin-auth";
-import { getSessionOrganizationIds } from "@/lib/clerk-session";
+import { getAuthenticatedUser, getEmailVerificationStatus } from "@/lib/admin-auth";
 import type { FlashMessage } from "@/lib/types";
 
 const getFlashMessage = (params: Record<string, string | string[] | undefined>): FlashMessage | null => {
@@ -82,26 +77,21 @@ export default async function AuthPage({
   const params = await searchParams;
   const mode = params.mode === "register" ? "register" : "login";
   const flash = getFlashMessage(params);
-  const { userId, orgId, sessionClaims } = await auth();
-  const sessionOrganizationIds = getSessionOrganizationIds(
-    sessionClaims as Record<string, unknown> | null | undefined,
-    orgId,
-  );
+  const { userId, orgId } = await auth();
   let verificationStatus: ReturnType<typeof getEmailVerificationStatus> = null;
   let signedInEmail: string | null = null;
 
   if (userId) {
     const user = await getAuthenticatedUser();
-    await activatePendingMemberships(user);
     verificationStatus = getEmailVerificationStatus(user);
     signedInEmail = user.email;
 
-    if (sessionOrganizationIds.length > 0) {
+    if (orgId) {
       redirect("/admin");
     }
   }
 
-  const requiresOrganizationSetup = Boolean(userId) && sessionOrganizationIds.length === 0;
+  const requiresOrganizationSetup = Boolean(userId) && !orgId;
 
   return (
     <main className="wf-auth-layout">

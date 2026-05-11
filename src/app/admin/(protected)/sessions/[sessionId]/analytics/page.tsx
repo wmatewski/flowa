@@ -169,22 +169,10 @@ export default async function SessionAnalyticsPage({
 
         <aside className="wf-panel-grid" style={{ gridTemplateColumns: "1fr" }}>
           <article className="wf-panel-card">
-            <h3>Współtwórcy sesji</h3>
-            {data.collaborators.length ? (
-              <div className="wf-member-list">
-                {data.collaborators.map((member) => (
-                  <div className="wf-member-row" key={member.membershipId}>
-                    <div>
-                      <div className="wf-member-name">{member.displayName}</div>
-                      <div className="wf-table-muted">{member.email}</div>
-                    </div>
-                    <span className="wf-pill">{member.role}</span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="wf-empty">Ta sesja nie ma jeszcze przypisanych współtwórców.</p>
-            )}
+            <h3>Dostęp organizacji</h3>
+            <p>
+              Lista osób uprawnionych do pracy nad ankietami jest zarządzana po stronie Clerk dla całej organizacji.
+            </p>
           </article>
 
           <article className="wf-panel-card">

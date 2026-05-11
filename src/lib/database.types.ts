@@ -8,77 +8,7 @@ export type Json =
 
 export interface Database {
   public: {
-    Tables: Record<string, never>;
-    Views: Record<string, never>;
-    Functions: Record<string, never>;
-    Enums: Record<string, never>;
-    CompositeTypes: Record<string, never>;
-  };
-  flowa: {
     Tables: {
-      profiles: {
-        Row: {
-          user_id: string;
-          email: string;
-          display_name: string | null;
-          default_organization_id: string | null;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          user_id: string;
-          email: string;
-          display_name?: string | null;
-          default_organization_id?: string | null;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          user_id?: string;
-          email?: string;
-          display_name?: string | null;
-          default_organization_id?: string | null;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Relationships: [];
-      };
-      memberships: {
-        Row: {
-          id: string;
-          organization_id: string;
-          user_id: string | null;
-          invited_email: string;
-          role: Database["flowa"]["Enums"]["membership_role"];
-          status: Database["flowa"]["Enums"]["membership_status"];
-          created_by: string | null;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          id?: string;
-          organization_id: string;
-          user_id?: string | null;
-          invited_email: string;
-          role?: Database["flowa"]["Enums"]["membership_role"];
-          status?: Database["flowa"]["Enums"]["membership_status"];
-          created_by?: string | null;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          id?: string;
-          organization_id?: string;
-          user_id?: string | null;
-          invited_email?: string;
-          role?: Database["flowa"]["Enums"]["membership_role"];
-          status?: Database["flowa"]["Enums"]["membership_status"];
-          created_by?: string | null;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Relationships: [];
-      };
       sessions: {
         Row: {
           id: string;
@@ -87,11 +17,11 @@ export interface Database {
           name: string;
           description: string;
           screen_time_limit_minutes: number;
-          age_mode: Database["flowa"]["Enums"]["age_mode"];
+          age_mode: Database["public"]["Enums"]["age_mode"];
           fixed_age: number | null;
           age_recommendations_enabled: boolean;
           age_recommendations: Json;
-          status: Database["flowa"]["Enums"]["session_status"];
+          status: Database["public"]["Enums"]["session_status"];
           created_by: string;
           starts_at: string;
           ends_at: string | null;
@@ -105,11 +35,11 @@ export interface Database {
           name: string;
           description?: string;
           screen_time_limit_minutes?: number;
-          age_mode?: Database["flowa"]["Enums"]["age_mode"];
+          age_mode?: Database["public"]["Enums"]["age_mode"];
           fixed_age?: number | null;
           age_recommendations_enabled?: boolean;
           age_recommendations?: Json;
-          status?: Database["flowa"]["Enums"]["session_status"];
+          status?: Database["public"]["Enums"]["session_status"];
           created_by: string;
           starts_at?: string;
           ends_at?: string | null;
@@ -123,40 +53,16 @@ export interface Database {
           name?: string;
           description?: string;
           screen_time_limit_minutes?: number;
-          age_mode?: Database["flowa"]["Enums"]["age_mode"];
+          age_mode?: Database["public"]["Enums"]["age_mode"];
           fixed_age?: number | null;
           age_recommendations_enabled?: boolean;
           age_recommendations?: Json;
-          status?: Database["flowa"]["Enums"]["session_status"];
+          status?: Database["public"]["Enums"]["session_status"];
           created_by?: string;
           starts_at?: string;
           ends_at?: string | null;
           created_at?: string;
           updated_at?: string;
-        };
-        Relationships: [];
-      };
-      session_collaborators: {
-        Row: {
-          id: string;
-          session_id: string;
-          membership_id: string;
-          role: Database["flowa"]["Enums"]["membership_role"];
-          created_at: string;
-        };
-        Insert: {
-          id?: string;
-          session_id: string;
-          membership_id: string;
-          role?: Database["flowa"]["Enums"]["membership_role"];
-          created_at?: string;
-        };
-        Update: {
-          id?: string;
-          session_id?: string;
-          membership_id?: string;
-          role?: Database["flowa"]["Enums"]["membership_role"];
-          created_at?: string;
         };
         Relationships: [];
       };
@@ -167,7 +73,7 @@ export interface Database {
           participant_key: string;
           age: number;
           screen_time_minutes: number;
-          detected_os: Database["flowa"]["Enums"]["os_family"];
+          detected_os: Database["public"]["Enums"]["os_family"];
           ip_address: string | null;
           user_agent: string | null;
           submitted_at: string;
@@ -179,7 +85,7 @@ export interface Database {
           participant_key: string;
           age: number;
           screen_time_minutes: number;
-          detected_os?: Database["flowa"]["Enums"]["os_family"];
+          detected_os?: Database["public"]["Enums"]["os_family"];
           ip_address?: string | null;
           user_agent?: string | null;
           submitted_at?: string;
@@ -191,7 +97,7 @@ export interface Database {
           participant_key?: string;
           age?: number;
           screen_time_minutes?: number;
-          detected_os?: Database["flowa"]["Enums"]["os_family"];
+          detected_os?: Database["public"]["Enums"]["os_family"];
           ip_address?: string | null;
           user_agent?: string | null;
           submitted_at?: string;
@@ -244,7 +150,7 @@ export interface Database {
           participant_key: string;
           age: number;
           screen_time_minutes: number;
-          detected_os: Database["flowa"]["Enums"]["os_family"];
+          detected_os: Database["public"]["Enums"]["os_family"];
           ip_address: string | null;
           user_agent: string | null;
           submitted_at: string;
@@ -256,7 +162,7 @@ export interface Database {
           participant_key?: string;
           age?: number;
           screen_time_minutes?: number;
-          detected_os?: Database["flowa"]["Enums"]["os_family"];
+          detected_os?: Database["public"]["Enums"]["os_family"];
           ip_address?: string | null;
           user_agent?: string | null;
           submitted_at?: string;
@@ -268,7 +174,7 @@ export interface Database {
           participant_key?: string;
           age?: number;
           screen_time_minutes?: number;
-          detected_os?: Database["flowa"]["Enums"]["os_family"];
+          detected_os?: Database["public"]["Enums"]["os_family"];
           ip_address?: string | null;
           user_agent?: string | null;
           submitted_at?: string;
@@ -306,7 +212,7 @@ export interface Database {
           organization_id: string;
           slug: string;
           name: string;
-          status: Database["flowa"]["Enums"]["session_status"];
+          status: Database["public"]["Enums"]["session_status"];
           screen_time_limit_minutes: number;
           created_at: string;
           starts_at: string;
@@ -321,7 +227,7 @@ export interface Database {
           organization_id?: string;
           slug?: string;
           name?: string;
-          status?: Database["flowa"]["Enums"]["session_status"];
+          status?: Database["public"]["Enums"]["session_status"];
           screen_time_limit_minutes?: number;
           created_at?: string;
           starts_at?: string;
@@ -336,7 +242,7 @@ export interface Database {
           organization_id?: string;
           slug?: string;
           name?: string;
-          status?: Database["flowa"]["Enums"]["session_status"];
+          status?: Database["public"]["Enums"]["session_status"];
           screen_time_limit_minutes?: number;
           created_at?: string;
           starts_at?: string;
@@ -356,11 +262,11 @@ export interface Database {
       };
     };
     Enums: {
-      os_family: 'ios' | 'android' | 'windows' | 'macos' | 'linux' | 'unknown';
-      membership_role: 'owner' | 'admin' | 'moderator';
-      membership_status: 'invited' | 'active' | 'disabled';
-      session_status: 'draft' | 'active' | 'completed';
-      age_mode: 'fixed' | 'variable';
+      os_family: "ios" | "android" | "windows" | "macos" | "linux" | "unknown";
+      membership_role: "owner" | "admin" | "moderator";
+      membership_status: "invited" | "active" | "disabled";
+      session_status: "draft" | "active" | "completed";
+      age_mode: "fixed" | "variable";
     };
     CompositeTypes: Record<string, never>;
   };

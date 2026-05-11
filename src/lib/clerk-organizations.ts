@@ -28,7 +28,6 @@ export const getClerkOrganizationSummary = async (organizationId: string): Promi
     id: organization.id,
     name: organization.name,
     slug: organization.slug ?? null,
-    created_by: null,
     created_at: toIsoString((organization as { createdAt?: unknown }).createdAt),
     updated_at: toIsoString(
       (organization as { updatedAt?: unknown }).updatedAt ?? (organization as { createdAt?: unknown }).createdAt,

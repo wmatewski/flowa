@@ -70,7 +70,7 @@ export default async function OrganizationPage({
         <div>
           <div className="wf-badge">Organizacja</div>
           <h1 className="wf-page-title" style={{ marginTop: 16 }}>{organization.name}</h1>
-          <p className="wf-page-subtitle">Dodawaj członków do organizacji i przypisuj ich do aktywnej sesji.</p>
+          <p className="wf-page-subtitle">Dodawaj członków do organizacji i zarządzaj dostępem przez Clerk.</p>
         </div>
       </div>
 
@@ -129,7 +129,7 @@ export default async function OrganizationPage({
           <article className="wf-panel-card">
             <h3>Dodaj współtwórcę</h3>
             <p style={{ marginBottom: 18 }}>
-              Nowe konto zawsze tworzy członkostwo w organizacji. {data.currentSession ? "Jeśli wybrana jest sesja, współtwórca zostanie przypisany także do niej." : ""}
+              Zaproszenia i członkostwo obsługuje Clerk, a dostęp do ankiet wynika z organizacji.
             </p>
             <form action={inviteAdminAction} className="wf-form-stack">
               <label className="wf-field">
@@ -152,7 +152,7 @@ export default async function OrganizationPage({
           </article>
 
           <article className="wf-panel-card">
-            <h3>Aktywna sesja</h3>
+            <h3>Aktywna ankieta</h3>
             {data.currentSession ? (
               <>
                 <div className="wf-member-list">
@@ -170,22 +170,8 @@ export default async function OrganizationPage({
                   </div>
                 </div>
                 <div style={{ marginTop: 20 }}>
-                  <h3 style={{ marginTop: 0 }}>Przypisani współtwórcy</h3>
-                  {data.sessionCollaborators.length ? (
-                    <div className="wf-member-list">
-                      {data.sessionCollaborators.map((member) => (
-                        <div className="wf-member-row" key={member.membershipId}>
-                          <div>
-                            <div className="wf-member-name">{member.displayName}</div>
-                            <div className="wf-table-muted">{member.email}</div>
-                          </div>
-                          <span className="wf-pill">{formatMembershipRole(member.role)}</span>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="wf-empty">Brak przypisanych współtwórców do tej sesji.</p>
-                  )}
+                  <h3 style={{ marginTop: 0 }}>Dostęp organizacji</h3>
+                  <p className="wf-empty">Wszyscy członkowie organizacji Clerk mają dostęp do ankiet w tej przestrzeni.</p>
                 </div>
                 <div style={{ marginTop: 20 }}>
                   <Link className="wf-btn wf-btn-secondary wf-btn-block" href={`/admin/sessions/${data.currentSession.session_id}/settings`}>

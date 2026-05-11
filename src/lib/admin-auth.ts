@@ -4,9 +4,8 @@ import { auth, clerkClient } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 
 import { getClerkOrganizationSummary } from "@/lib/clerk-organizations";
-import { getSessionOrganizationIds, getSessionVerificationClaim } from "@/lib/clerk-session";
-import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import type { Membership, Organization, Profile } from "@/lib/types";
+import { getSessionVerificationClaim } from "@/lib/clerk-session";
+import type { Membership, Organization, OrganizationMember } from "@/lib/types";
 
 export interface AuthenticatedUser {
   id: string;
@@ -27,6 +26,20 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 
 const normalizeEmail = (value: string | null | undefined) =>
   String(value ?? "").trim().toLowerCase();
+
+const mapOrganizationRole = (role: string | null | undefined): Membership["role"] => {
+  const normalized = String(role ?? "").toLowerCase();
+
+  if (normalized.includes("owner")) {
+    return "owner";
+  }
+
+  if (normalized.includes("admin")) {
+    return "admin";
+  }
+
+  return "moderator";
+};
 
 const deriveDisplayName = (user: AuthenticatedUser) => {
   const fullName = user.displayName;
@@ -86,79 +99,13 @@ export const getAuthenticatedUser = async (): Promise<AuthenticatedUser> => {
   };
 };
 
-export const ensureProfileForUser = async (user: AuthenticatedUser): Promise<Profile> => {
-  const email = normalizeEmail(user.email);
-
-  if (!email) {
-    throw new Error("Authenticated user is missing an e-mail address.");
-  }
-
-  const adminClient = createSupabaseAdminClient();
-  const { data, error } = await adminClient
-    .from("profiles")
-    .upsert(
-      {
-        user_id: user.id,
-        email,
-        display_name: deriveDisplayName(user),
-      },
-      { onConflict: "user_id" },
-    )
-    .select("user_id, email, display_name, default_organization_id, created_at, updated_at")
-    .single();
-
-  if (error) {
-    throw error;
-  }
-
-  return data as Profile;
-};
-
-export const activatePendingMemberships = async (user: AuthenticatedUser) => {
-  const email = normalizeEmail(user.email);
-
-  if (!email) {
-    return;
-  }
-
-  const adminClient = createSupabaseAdminClient();
-
-  const { error: pendingError } = await adminClient
-    .from("memberships")
-    .update({
-      user_id: user.id,
-      status: "active",
-      invited_email: email,
-    })
-    .is("user_id", null)
-    .eq("invited_email", email);
-
-  if (pendingError) {
-    throw pendingError;
-  }
-
-  const { error: existingError } = await adminClient
-    .from("memberships")
-    .update({
-      status: "active",
-      invited_email: email,
-    })
-    .eq("user_id", user.id)
-    .eq("status", "invited");
-
-  if (existingError) {
-    throw existingError;
-  }
-};
-
 export const getAuthenticatedAdmin = async (): Promise<{
   user: AuthenticatedUser;
-  profile: Profile;
   organization: Organization;
   membership: Membership;
   memberships: Membership[];
 }> => {
-  const { orgId, sessionClaims } = await auth();
+  const { orgId, orgRole, sessionClaims, userId } = await auth();
   const user = await getAuthenticatedUser();
   const verificationStatus = getEmailVerificationStatus(user);
 
@@ -166,61 +113,83 @@ export const getAuthenticatedAdmin = async (): Promise<{
     redirect("/auth?error=email-verification-expired");
   }
 
-  await activatePendingMemberships(user);
-
-  const profile = await ensureProfileForUser(user);
-  const sessionOrganizationIds = getSessionOrganizationIds(
-    sessionClaims as Record<string, unknown> | null | undefined,
-    orgId,
-  );
-
-  const adminClient = createSupabaseAdminClient();
-  const { data, error } = await adminClient
-    .from("memberships")
-    .select("id, organization_id, user_id, invited_email, role, status, created_by, created_at, updated_at")
-    .eq("user_id", user.id)
-    .neq("status", "disabled")
-    .order("created_at", { ascending: true });
-
-  if (error) {
-    throw error;
-  }
-
-  const memberships = (data as Membership[] | null) ?? [];
-
-  if (!memberships.length) {
+  if (!orgId) {
     redirect("/auth");
   }
 
-  const targetOrganizationId = sessionOrganizationIds.find((organizationId) =>
-    memberships.some((membership) => membership.organization_id === organizationId),
-  );
+  const clerk = await clerkClient();
+  const organization = await getClerkOrganizationSummary(orgId);
+  const membershipList = await clerk.organizations.getOrganizationMembershipList({
+    organizationId: orgId,
+    limit: 100,
+  });
+  const currentMembership = (membershipList.data ?? []).find((item: any) => {
+    const memberUserId = String(item.publicUserData?.userId ?? item.publicUserData?.id ?? "");
+    return memberUserId === userId;
+  }) as any;
 
-  if (!targetOrganizationId) {
+  if (!currentMembership) {
     redirect("/auth?error=not-authorized");
   }
 
-  const organization = await getClerkOrganizationSummary(targetOrganizationId);
-  const membership = memberships.find((item) => item.organization_id === targetOrganizationId);
+  const currentRole = mapOrganizationRole(orgRole ?? currentMembership.role);
+  const memberships = (membershipList.data ?? []).map((item: any) => {
+    const publicUserData = item.publicUserData ?? {};
+    const email = normalizeEmail(
+      publicUserData.identifier ??
+        publicUserData.emailAddress ??
+        publicUserData.primaryEmailAddress?.emailAddress ??
+        publicUserData.emailAddresses?.[0]?.emailAddress,
+    );
+    const displayName =
+      [publicUserData.firstName, publicUserData.lastName].filter(Boolean).join(" ").trim() ||
+      email.split("@")[0] ||
+      email ||
+      "Organizator";
 
-  if (!membership) {
-    redirect("/auth?error=not-authorized");
+    const organizationMember: OrganizationMember = {
+      id: item.id,
+      membershipId: item.id,
+      userId: String(publicUserData.userId ?? publicUserData.id ?? "").trim(),
+      email,
+      displayName,
+      initials: displayName
+        .split(/\s+/)
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((part) => part[0]?.toUpperCase() ?? "")
+        .join("") || "WF",
+      role: mapOrganizationRole(item.role),
+      status: "active",
+      createdAt: new Date(String((item as { createdAt?: unknown }).createdAt ?? Date.now())).toISOString(),
+    };
+
+    return organizationMember as Membership;
+  });
+
+  const membership =
+    memberships.find((item) => item.userId === user.id) ??
+    ({
+      id: currentMembership.id,
+      membershipId: currentMembership.id,
+      organizationId: organization.id,
+      userId: user.id,
+      email: user.email,
+      displayName: user.displayName,
+      initials: user.displayName
+        .split(/\s+/)
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((part) => part[0]?.toUpperCase() ?? "")
+        .join("") || "WF",
+      role: currentRole,
+      status: "active",
+      createdAt: user.createdAt,
+    } satisfies Membership);
+
+  if (!memberships.length) {
+    memberships.push(membership);
   }
 
-  if (profile.default_organization_id !== targetOrganizationId) {
-    await adminClient
-      .from("profiles")
-      .update({ default_organization_id: targetOrganizationId })
-      .eq("user_id", user.id);
-
-    profile.default_organization_id = targetOrganizationId;
-  }
-
-  return {
-    user,
-    profile,
-    organization,
-    membership,
-    memberships,
-  };
+  return { user, organization, membership, memberships };
 };

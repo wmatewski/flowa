@@ -5,7 +5,7 @@ import type { Database } from "@/lib/database.types";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import type { FlashMessage } from "@/lib/types";
 
-type SessionAgeRow = Pick<Database["flowa"]["Tables"]["sessions"]["Row"], "id" | "slug" | "age_mode">;
+type SessionAgeRow = Pick<Database["public"]["Tables"]["sessions"]["Row"], "id" | "slug" | "age_mode">;
 
 const getFlashMessage = (error: string | undefined): FlashMessage | null => {
   if (error === "invalid-age") {

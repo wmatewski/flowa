@@ -1,10 +1,10 @@
 create extension if not exists pgcrypto;
 
-create schema if not exists flowa;
+create schema if not exists public;
 
 do $$
 begin
-  create type flowa.os_family as enum (
+  create type public.os_family as enum (
     'ios',
     'android',
     'windows',
@@ -19,7 +19,7 @@ $$;
 
 do $$
 begin
-  create type flowa.membership_role as enum (
+  create type public.membership_role as enum (
     'owner',
     'admin',
     'moderator'
@@ -31,7 +31,7 @@ $$;
 
 do $$
 begin
-  create type flowa.membership_status as enum (
+  create type public.membership_status as enum (
     'invited',
     'active',
     'disabled'
@@ -43,7 +43,7 @@ $$;
 
 do $$
 begin
-  create type flowa.session_status as enum (
+  create type public.session_status as enum (
     'draft',
     'active',
     'completed'
@@ -55,7 +55,7 @@ $$;
 
 do $$
 begin
-  create type flowa.age_mode as enum (
+  create type public.age_mode as enum (
     'fixed',
     'variable'
   );
@@ -64,82 +64,60 @@ exception
 end;
 $$;
 
-create table if not exists flowa.profiles (
-  user_id text primary key,
-  email text not null unique,
-  display_name text,
-  default_organization_id text,
-  created_at timestamptz not null default timezone('utc', now()),
-  updated_at timestamptz not null default timezone('utc', now()),
-  constraint flowa_profiles_email_check check (position('@' in email) > 1)
-);
+drop trigger if exists flowa_profiles_set_updated_at on public.profiles;
+drop trigger if exists flowa_memberships_set_updated_at on public.memberships;
+drop trigger if exists flowa_sessions_set_updated_at on public.sessions;
+drop trigger if exists flowa_organizations_set_updated_at on public.organizations;
 
-drop trigger if exists flowa_organizations_set_updated_at on flowa.organizations;
-drop table if exists flowa.organizations cascade;
+drop view if exists public.session_overview cascade;
+drop view if exists public.session_age_statistics cascade;
+drop view if exists public.latest_session_participants cascade;
 
-create table if not exists flowa.memberships (
-  id uuid primary key default gen_random_uuid(),
-  organization_id text not null,
-  user_id text,
-  invited_email text not null,
-  role flowa.membership_role not null default 'moderator',
-  status flowa.membership_status not null default 'invited',
-  created_by text,
-  created_at timestamptz not null default timezone('utc', now()),
-  updated_at timestamptz not null default timezone('utc', now()),
-  constraint flowa_memberships_email_check check (position('@' in invited_email) > 1),
-  constraint flowa_memberships_org_email_unique unique (organization_id, invited_email)
-);
+drop table if exists public.session_collaborators cascade;
+drop table if exists public.memberships cascade;
+drop table if exists public.profiles cascade;
+drop table if exists public.organizations cascade;
 
-create table if not exists flowa.sessions (
+create table if not exists public.sessions (
   id uuid primary key default gen_random_uuid(),
   organization_id text not null,
   slug text not null unique,
   name text not null,
   description text not null default '',
   screen_time_limit_minutes integer not null default 60 check (screen_time_limit_minutes between 1 and 1440),
-  age_mode flowa.age_mode not null default 'variable',
+  age_mode public.age_mode not null default 'variable',
   fixed_age integer,
   age_recommendations_enabled boolean not null default true,
   age_recommendations jsonb not null default '[]'::jsonb,
-  status flowa.session_status not null default 'active',
+  status public.session_status not null default 'active',
   created_by text not null,
   starts_at timestamptz not null default timezone('utc', now()),
   ends_at timestamptz,
   created_at timestamptz not null default timezone('utc', now()),
   updated_at timestamptz not null default timezone('utc', now()),
-  constraint flowa_sessions_fixed_age_check check (
+  constraint public_sessions_fixed_age_check check (
     (age_mode = 'fixed' and fixed_age between 1 and 120)
     or (age_mode = 'variable' and fixed_age is null)
   )
 );
 
-create table if not exists flowa.session_collaborators (
+create table if not exists public.session_submissions (
   id uuid primary key default gen_random_uuid(),
-  session_id uuid not null references flowa.sessions (id) on delete cascade,
-  membership_id uuid not null references flowa.memberships (id) on delete cascade,
-  role flowa.membership_role not null default 'moderator',
-  created_at timestamptz not null default timezone('utc', now()),
-  constraint flowa_session_collaborators_unique unique (session_id, membership_id)
-);
-
-create table if not exists flowa.session_submissions (
-  id uuid primary key default gen_random_uuid(),
-  session_id uuid not null references flowa.sessions (id) on delete cascade,
+  session_id uuid not null references public.sessions (id) on delete cascade,
   participant_key uuid not null,
   age integer not null check (age between 1 and 120),
   screen_time_minutes integer not null check (screen_time_minutes between 0 and 1440),
-  detected_os flowa.os_family not null default 'unknown',
+  detected_os public.os_family not null default 'unknown',
   ip_address inet,
   user_agent text,
   submitted_at timestamptz not null default timezone('utc', now()),
   entry_date date not null default (timezone('utc', now())::date)
 );
 
-create table if not exists flowa.activity_log (
+create table if not exists public.activity_log (
   id bigint generated by default as identity primary key,
   organization_id text not null,
-  session_id uuid references flowa.sessions (id) on delete set null,
+  session_id uuid references public.sessions (id) on delete set null,
   actor_user_id text,
   activity_type text not null,
   title text not null,
@@ -148,46 +126,40 @@ create table if not exists flowa.activity_log (
   created_at timestamptz not null default timezone('utc', now())
 );
 
-create index if not exists flowa_memberships_user_idx
-  on flowa.memberships (user_id, status);
-
-create index if not exists flowa_memberships_org_idx
-  on flowa.memberships (organization_id, status);
-
-create index if not exists flowa_sessions_org_idx
-  on flowa.sessions (organization_id, created_at desc);
-
-create index if not exists flowa_sessions_status_idx
-  on flowa.sessions (status, starts_at desc);
-
-create index if not exists flowa_session_submissions_session_idx
-  on flowa.session_submissions (session_id, submitted_at desc);
-
-create index if not exists flowa_session_submissions_participant_idx
-  on flowa.session_submissions (session_id, participant_key, submitted_at desc);
-
-create index if not exists flowa_session_submissions_entry_date_idx
-  on flowa.session_submissions (entry_date desc);
-
-create index if not exists flowa_session_submissions_os_idx
-  on flowa.session_submissions (detected_os, submitted_at desc);
-
-create index if not exists flowa_activity_log_org_idx
-  on flowa.activity_log (organization_id, created_at desc);
-
-alter table if exists flowa.profiles
-  alter column default_organization_id type text using default_organization_id::text;
-
-alter table if exists flowa.memberships
+alter table if exists public.sessions
   alter column organization_id type text using organization_id::text;
 
-alter table if exists flowa.sessions
+alter table if exists public.sessions
+  alter column created_by type text using created_by::text;
+
+alter table if exists public.activity_log
   alter column organization_id type text using organization_id::text;
 
-alter table if exists flowa.activity_log
-  alter column organization_id type text using organization_id::text;
+alter table if exists public.activity_log
+  alter column actor_user_id type text using actor_user_id::text;
 
-create or replace function flowa.set_updated_at()
+create index if not exists public_sessions_org_idx
+  on public.sessions (organization_id, created_at desc);
+
+create index if not exists public_sessions_status_idx
+  on public.sessions (status, starts_at desc);
+
+create index if not exists public_session_submissions_session_idx
+  on public.session_submissions (session_id, submitted_at desc);
+
+create index if not exists public_session_submissions_participant_idx
+  on public.session_submissions (session_id, participant_key, submitted_at desc);
+
+create index if not exists public_session_submissions_entry_date_idx
+  on public.session_submissions (entry_date desc);
+
+create index if not exists public_session_submissions_os_idx
+  on public.session_submissions (detected_os, submitted_at desc);
+
+create index if not exists public_activity_log_org_idx
+  on public.activity_log (organization_id, created_at desc);
+
+create or replace function public.set_updated_at()
 returns trigger
 language plpgsql
 as $$
@@ -197,25 +169,13 @@ begin
 end;
 $$;
 
-drop trigger if exists flowa_profiles_set_updated_at on flowa.profiles;
-create trigger flowa_profiles_set_updated_at
-before update on flowa.profiles
+drop trigger if exists public_sessions_set_updated_at on public.sessions;
+create trigger public_sessions_set_updated_at
+before update on public.sessions
 for each row
-execute function flowa.set_updated_at();
+execute function public.set_updated_at();
 
-drop trigger if exists flowa_memberships_set_updated_at on flowa.memberships;
-create trigger flowa_memberships_set_updated_at
-before update on flowa.memberships
-for each row
-execute function flowa.set_updated_at();
-
-drop trigger if exists flowa_sessions_set_updated_at on flowa.sessions;
-create trigger flowa_sessions_set_updated_at
-before update on flowa.sessions
-for each row
-execute function flowa.set_updated_at();
-
-create or replace view flowa.latest_session_participants as
+create or replace view public.latest_session_participants as
 select distinct on (session_id, participant_key)
   id,
   session_id,
@@ -227,10 +187,10 @@ select distinct on (session_id, participant_key)
   user_agent,
   submitted_at,
   entry_date
-from flowa.session_submissions
+from public.session_submissions
 order by session_id, participant_key, submitted_at desc;
 
-create or replace view flowa.session_age_statistics as
+create or replace view public.session_age_statistics as
 select
   session_id,
   case
@@ -243,10 +203,10 @@ select
   count(*)::integer as participants,
   round(avg(screen_time_minutes)::numeric, 1) as average_minutes,
   max(screen_time_minutes)::integer as maximum_minutes
-from flowa.latest_session_participants
+from public.latest_session_participants
 group by session_id, 2;
 
-create or replace view flowa.session_overview as
+create or replace view public.session_overview as
 select
   sessions.id as session_id,
   sessions.organization_id,
@@ -261,8 +221,8 @@ select
   round(avg(participants.screen_time_minutes)::numeric, 1) as average_minutes,
   max(participants.screen_time_minutes)::integer as maximum_minutes,
   max(participants.submitted_at) as latest_submission_at
-from flowa.sessions as sessions
-left join flowa.latest_session_participants as participants
+from public.sessions as sessions
+left join public.latest_session_participants as participants
   on participants.session_id = sessions.id
 group by
   sessions.id,

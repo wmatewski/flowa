@@ -1,5 +1,6 @@
 import "server-only";
 
+import { clerkClient } from "@clerk/nextjs/server";
 import {
   average,
   buildFocusScore,
@@ -19,16 +20,13 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import type {
   ActivityLog,
   DashboardActivity,
-  Membership,
   Organization,
   OrganizationMember,
   OrganizationMembersData,
   OrganizerDashboardData,
-  Profile,
   PublicLiveSessionData,
   Session,
   SessionAgeStatistic,
-  SessionCollaborator,
   SessionExperienceData,
   LiveSessionEntry,
   SessionOverview,
@@ -39,9 +37,6 @@ import type {
 } from "@/lib/types";
 import { redirect } from "next/navigation";
 
-const profileColumns = "user_id, email, display_name, default_organization_id, created_at, updated_at";
-const membershipColumns =
-  "id, organization_id, user_id, invited_email, role, status, created_by, created_at, updated_at";
 const sessionColumns =
   "id, organization_id, slug, name, description, screen_time_limit_minutes, age_mode, fixed_age, status, created_by, starts_at, ends_at, created_at, updated_at";
 const sessionOverviewColumns =
@@ -50,6 +45,36 @@ const latestParticipantColumns =
   "id, session_id, participant_key, age, screen_time_minutes, detected_os, ip_address, user_agent, submitted_at, entry_date";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+
+const mapOrganizationRole = (role: string | null | undefined) => {
+  const normalized = String(role ?? "").toLowerCase();
+
+  if (normalized.includes("owner")) {
+    return "owner";
+  }
+
+  if (normalized.includes("admin")) {
+    return "admin";
+  }
+
+  return "moderator";
+};
+
+const toIsoString = (value: unknown) => {
+  if (value instanceof Date) {
+    return value.toISOString();
+  }
+
+  if (typeof value === "string" || typeof value === "number") {
+    const date = new Date(value);
+
+    if (!Number.isNaN(date.getTime())) {
+      return date.toISOString();
+    }
+  }
+
+  return new Date(0).toISOString();
+};
 
 const countInPeriods = (dates: string[], periodDays: number) => {
   const now = Date.now();
@@ -81,53 +106,37 @@ const averageForWindow = (
 };
 
 const buildMemberList = async (organizationId: string): Promise<OrganizationMember[]> => {
-  const supabase = createSupabaseAdminClient();
-  const { data: membershipRows, error: membershipError } = await supabase
-    .from("memberships")
-    .select(membershipColumns)
-    .eq("organization_id", organizationId)
-    .order("created_at", { ascending: true });
+  const clerk = await clerkClient();
+  const result = await clerk.organizations.getOrganizationMembershipList({
+    organizationId,
+    limit: 100,
+  });
 
-  if (membershipError) {
-    throw membershipError;
-  }
-
-  const memberships = (membershipRows as Membership[] | null) ?? [];
-  const userIds = memberships
-    .map((membership) => membership.user_id)
-    .filter((value): value is string => Boolean(value));
-
-  let profiles: Profile[] = [];
-
-  if (userIds.length) {
-    const { data: profileRows, error: profileError } = await supabase
-      .from("profiles")
-      .select(profileColumns)
-      .in("user_id", userIds);
-
-    if (profileError) {
-      throw profileError;
-    }
-
-    profiles = (profileRows as Profile[] | null) ?? [];
-  }
-
-  const profileMap = new Map(profiles.map((profile) => [profile.user_id, profile]));
-
-  return memberships.map((membership) => {
-    const profile = membership.user_id ? profileMap.get(membership.user_id) : null;
+  return (result.data ?? []).map((membership: any) => {
+    const userData = membership.publicUserData ?? {};
+    const email = String(
+      userData.identifier ??
+        userData.emailAddress ??
+        userData.primaryEmailAddress?.emailAddress ??
+        userData.emailAddresses?.[0]?.emailAddress ??
+        "",
+    ).trim();
     const displayName =
-      profile?.display_name?.trim() || membership.invited_email.split("@")[0] || membership.invited_email;
+      [userData.firstName, userData.lastName].filter(Boolean).join(" ").trim() ||
+      email.split("@")[0] ||
+      email ||
+      "Organizator";
 
     return {
+      id: membership.id,
       membershipId: membership.id,
-      userId: membership.user_id,
-      email: membership.invited_email,
+      userId: String(userData.userId ?? userData.id ?? "").trim(),
+      email,
       displayName,
       initials: formatInitials(displayName),
-      role: membership.role,
-      status: membership.status,
-      createdAt: membership.created_at,
+      role: mapOrganizationRole(membership.role),
+      status: "active",
+      createdAt: toIsoString(membership.createdAt ?? membership.created_at),
     } satisfies OrganizationMember;
   });
 };
@@ -362,7 +371,7 @@ export const getSessionStatisticsData = async (
 
   const supabase = createSupabaseAdminClient();
 
-  const [sessionResult, overviewResult, ageStatsResult, participantResult, collaboratorResult, members] = await Promise.all([
+  const [sessionResult, overviewResult, ageStatsResult, participantResult] = await Promise.all([
     supabase
       .from("sessions")
       .select(sessionColumns)
@@ -385,11 +394,6 @@ export const getSessionStatisticsData = async (
       .eq("session_id", sessionId)
       .order("screen_time_minutes", { ascending: false })
       .limit(200),
-    supabase
-      .from("session_collaborators")
-      .select("id, session_id, membership_id, role, created_at")
-      .eq("session_id", sessionId),
-    buildMemberList(access.organizationId),
   ]);
 
   if (sessionResult.error) {
@@ -408,10 +412,6 @@ export const getSessionStatisticsData = async (
     throw participantResult.error;
   }
 
-  if (collaboratorResult.error) {
-    throw collaboratorResult.error;
-  }
-
   const session = sessionResult.data as Session;
   const participantRows = (participantResult.data as SessionSubmission[] | null) ?? [];
   const participants = participantRows.map((entry, index) => ({
@@ -427,18 +427,11 @@ export const getSessionStatisticsData = async (
     ),
     submittedAt: entry.submitted_at,
   })) satisfies SessionParticipantRow[];
-  const collaboratorIds = new Set(
-    ((collaboratorResult.data as SessionCollaborator[] | null) ?? []).map(
-      (item) => item.membership_id,
-    ),
-  );
-
   return {
     session,
     overview: (overviewResult.data as SessionOverview | null) ?? null,
     ageStatistics: (ageStatsResult.data as SessionAgeStatistic[] | null) ?? [],
     participants,
-    collaborators: members.filter((member) => collaboratorIds.has(member.membershipId)),
     focusScore: buildFocusScore(
       participantRows.map((entry) => entry.screen_time_minutes),
       session.screen_time_limit_minutes,
@@ -498,7 +491,7 @@ export const getSessionSettingsData = async (
 
   const supabase = createSupabaseAdminClient();
 
-  const [sessionResult, overviewResult, collaboratorResult, members] = await Promise.all([
+  const [sessionResult, overviewResult] = await Promise.all([
     supabase
       .from("sessions")
       .select(sessionColumns)
@@ -511,11 +504,6 @@ export const getSessionSettingsData = async (
       .eq("session_id", sessionId)
       .eq("organization_id", access.organizationId)
       .maybeSingle(),
-    supabase
-      .from("session_collaborators")
-      .select("id, session_id, membership_id, role, created_at")
-      .eq("session_id", sessionId),
-    buildMemberList(access.organizationId),
   ]);
 
   if (sessionResult.error) {
@@ -526,17 +514,9 @@ export const getSessionSettingsData = async (
     throw overviewResult.error;
   }
 
-  if (collaboratorResult.error) {
-    throw collaboratorResult.error;
-  }
-
   return {
     session: sessionResult.data as Session,
     overview: (overviewResult.data as SessionOverview | null) ?? null,
-    members,
-    sessionCollaboratorIds: ((collaboratorResult.data as SessionCollaborator[] | null) ?? []).map(
-      (item) => item.membership_id,
-    ),
   };
 };
 
@@ -557,29 +537,13 @@ export const getOrganizationMembersData = async (
       members,
       sessions,
       currentSession: null,
-      sessionCollaborators: [],
     };
   }
-
-  const supabase = createSupabaseAdminClient();
-  const { data, error } = await supabase
-    .from("session_collaborators")
-    .select("id, session_id, membership_id, role, created_at")
-    .eq("session_id", currentSession.session_id);
-
-  if (error) {
-    throw error;
-  }
-
-  const collaboratorIds = new Set(
-    ((data as SessionCollaborator[] | null) ?? []).map((item) => item.membership_id),
-  );
 
   return {
     members,
     sessions,
     currentSession,
-    sessionCollaborators: members.filter((member) => collaboratorIds.has(member.membershipId)),
   };
 };
 

@@ -4,18 +4,13 @@ import type { Database } from "@/lib/database.types";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import type { MembershipRole } from "@/lib/types";
 
-type SessionAccessRow = Pick<Database["flowa"]["Tables"]["sessions"]["Row"], "id" | "name" | "created_by">;
-
-type SessionCollaboratorRow = Pick<
-  Database["flowa"]["Tables"]["session_collaborators"]["Row"],
-  "session_id" | "membership_id"
->;
+type SessionAccessRow = Pick<Database["public"]["Tables"]["sessions"]["Row"], "id" | "name" | "created_by">;
 
 type SessionIdListRow = Pick<SessionAccessRow, "id">;
 
 export interface SessionAccessContext {
   organizationId: string;
-  membershipId: string;
+  membershipId?: string;
   role: MembershipRole;
   userId: string;
 }
@@ -31,34 +26,20 @@ export const getVisibleSessionIds = async (
   }
 
   const adminClient = createSupabaseAdminClient();
-  const [createdSessionsResult, collaboratorSessionsResult] = await Promise.all([
-    adminClient
-      .from<SessionIdListRow[]>("sessions")
-      .select("id")
-      .eq("organization_id", context.organizationId)
-      .eq("created_by", context.userId),
-    adminClient
-      .from<SessionCollaboratorRow[]>("session_collaborators")
-      .select("session_id, membership_id")
-      .eq("membership_id", context.membershipId),
-  ]);
+  const createdSessionsResult = await adminClient
+    .from<SessionIdListRow[]>("sessions")
+    .select("id")
+    .eq("organization_id", context.organizationId)
+    .eq("created_by", context.userId);
 
   if (createdSessionsResult.error) {
     throw createdSessionsResult.error;
-  }
-
-  if (collaboratorSessionsResult.error) {
-    throw collaboratorSessionsResult.error;
   }
 
   const visibleIds = new Set<string>();
 
   for (const session of createdSessionsResult.data ?? []) {
     visibleIds.add(session.id);
-  }
-
-  for (const collaborator of collaboratorSessionsResult.data ?? []) {
-    visibleIds.add(collaborator.session_id);
   }
 
   return [...visibleIds];
@@ -90,16 +71,5 @@ export const getAccessibleSession = async (
     return session;
   }
 
-  const collaboratorResult = await adminClient
-    .from<SessionCollaboratorRow>("session_collaborators")
-    .select("session_id, membership_id")
-    .eq("session_id", sessionId)
-    .eq("membership_id", context.membershipId)
-    .maybeSingle();
-
-  if (collaboratorResult.error) {
-    throw collaboratorResult.error;
-  }
-
-  return collaboratorResult.data ? session : null;
+  return null;
 };

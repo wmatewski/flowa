@@ -69,9 +69,6 @@ export default async function SessionSettingsPage({
     },
     sessionId,
   );
-  const selectedCollaborators = data.members.filter((member) =>
-    data.sessionCollaboratorIds.includes(member.membershipId),
-  );
   const baseUrl = publicEnv.appUrl.replace(/\/$/, "");
   const publicUrl = `${baseUrl}/ankieta/${data.session.slug}`;
   const liveUrl = `${publicUrl}/live`;
@@ -116,9 +113,6 @@ export default async function SessionSettingsPage({
       <div className="wf-settings-layout">
         <form action={saveSessionSettingsAction} className="wf-settings-form" id="session-settings-form">
           <input name="sessionId" type="hidden" value={sessionId} />
-          {data.sessionCollaboratorIds.map((membershipId) => (
-            <input key={membershipId} name="collaboratorMembershipIds" type="hidden" value={membershipId} />
-          ))}
 
           <section className="wf-settings-card">
             <div className="wf-settings-card-header">
@@ -225,8 +219,8 @@ export default async function SessionSettingsPage({
                 <strong>{formatSessionStatus(data.session.status)}</strong>
               </div>
               <div className="wf-settings-list-row">
-                <span className="wf-table-muted">Współtwórcy</span>
-                <strong>{selectedCollaborators.length}</strong>
+                <span className="wf-table-muted">Dostęp organizacji</span>
+                <strong>Clerk</strong>
               </div>
               <div className="wf-settings-list-row">
                 <span className="wf-table-muted">Uczestnicy</span>
@@ -260,30 +254,18 @@ export default async function SessionSettingsPage({
                 <Users size={22} />
               </div>
               <div>
-                <h2>Przypisani współtwórcy</h2>
-                <p>Obecny zapis ustawień zachowa tę listę bez zmian.</p>
+                <h2>Dostęp organizacji</h2>
+                <p>Dostęp do ankiet i zaproszenia są zarządzane przez Clerk na poziomie organizacji.</p>
               </div>
             </div>
 
-            {selectedCollaborators.length ? (
-              <div className="wf-settings-collaborators">
-                {selectedCollaborators.map((member) => (
-                  <div className="wf-settings-collaborator" key={member.membershipId}>
-                    <div>
-                      <div className="wf-member-name">{member.displayName}</div>
-                      <div className="wf-table-muted">{member.email}</div>
-                    </div>
-                    <span className="wf-status-chip info">{getRoleLabel(member.role)}</span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="wf-empty">Ta ankieta nie ma jeszcze przypisanych współtwórców.</p>
-            )}
+            <p className="wf-empty">
+              Ta ankieta korzysta z członków aktywnej organizacji w Clerk, bez lokalnej listy przypisań.
+            </p>
 
             <div className="wf-card-actions">
-              <Link className="wf-btn wf-btn-secondary" href={`/admin/sessions/${sessionId}`}>
-                Otwórz podgląd ankiety
+              <Link className="wf-btn wf-btn-secondary wf-btn-block" href="/admin/organization">
+                Zarządzaj organizacją
               </Link>
             </div>
           </article>

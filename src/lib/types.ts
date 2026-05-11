@@ -1,26 +1,46 @@
 import type { Database } from "@/lib/database.types";
 
-export type OperatingSystem = Database["flowa"]["Enums"]["os_family"];
-export type MembershipRole = Database["flowa"]["Enums"]["membership_role"];
-export type MembershipStatus = Database["flowa"]["Enums"]["membership_status"];
-export type SessionStatus = Database["flowa"]["Enums"]["session_status"];
-export type AgeMode = Database["flowa"]["Enums"]["age_mode"];
+export type OperatingSystem = Database["public"]["Enums"]["os_family"];
+export type MembershipRole = Database["public"]["Enums"]["membership_role"];
+export type MembershipStatus = Database["public"]["Enums"]["membership_status"];
+export type SessionStatus = Database["public"]["Enums"]["session_status"];
+export type AgeMode = Database["public"]["Enums"]["age_mode"];
 export type ResultTone = "optimal" | "warning" | "critical";
+export type OrganizationRole = MembershipRole;
+export type OrganizationMemberStatus = MembershipStatus;
 
-export type Profile = Database["flowa"]["Tables"]["profiles"]["Row"];
-export type Membership = Database["flowa"]["Tables"]["memberships"]["Row"];
-export type Session = Database["flowa"]["Tables"]["sessions"]["Row"];
-export type SessionCollaborator = Database["flowa"]["Tables"]["session_collaborators"]["Row"];
-export type SessionSubmission = Database["flowa"]["Tables"]["session_submissions"]["Row"];
-export type ActivityLog = Database["flowa"]["Tables"]["activity_log"]["Row"];
-export type SessionOverview = Database["flowa"]["Views"]["session_overview"]["Row"];
-export type SessionAgeStatistic = Database["flowa"]["Views"]["session_age_statistics"]["Row"];
+export type Session = Database["public"]["Tables"]["sessions"]["Row"];
+export type SessionSubmission = Database["public"]["Tables"]["session_submissions"]["Row"];
+export type ActivityLog = Database["public"]["Tables"]["activity_log"]["Row"];
+export type SessionOverview = Database["public"]["Views"]["session_overview"]["Row"];
+export type SessionAgeStatistic = Database["public"]["Views"]["session_age_statistics"]["Row"];
+
+export interface Profile {
+  userId: string;
+  email: string;
+  displayName: string;
+  defaultOrganizationId: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Membership {
+  id: string;
+  membershipId: string;
+  organizationId: string;
+  userId: string;
+  email: string;
+  displayName: string;
+  initials: string;
+  role: OrganizationRole;
+  status: OrganizationMemberStatus;
+  createdAt: string;
+}
 
 export interface Organization {
   id: string;
   name: string;
   slug: string | null;
-  created_by: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -43,15 +63,18 @@ export interface OperatingSystemConfig {
 }
 
 export interface OrganizationMember {
+  id: string;
   membershipId: string;
-  userId: string | null;
+  userId: string;
   email: string;
   displayName: string;
   initials: string;
-  role: MembershipRole;
-  status: MembershipStatus;
+  role: OrganizationRole;
+  status: OrganizationMemberStatus;
   createdAt: string;
 }
+
+export type SessionCollaborator = OrganizationMember;
 
 export interface DashboardMetricSnapshot {
   totalSessions: number;
@@ -108,22 +131,18 @@ export interface SessionStatisticsData {
   overview: SessionOverview | null;
   ageStatistics: SessionAgeStatistic[];
   participants: SessionParticipantRow[];
-  collaborators: OrganizationMember[];
   focusScore: FocusScore;
 }
 
 export interface SessionSettingsData {
   session: Session;
   overview: SessionOverview | null;
-  members: OrganizationMember[];
-  sessionCollaboratorIds: string[];
 }
 
 export interface OrganizationMembersData {
   members: OrganizationMember[];
   sessions: SessionOverview[];
   currentSession: SessionOverview | null;
-  sessionCollaborators: OrganizationMember[];
 }
 
 export interface SessionExperienceData {

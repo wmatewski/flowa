@@ -180,22 +180,10 @@ export default async function SessionOverviewPage({
           </article>
 
           <article className="wf-panel-card">
-            <h3>Współtwórcy sesji</h3>
-            {data.collaborators.length ? (
-              <div className="wf-member-list">
-                {data.collaborators.map((member) => (
-                  <div className="wf-member-row" key={member.membershipId}>
-                    <div>
-                      <div className="wf-member-name">{member.displayName}</div>
-                      <div className="wf-table-muted">{member.email}</div>
-                    </div>
-                    <span className="wf-pill">{member.role}</span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="wf-empty">Ta ankieta nie ma jeszcze przypisanych współtwórców.</p>
-            )}
+            <h3>Dostęp organizacji</h3>
+            <p>
+              Dostęp do tej ankiety wynika z członkostwa w organizacji Clerk, a nie z lokalnej listy przypisań.
+            </p>
           </article>
         </aside>
       </section>

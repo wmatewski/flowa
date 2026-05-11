@@ -11,7 +11,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import type { MembershipRole } from "@/lib/types";
 
 type SessionAgeMode = "fixed" | "variable";
-type SessionRow = Database["flowa"]["Tables"]["sessions"]["Row"];
+type SessionRow = Database["public"]["Tables"]["sessions"]["Row"];
 type SessionInsert = {
   organization_id: string;
   slug: string;
@@ -35,11 +35,6 @@ type SessionUpdate = {
   age_recommendations_enabled?: boolean;
   age_recommendations?: Json;
 };
-type SessionCollaboratorInsert = {
-  session_id: string;
-  membership_id: string;
-  role: MembershipRole;
-};
 
 const normalizeEmail = (value: FormDataEntryValue | string | null | undefined) =>
   String(value ?? "")
@@ -54,14 +49,11 @@ const slugify = (value: string) =>
     .replace(/^-+|-+$/g, "")
     .toLowerCase();
 
-const ensureUniqueSlug = async (
-  table: "organizations" | "sessions",
-  source: string,
-) => {
+const ensureUniqueSlug = async (source: string) => {
   const adminClient = createSupabaseAdminClient();
-  const baseSlug = slugify(source) || `${table}-flowa`;
+  const baseSlug = slugify(source) || "sessions-flowa";
   const { data, error } = await adminClient
-    .from(table)
+    .from("sessions")
     .select("slug")
     .ilike("slug", `${baseSlug}%`);
 
@@ -193,7 +185,6 @@ export const inviteAdminAction = async (formData: FormData) => {
     }
   }
 
-  const adminClient = createSupabaseAdminClient();
   let existingUserId: string | null = null;
 
   const clerk = await clerkClient();
@@ -221,62 +212,6 @@ export const inviteAdminAction = async (formData: FormData) => {
     },
   });
 
-  if (existingUserId) {
-    await adminClient.from("profiles").upsert(
-      {
-        user_id: existingUserId,
-        email,
-        display_name: email.split("@")[0],
-      },
-      { onConflict: "user_id" },
-    );
-  }
-
-  const membershipResult = await adminClient
-    .from<{
-      id: string;
-      organization_id: string;
-      user_id: string | null;
-      invited_email: string;
-      role: MembershipRole;
-      status: "invited" | "active" | "disabled";
-      created_by: string | null;
-      created_at: string;
-      updated_at: string;
-    }>("memberships")
-    .upsert(
-    {
-      organization_id: organization.id,
-      user_id: existingUserId,
-      invited_email: email,
-      role,
-      status: existingUserId ? "active" : "invited",
-      created_by: user.id,
-    },
-    { onConflict: "organization_id,invited_email" },
-  )
-    .select("id, organization_id, user_id, invited_email, role, status, created_by, created_at, updated_at")
-    .single();
-
-  if (membershipResult.error || !membershipResult.data) {
-    throw membershipResult.error;
-  }
-
-  if (sessionId) {
-    const { error: collaboratorError } = await adminClient.from("session_collaborators").upsert(
-      {
-        session_id: sessionId,
-        membership_id: membershipResult.data.id,
-        role,
-      },
-      { onConflict: "session_id,membership_id" },
-    );
-
-    if (collaboratorError) {
-      throw collaboratorError;
-    }
-  }
-
   await logOrganizationActivity({
     organizationId: organization.id,
     actorUserId: user.id,
@@ -289,7 +224,7 @@ export const inviteAdminAction = async (formData: FormData) => {
     metadata: {
       email,
       role,
-      membershipId: membershipResult.data.id,
+      existingUserId,
     },
   });
 
@@ -304,7 +239,7 @@ export const createSessionAction = async (formData: FormData) => {
   const fixedAge = ageMode === "fixed" ? parsePositiveNumber(formData.get("fixedAge"), 18) : null;
   const ageRecommendationsEnabled = String(formData.get("ageRecommendationsEnabled") ?? "") === "1";
   const ageRecommendations = parseAgeRecommendations(formData.get("ageRecommendations"));
-  const slug = await ensureUniqueSlug("sessions", name);
+  const slug = await ensureUniqueSlug(name);
   const adminClient = createSupabaseAdminClient();
   const { data, error } = await adminClient
     .from<Pick<SessionRow, "id">>("sessions")
@@ -355,10 +290,6 @@ export const saveSessionSettingsAction = async (formData: FormData) => {
   const ageRecommendations = formData.has("ageRecommendations")
     ? parseAgeRecommendations(formData.get("ageRecommendations"))
     : undefined;
-  const collaboratorMembershipIds = formData
-    .getAll("collaboratorMembershipIds")
-    .map((value) => String(value))
-    .filter(Boolean);
 
   if (!name) {
     redirect(sessionId ? `/admin/sessions/${sessionId}/settings?error=missing-name` : "/admin/sessions/new?error=missing-name");
@@ -403,7 +334,7 @@ export const saveSessionSettingsAction = async (formData: FormData) => {
   const insertPayload: SessionInsert = {
     ...basePayload,
     ...createAgePayload,
-    slug: await ensureUniqueSlug("sessions", name),
+    slug: await ensureUniqueSlug(name),
     status: "active",
     created_by: user.id,
   };
@@ -432,33 +363,6 @@ export const saveSessionSettingsAction = async (formData: FormData) => {
   }
 
   const resolvedSessionId = sessionResult.data.id;
-
-  const { error: deleteCollaboratorsError } = await adminClient
-    .from("session_collaborators")
-    .delete()
-    .eq("session_id", resolvedSessionId);
-
-  if (deleteCollaboratorsError) {
-    throw deleteCollaboratorsError;
-  }
-
-  if (collaboratorMembershipIds.length) {
-    const collaboratorRows: SessionCollaboratorInsert[] = collaboratorMembershipIds.map(
-      (membershipId) => ({
-        session_id: resolvedSessionId,
-        membership_id: membershipId,
-        role: "moderator",
-      }),
-    );
-
-    const { error: collaboratorInsertError } = await adminClient
-      .from("session_collaborators")
-      .insert(collaboratorRows);
-
-    if (collaboratorInsertError) {
-      throw collaboratorInsertError;
-    }
-  }
 
   await logOrganizationActivity({
     organizationId: organization.id,

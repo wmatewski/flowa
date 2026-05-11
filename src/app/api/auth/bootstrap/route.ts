@@ -1,12 +1,7 @@
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
-import {
-  activatePendingMemberships,
-  ensureProfileForUser,
-  type AuthenticatedUser,
-} from "@/lib/admin-auth";
-import { getSessionOrganizationIds, getSessionVerificationClaim } from "@/lib/clerk-session";
+import { getSessionVerificationClaim } from "@/lib/clerk-session";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 const slugify = (value: string) =>
@@ -26,9 +21,12 @@ const buildOrganizationSlug = (source: string) => {
 };
 
 const getAuthenticatedUser = async (): Promise<{
-  user: AuthenticatedUser;
+  userId: string;
+  email: string;
+  displayName: string;
+  createdAt: string;
+  emailVerified: boolean;
   orgId: string | null;
-  sessionClaims: Record<string, unknown> | null | undefined;
 } | null> => {
   const { userId, orgId, sessionClaims } = await auth();
 
@@ -53,15 +51,12 @@ const getAuthenticatedUser = async (): Promise<{
   }
 
   return {
-    user: {
-      id: user.id,
-      email,
-      displayName: [user.firstName, user.lastName].filter(Boolean).join(" "),
-      createdAt: new Date((user as { createdAt?: Date | string | number }).createdAt ?? Date.now()).toISOString(),
-      emailVerified: verificationClaim ?? String(primaryAddress?.verification?.status ?? "") === "verified",
-    },
+    userId: user.id,
+    email,
+    displayName: [user.firstName, user.lastName].filter(Boolean).join(" "),
+    createdAt: new Date((user as { createdAt?: Date | string | number }).createdAt ?? Date.now()).toISOString(),
+    emailVerified: verificationClaim ?? String(primaryAddress?.verification?.status ?? "") === "verified",
     orgId: orgId ?? null,
-    sessionClaims: sessionClaims as Record<string, unknown> | null | undefined,
   };
 };
 
@@ -72,10 +67,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
   }
 
-  const { user, orgId, sessionClaims } = authState;
-
-  await ensureProfileForUser(user);
-  await activatePendingMemberships(user);
+  const { userId, email, displayName, orgId } = authState;
 
   const payload = await request
     .json()
@@ -86,50 +78,24 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, clerkOrganizationId: orgId });
   }
 
-  const sessionOrganizationIds = getSessionOrganizationIds(sessionClaims, orgId);
-
-  if (sessionOrganizationIds.length > 0) {
-    return NextResponse.json({ ok: true, clerkOrganizationId: sessionOrganizationIds[0] ?? null });
-  }
-
   const adminClient = createSupabaseAdminClient();
   const clerk = await clerkClient();
   const clerkOrganization = await clerk.organizations.createOrganization({
     name: organizationName,
     slug: buildOrganizationSlug(organizationName),
-    createdBy: user.id,
+    createdBy: userId,
   });
-
-  const { error: membershipError } = await adminClient.from("memberships").upsert(
-    {
-      organization_id: clerkOrganization.id,
-      user_id: user.id,
-      invited_email: user.email,
-      role: "owner",
-      status: "active",
-      created_by: user.id,
-    },
-    { onConflict: "organization_id,invited_email" },
-  );
-
-  if (membershipError) {
-    await clerk.organizations.deleteOrganization(clerkOrganization.id).catch(() => undefined);
-    throw membershipError;
-  }
-
-  await adminClient
-    .from("profiles")
-    .update({ default_organization_id: clerkOrganization.id })
-    .eq("user_id", user.id);
 
   await adminClient.from("activity_log").insert({
     organization_id: clerkOrganization.id,
-    actor_user_id: user.id,
+    actor_user_id: userId,
     activity_type: "organization_created",
     title: `Utworzono organizację \"${organizationName}\"`,
     description: "Nowe konto organizatora zostało przygotowane i przypisane do organizacji.",
     metadata: {
       clerkOrganizationId: clerkOrganization.id,
+      email,
+      displayName,
     },
   });
 
