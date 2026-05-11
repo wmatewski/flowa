@@ -4,12 +4,13 @@ import { clerkClient } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 
 import { getAuthenticatedAdmin } from "@/lib/admin-auth";
-import type { Json } from "@/lib/database.types";
+import type { Database, Json } from "@/lib/database.types";
 import { publicEnv } from "@/lib/env/public";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import type { MembershipRole } from "@/lib/types";
 
 type SessionAgeMode = "fixed" | "variable";
+type SessionRow = Database["flowa"]["Tables"]["sessions"]["Row"];
 type SessionInsert = {
   organization_id: string;
   slug: string;
@@ -236,7 +237,7 @@ export const createSessionAction = async (formData: FormData) => {
   const slug = await ensureUniqueSlug("sessions", name);
   const adminClient = createSupabaseAdminClient();
   const { data, error } = await adminClient
-    .from("sessions")
+    .from<Pick<SessionRow, "id">>("sessions")
     .insert({
       organization_id: organization.id,
       slug,
@@ -305,14 +306,14 @@ export const saveSessionSettingsAction = async (formData: FormData) => {
 
   const sessionResult = sessionId
     ? await adminClient
-        .from("sessions")
+      .from<Pick<SessionRow, "id">>("sessions")
         .update(updatePayload)
         .eq("id", sessionId)
         .eq("organization_id", organization.id)
         .select("id")
         .single()
     : await adminClient
-        .from("sessions")
+      .from<Pick<SessionRow, "id">>("sessions")
         .insert(insertPayload)
         .select("id")
         .single();
@@ -372,7 +373,7 @@ export const deleteSessionAction = async (formData: FormData) => {
 
   const adminClient = createSupabaseAdminClient();
   const { data: sessionRow } = await adminClient
-    .from("sessions")
+    .from<Pick<SessionRow, "id" | "name">>("sessions")
     .select("id, name")
     .eq("id", sessionId)
     .eq("organization_id", organization.id)

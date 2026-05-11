@@ -371,6 +371,10 @@ class QueryBuilder<T = unknown>
   }
 }
 
-export const createSupabaseAdminClient = (): any => ({
+export type SupabaseAdminClient = {
+  from: <T = unknown>(table: string) => QueryBuilder<T>;
+};
+
+export const createSupabaseAdminClient = (): SupabaseAdminClient => ({
   from: <T = unknown>(table: string) => new QueryBuilder<T>(table),
 });

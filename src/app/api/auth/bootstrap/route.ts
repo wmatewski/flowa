@@ -6,7 +6,10 @@ import {
   ensureProfileForUser,
   type AuthenticatedUser,
 } from "@/lib/admin-auth";
+import type { Database } from "@/lib/database.types";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+
+type OrganizationRow = Database["flowa"]["Tables"]["organizations"]["Row"];
 
 const slugify = (value: string) =>
   value
@@ -109,7 +112,7 @@ export async function POST(request: Request) {
 
   const organizationSlug = await ensureUniqueSlug(organizationName);
   const { data: organizationRow, error: organizationError } = await adminClient
-    .from("organizations")
+    .from<Pick<OrganizationRow, "id">>("organizations")
     .insert({
       name: organizationName,
       slug: organizationSlug,
