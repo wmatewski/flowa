@@ -313,12 +313,9 @@ export const AuthForms = ({ mode, initialFlash, requiresOrganizationSetup }: Aut
     setFlash(null);
 
     try {
-      const initialAttempt = await signIn.create({
-        identifier: email,
-      });
-
-      const passwordAttempt = await signIn.attemptFirstFactor({
+      const passwordAttempt = await signIn.create({
         strategy: "password",
+        identifier: email,
         password,
       });
 
@@ -328,7 +325,7 @@ export const AuthForms = ({ mode, initialFlash, requiresOrganizationSetup }: Aut
       }
 
       const codePrepared = await prepareLoginCodeVerification(
-        passwordAttempt.supportedFirstFactors ?? initialAttempt.supportedFirstFactors,
+        passwordAttempt.supportedFirstFactors ?? signIn.supportedFirstFactors,
         email,
       );
 
@@ -413,16 +410,14 @@ export const AuthForms = ({ mode, initialFlash, requiresOrganizationSetup }: Aut
         }
 
         const verificationAttempt = await signUp.attemptEmailAddressVerification({ code });
+        const sessionId = verificationAttempt.createdSessionId ?? signUp.createdSessionId;
 
-        if (verificationAttempt.status !== "complete" || !verificationAttempt.createdSessionId) {
+        if (verificationAttempt.verifications.emailAddress.status !== "verified" || !sessionId) {
           setError("Kod jest nieprawidłowy.");
           return;
         }
 
-        await completeOrganizerSignUp(
-          verificationAttempt.createdSessionId,
-          pendingVerification.organizationName,
-        );
+        await completeOrganizerSignUp(sessionId, pendingVerification.organizationName);
         return;
       }
 
@@ -435,13 +430,14 @@ export const AuthForms = ({ mode, initialFlash, requiresOrganizationSetup }: Aut
         strategy: "email_code",
         code,
       });
+      const sessionId = verificationAttempt.createdSessionId ?? signIn.createdSessionId;
 
-      if (verificationAttempt.status !== "complete" || !verificationAttempt.createdSessionId) {
+      if (verificationAttempt.status !== "complete" || !sessionId) {
         setError("Kod jest nieprawidłowy.");
         return;
       }
 
-      await completeOrganizerSignIn(verificationAttempt.createdSessionId);
+      await completeOrganizerSignIn(sessionId);
     } catch (error) {
       setError(getClerkErrorMessage(error, "Kod jest nieprawidłowy."));
     }
