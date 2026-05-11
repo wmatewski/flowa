@@ -215,7 +215,7 @@ export const ScreenTimeStepForm = ({
       }).format(new Date()),
       platform: navigator.platform || null,
       fullUserAgent: navigator.userAgent || null,
-      memoryLabel: typeof memoryValue === "number" ? `${memoryValue} GB` : "Brak",
+      memoryLabel: typeof memoryValue === "number" ? `${memoryValue} GB` : "Niedostępne",
       cpuCores: typeof navigator.hardwareConcurrency === "number" ? navigator.hardwareConcurrency : null,
       touchScreen: hasTouch,
       cookiesEnabled: navigator.cookieEnabled,

@@ -26,6 +26,14 @@ const formatBooleanValue = (value: boolean | null | undefined, trueLabel = "Tak"
   return value ? trueLabel : falseLabel;
 };
 
+const hasValidDateTime = (value: string | null | undefined) => {
+  if (!value) {
+    return false;
+  }
+
+  return !Number.isNaN(new Date(value).getTime());
+};
+
 export default async function SessionAnalyticsPage({
   params,
   searchParams,
@@ -61,7 +69,9 @@ export default async function SessionAnalyticsPage({
     data.participants.find((participant) => participant.id === selectedParticipantId) ?? null;
   const maxBarValue = Math.max(...data.ageStatistics.map((stat) => stat.average_minutes ?? 0), 1);
   const maxParticipantTime = data.participants[0]?.screenTimeMinutes ?? 0;
-  const entryDateLabel = selectedParticipant?.enteredAt ? "Data wejścia" : "Data wejścia (wg czasu zapisu)";
+  const entryDateLabel = hasValidDateTime(selectedParticipant?.enteredAt)
+    ? "Data wejścia"
+    : "Data wejścia (wg czasu zapisu)";
 
   return (
     <div className="wf-page">
