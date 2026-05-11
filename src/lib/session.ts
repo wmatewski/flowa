@@ -1,12 +1,13 @@
-import { publicEnv } from "@/lib/env/public";
-
 export const createSessionId = () => crypto.randomUUID();
+
+const sessionCookieName = process.env.NEXT_PUBLIC_SESSION_COOKIE_NAME ?? "flowa_session_id";
+const projectDomain = process.env.NEXT_PUBLIC_PROJECT_DOMAIN ?? "";
 
 const baseCookieOptions = {
   sameSite: "lax" as const,
   secure: process.env.NODE_ENV === "production",
   path: "/",
-  ...(publicEnv.projectDomain ? { domain: publicEnv.projectDomain } : {}),
+  ...(projectDomain ? { domain: projectDomain } : {}),
 };
 
 export const sessionCookieOptions = {
@@ -20,4 +21,4 @@ export const supabaseAuthCookieOptions = {
   maxAge: 60 * 60 * 24 * 365,
 };
 
-export const sessionCookieName = publicEnv.sessionCookieName;
+export { sessionCookieName };

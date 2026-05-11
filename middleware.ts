@@ -1,14 +1,15 @@
 import { clerkMiddleware } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
-import { publicEnv } from "@/lib/env/public";
 import { createSessionId, sessionCookieOptions } from "@/lib/session";
+
+const sessionCookieName = process.env.NEXT_PUBLIC_SESSION_COOKIE_NAME ?? "flowa_session_id";
 
 export default clerkMiddleware(async (_auth, request) => {
   const response = NextResponse.next();
 
-  if (!request.cookies.get(publicEnv.sessionCookieName)?.value) {
-    response.cookies.set(publicEnv.sessionCookieName, createSessionId(), sessionCookieOptions);
+  if (!request.cookies.get(sessionCookieName)?.value) {
+    response.cookies.set(sessionCookieName, createSessionId(), sessionCookieOptions);
   }
 
   return response;
