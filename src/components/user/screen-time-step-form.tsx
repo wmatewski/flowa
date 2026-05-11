@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowRight } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { getSessionEntryStorageKey } from "@/lib/session-entry";
 import type { OperatingSystem } from "@/lib/types";
@@ -176,8 +176,8 @@ export const ScreenTimeStepForm = ({
   submitAction,
 }: ScreenTimeStepFormProps) => {
   const [screenTimeValue, setScreenTimeValue] = useState(formatMinutesToInput(initialMinutes));
-  const [participantEnteredAt, setParticipantEnteredAt] = useState("");
-  const [participantMetadata, setParticipantMetadata] = useState("");
+  const participantEnteredAtRef = useRef<HTMLInputElement>(null);
+  const participantMetadataRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     let currentStartedAt = new Date().toISOString();
@@ -189,8 +189,9 @@ export const ScreenTimeStepForm = ({
     } catch {
       currentStartedAt = new Date().toISOString();
     }
-
-    setParticipantEnteredAt(currentStartedAt);
+    if (participantEnteredAtRef.current) {
+      participantEnteredAtRef.current.value = currentStartedAt;
+    }
 
     const navigatorData = navigator as NavigatorWithClientHints;
     const hasTouch = navigator.maxTouchPoints > 0 || "ontouchstart" in window;
@@ -219,8 +220,9 @@ export const ScreenTimeStepForm = ({
       pluginsCount: typeof navigator.plugins?.length === "number" ? navigator.plugins.length : null,
       webdriverDetected: typeof navigator.webdriver === "boolean" ? navigator.webdriver : null,
     };
-
-    setParticipantMetadata(JSON.stringify(metadata));
+    if (participantMetadataRef.current) {
+      participantMetadataRef.current.value = JSON.stringify(metadata);
+    }
   }, [operatingSystem, sessionSlug]);
 
   return (
@@ -229,8 +231,8 @@ export const ScreenTimeStepForm = ({
       <input name="sessionSlug" type="hidden" value={sessionSlug} />
       <input name="age" type="hidden" value={String(age)} />
       <input name="operatingSystem" type="hidden" value={operatingSystem} />
-      <input name="participantEnteredAt" type="hidden" value={participantEnteredAt} />
-      <input name="participantMetadata" type="hidden" value={participantMetadata} />
+      <input defaultValue="" name="participantEnteredAt" ref={participantEnteredAtRef} type="hidden" />
+      <input defaultValue="" name="participantMetadata" ref={participantMetadataRef} type="hidden" />
 
       <label className="wf-field">
         <span className="wf-field-label">Liczba godzin i minut</span>

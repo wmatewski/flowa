@@ -105,6 +105,29 @@ const averageForWindow = (
   return average(values);
 };
 
+interface ClerkMembershipUserData {
+  id?: string | null;
+  userId?: string | null;
+  identifier?: string | null;
+  emailAddress?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+  primaryEmailAddress?: {
+    emailAddress?: string | null;
+  } | null;
+  emailAddresses?: Array<{
+    emailAddress?: string | null;
+  }> | null;
+}
+
+interface ClerkMembershipSummary {
+  id: string;
+  role: string | null;
+  createdAt?: unknown;
+  created_at?: unknown;
+  publicUserData?: ClerkMembershipUserData | null;
+}
+
 const buildMemberList = async (organizationId: string): Promise<OrganizationMember[]> => {
   const clerk = await clerkClient();
   const result = await clerk.organizations.getOrganizationMembershipList({
@@ -112,7 +135,7 @@ const buildMemberList = async (organizationId: string): Promise<OrganizationMemb
     limit: 100,
   });
 
-  return (result.data ?? []).map((membership: any) => {
+  return ((result.data as ClerkMembershipSummary[] | undefined) ?? []).map((membership) => {
     const userData = membership.publicUserData ?? {};
     const email = String(
       userData.identifier ??
