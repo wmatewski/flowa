@@ -27,6 +27,22 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 const normalizeEmail = (value: string | null | undefined) =>
   String(value ?? "").trim().toLowerCase();
 
+const toIsoString = (value: unknown) => {
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? new Date(0).toISOString() : value.toISOString();
+  }
+
+  if (typeof value === "string" || typeof value === "number") {
+    const date = new Date(value);
+
+    if (!Number.isNaN(date.getTime())) {
+      return date.toISOString();
+    }
+  }
+
+  return new Date(0).toISOString();
+};
+
 const mapOrganizationRole = (role: string | null | undefined): Membership["role"] => {
   const normalized = String(role ?? "").toLowerCase();
 
@@ -94,7 +110,7 @@ export const getAuthenticatedUser = async (): Promise<AuthenticatedUser> => {
     id: user.id,
     email,
     displayName: [user.firstName, user.lastName].filter(Boolean).join(" "),
-    createdAt: new Date((user as { createdAt?: Date | string | number }).createdAt ?? Date.now()).toISOString(),
+    createdAt: toIsoString((user as { createdAt?: Date | string | number }).createdAt ?? Date.now()),
     emailVerified: verificationClaim ?? String(primaryAddress?.verification?.status ?? "") === "verified",
   };
 };
@@ -161,7 +177,7 @@ export const getAuthenticatedAdmin = async (): Promise<{
         .join("") || "WF",
       role: mapOrganizationRole(item.role),
       status: "active",
-      createdAt: new Date(String((item as { createdAt?: unknown }).createdAt ?? Date.now())).toISOString(),
+      createdAt: toIsoString((item as { createdAt?: unknown }).createdAt ?? Date.now()),
     };
 
     return organizationMember as Membership;

@@ -6,7 +6,7 @@ import type { Organization } from "@/lib/types";
 
 const toIsoString = (value: unknown) => {
   if (value instanceof Date) {
-    return value.toISOString();
+    return Number.isNaN(value.getTime()) ? new Date(0).toISOString() : value.toISOString();
   }
 
   if (typeof value === "string" || typeof value === "number") {
