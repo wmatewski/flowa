@@ -1,4 +1,4 @@
-# My Screen Time
+# Wojticore Flowa
 
 Mobilna aplikacja webowa w Next.js 16.1.6 do zbierania i analizowania czasu przed ekranem z publiczną rejestracją użytkowników, własnymi sesjami i panelem administratora opartym o Clerk i Neon.
 
