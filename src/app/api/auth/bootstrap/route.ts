@@ -15,6 +15,22 @@ const slugify = (value: string) =>
 const normalizeEmail = (value: string | null | undefined) =>
   String(value ?? "").trim().toLowerCase();
 
+const toIsoString = (value: unknown) => {
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? new Date(0).toISOString() : value.toISOString();
+  }
+
+  if (typeof value === "string" || typeof value === "number") {
+    const date = new Date(value);
+
+    if (!Number.isNaN(date.getTime())) {
+      return date.toISOString();
+    }
+  }
+
+  return new Date(0).toISOString();
+};
+
 const buildOrganizationSlug = (source: string) => {
   const baseSlug = slugify(source) || "organization-flowa";
   return `${baseSlug}-${crypto.randomUUID().slice(0, 8)}`;
@@ -54,7 +70,7 @@ const getAuthenticatedUser = async (): Promise<{
     userId: user.id,
     email,
     displayName: [user.firstName, user.lastName].filter(Boolean).join(" "),
-    createdAt: new Date((user as { createdAt?: Date | string | number }).createdAt ?? Date.now()).toISOString(),
+    createdAt: toIsoString((user as { createdAt?: Date | string | number }).createdAt ?? Date.now()),
     emailVerified: verificationClaim ?? String(primaryAddress?.verification?.status ?? "") === "verified",
     orgId: orgId ?? null,
   };

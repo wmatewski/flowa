@@ -73,6 +73,15 @@ export const getEmailVerificationStatus = (user: Pick<AuthenticatedUser, "create
   }
 
   const createdAtTimestamp = new Date(user.createdAt).getTime();
+
+  if (Number.isNaN(createdAtTimestamp)) {
+    return {
+      daysRemaining: EMAIL_VERIFICATION_GRACE_DAYS,
+      expiresAt: new Date(Date.now() + EMAIL_VERIFICATION_GRACE_DAYS * DAY_MS).toISOString(),
+      isExpired: false,
+    } satisfies EmailVerificationStatus;
+  }
+
   const expiresAtTimestamp = createdAtTimestamp + EMAIL_VERIFICATION_GRACE_DAYS * DAY_MS;
   const msRemaining = expiresAtTimestamp - Date.now();
 
