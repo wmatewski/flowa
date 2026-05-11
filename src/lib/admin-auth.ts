@@ -25,7 +25,7 @@ const deriveDisplayName = (user: AuthenticatedUser) => {
   return normalizeEmail(user.email).split("@")[0] ?? "Organizator";
 };
 
-const getClerkUser = async (): Promise<AuthenticatedUser> => {
+export const getAuthenticatedUser = async (): Promise<AuthenticatedUser> => {
   const { userId } = await auth();
 
   if (!userId) {
@@ -124,7 +124,7 @@ export const getAuthenticatedAdmin = async (): Promise<{
   membership: Membership;
   memberships: Membership[];
 }> => {
-  const user = await getClerkUser();
+  const user = await getAuthenticatedUser();
 
   await activatePendingMemberships(user);
 
@@ -145,7 +145,7 @@ export const getAuthenticatedAdmin = async (): Promise<{
   const memberships = (data as Membership[] | null) ?? [];
 
   if (!memberships.length) {
-    redirect("/auth?error=not-authorized");
+    redirect("/auth");
   }
 
   const organizationIds = [...new Set(memberships.map((membership) => membership.organization_id))];

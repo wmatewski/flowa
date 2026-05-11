@@ -235,8 +235,7 @@ export const AuthForms = ({ mode, initialFlash, requiresOrganizationSetup }: Aut
 
   const completeOrganizerSignIn = async (sessionId: string) => {
     await setSignInActive?.({ session: sessionId });
-    await fetch("/api/auth/bootstrap", { method: "POST" });
-    router.push("/admin");
+    router.replace("/auth");
     router.refresh();
   };
 

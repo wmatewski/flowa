@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 
 import { auth } from "@clerk/nextjs/server";
 import { AuthForms } from "@/components/auth/auth-forms";
+import { activatePendingMemberships, getAuthenticatedUser } from "@/lib/admin-auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import type { FlashMessage } from "@/lib/types";
 
@@ -73,11 +74,14 @@ export default async function AuthPage({
   let activeMembershipCount = 0;
 
   if (userId) {
+    const user = await getAuthenticatedUser();
+    await activatePendingMemberships(user);
+
     const adminClient = createSupabaseAdminClient();
     const { count } = await adminClient
       .from("memberships")
       .select("id", { count: "exact", head: true })
-      .eq("user_id", userId)
+      .eq("user_id", user.id)
       .eq("status", "active");
 
     activeMembershipCount = count ?? 0;
