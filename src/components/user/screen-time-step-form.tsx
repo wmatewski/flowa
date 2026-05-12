@@ -57,6 +57,7 @@ const osLabelFallback: Record<OperatingSystem, string> = {
   windows: "Windows",
 };
 const MOBILE_VIEWPORT_MAX_WIDTH = 900;
+const BROWSER_LANGUAGES_SEPARATOR = ", ";
 
 interface NavigatorWithClientHints extends Navigator {
   deviceMemory?: number;
@@ -215,7 +216,7 @@ export const ScreenTimeStepForm = ({
       deviceTypeLabel: deviceType,
       operatingSystemLabel: parseOperatingSystemLabel(navigator.userAgent, operatingSystem),
       browserLabel: parseBrowserLabelBestEffort(navigator.userAgent, deviceType),
-      browserLanguages: navigator.languages?.join(", ") ?? null,
+      browserLanguages: navigator.languages?.join(BROWSER_LANGUAGES_SEPARATOR) ?? null,
       screenDetails: formatScreenDetails(),
       viewportDetails: `${window.innerWidth}x${window.innerHeight}`,
       orientation: window.screen.orientation?.type ?? null,

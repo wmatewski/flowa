@@ -38,7 +38,7 @@ const toNumberValue = (value: unknown, minimum: number, maximum: number) => {
 
 const toBooleanValue = (value: unknown) => (typeof value === "boolean" ? value : null);
 
-const toRoundedNumberValue = (value: unknown, minimum: number, maximum: number) => {
+const toTwoDecimalNumberValue = (value: unknown, minimum: number, maximum: number) => {
   const parsed = toNumberValue(value, minimum, maximum);
 
   if (parsed == null) {
@@ -78,7 +78,7 @@ export const normalizeParticipantMetadata = (value: unknown): ParticipantClientM
     cookiesEnabled: toBooleanValue(record.cookiesEnabled),
     networkType: toStringValue(record.networkType, 32),
     networkRttMs: toNumberValue(record.networkRttMs, 0, MAX_NETWORK_RTT_MS),
-    networkDownlinkMbps: toRoundedNumberValue(record.networkDownlinkMbps, 0, MAX_NETWORK_DOWNLINK_MBPS),
+    networkDownlinkMbps: toTwoDecimalNumberValue(record.networkDownlinkMbps, 0, MAX_NETWORK_DOWNLINK_MBPS),
     networkSaveData: toBooleanValue(record.networkSaveData),
     webglGpu: toStringValue(record.webglGpu, 256),
     fontCount: toNumberValue(record.fontCount, 0, MAX_FONT_COUNT),
