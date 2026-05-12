@@ -38,9 +38,13 @@ export const TimeInputMask = ({ name, value, onChange, className }: TimeInputMas
   const hhRef = useRef<HTMLInputElement>(null);
 
   const emitChange = (newHh: string, newMm: string) => {
+    if (!newHh && !newMm) {
+      onChange("");
+      return;
+    }
     const h = newHh || "0";
-    const m = newMm ? String(newMm).padStart(2, "0") : "00";
-    onChange(newHh || newMm ? `${h}:${m}` : "");
+    const m = newMm.padStart(2, "0");
+    onChange(`${h}:${m}`);
   };
 
   const handleHhChange = (raw: string) => {
@@ -82,7 +86,7 @@ export const TimeInputMask = ({ name, value, onChange, className }: TimeInputMas
     }
   };
 
-  const hiddenValue = hh || mm ? `${hh || "0"}:${(mm || "00").padStart(2, "0")}` : "";
+  const hiddenValue = hh || mm ? `${hh || "0"}:${mm.padStart(2, "0")}` : "";
 
   return (
     <div className={`wf-time-mask${className ? ` ${className}` : ""}`}>
