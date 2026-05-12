@@ -5,6 +5,7 @@ import { useState } from "react";
 
 import { getOperatingSystemConfig, operatingSystemOrder } from "@/lib/os";
 import type { OperatingSystem, Session } from "@/lib/types";
+import { TimeInputMask } from "@/components/user/time-input-mask";
 
 interface SessionEntryFormProps {
   age: number;
@@ -23,20 +24,6 @@ const formatMinutesToInput = (minutes: number | null | undefined) => {
   const hours = Math.floor(safeMinutes / 60);
   const remainingMinutes = safeMinutes % 60;
   return `${hours}:${String(remainingMinutes).padStart(2, "0")}`;
-};
-
-const formatTimeInput = (value: string) => {
-  const digits = value.replace(/\D/g, "").slice(0, 4);
-
-  if (!digits) {
-    return "";
-  }
-
-  if (digits.length <= 2) {
-    return digits;
-  }
-
-  return `${digits.slice(0, 2)}:${digits.slice(2)}`;
 };
 
 export const SessionEntryForm = ({
@@ -103,17 +90,14 @@ export const SessionEntryForm = ({
 
         <label className="wf-field">
           <span className="wf-field-label">Twój czas przed ekranem dzisiaj (godziny i minuty)</span>
-          <input
-            className="wf-time-input"
-            inputMode="numeric"
+          <TimeInputMask
+            className="wf-step-time-input"
             name="screenTimeValue"
-            onChange={(event) => setScreenTimeValue(formatTimeInput(event.target.value))}
-            pattern="[0-9:]*"
-            placeholder="np. 04:50"
+            onChange={setScreenTimeValue}
             value={screenTimeValue}
           />
           <span className="wf-field-hint">
-            Format GG:MM, np. 04:50 lub 11:50. Po wpisaniu dwóch cyfr dwukropek zostanie dodany automatycznie.
+            Wpisz godziny i minuty — dwukropek jest stały i widoczny.
           </span>
         </label>
 
