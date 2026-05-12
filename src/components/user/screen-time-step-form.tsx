@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { getSessionEntryStorageKey } from "@/lib/session-entry";
 import type { OperatingSystem } from "@/lib/types";
+import { TimeInputMask } from "@/components/user/time-input-mask";
 
 interface ScreenTimeStepFormProps {
   age: number;
@@ -25,20 +26,6 @@ const formatMinutesToInput = (minutes: number | null | undefined) => {
   const remainingMinutes = safeMinutes % 60;
 
   return `${hours}:${String(remainingMinutes).padStart(2, "0")}`;
-};
-
-const formatTimeInput = (value: string) => {
-  const digits = value.replace(/\D/g, "").slice(0, 4);
-
-  if (!digits) {
-    return "";
-  }
-
-  if (digits.length <= 2) {
-    return digits;
-  }
-
-  return `${digits.slice(0, digits.length - 2)}:${digits.slice(-2)}`;
 };
 
 const presets = [30, 60, 120, 240];
@@ -249,13 +236,10 @@ export const ScreenTimeStepForm = ({
 
       <label className="wf-field">
         <span className="wf-field-label">Liczba godzin i minut</span>
-        <input
-          className="wf-time-input wf-step-time-input"
-          inputMode="numeric"
+        <TimeInputMask
+          className="wf-step-time-input"
           name="screenTimeValue"
-          onChange={(event) => setScreenTimeValue(formatTimeInput(event.target.value))}
-          pattern="[0-9:]*"
-          placeholder="np. 2:30"
+          onChange={setScreenTimeValue}
           value={screenTimeValue}
         />
       </label>

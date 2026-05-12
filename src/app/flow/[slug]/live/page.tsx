@@ -8,8 +8,8 @@ import { LiveResultsTable } from "@/components/session/live-results-table";
 import { getPublicLiveSessionData } from "@/lib/data";
 import { publicEnv } from "@/lib/env/public";
 
-const QR_CODE_SIZE_DEFAULT = 320;
-const QR_CODE_SIZE_EMBED = 256;
+const QR_CODE_SIZE_DEFAULT = 224;
+const QR_CODE_SIZE_EMBED = 176;
 
 export default async function PublicLiveSessionPage({
   params,
@@ -47,14 +47,30 @@ export default async function PublicLiveSessionPage({
             </p>
           </div>
 
-          {!embed ? (
-            <div className="wf-card-actions">
-              <Link className="wf-btn wf-btn-secondary" href={`/flow/${slug}`}>
-                Otwórz ankietę
-              </Link>
-              <CopyButton className="wf-btn wf-btn-primary" label="Kopiuj link live" value={liveUrl} />
+          <div className="wf-live-header-right">
+            <div className="wf-live-header-qr">
+              <Image
+                alt={`Kod QR dla ${data.session.name}`}
+                className="wf-qr-image wf-live-header-qr-image"
+                height={embed ? 88 : 112}
+                src={qrCodeDataUrl}
+                width={embed ? 88 : 112}
+              />
+              <span className="wf-live-header-qr-label">
+                <QrCode size={12} />
+                Zeskanuj
+              </span>
             </div>
-          ) : null}
+
+            {!embed ? (
+              <div className="wf-card-actions">
+                <Link className="wf-btn wf-btn-secondary" href={`/flow/${slug}`}>
+                  Otwórz ankietę
+                </Link>
+                <CopyButton className="wf-btn wf-btn-primary" label="Kopiuj link live" value={liveUrl} />
+              </div>
+            ) : null}
+          </div>
         </header>
 
         <LiveResultsTable
@@ -64,33 +80,6 @@ export default async function PublicLiveSessionPage({
           initialParticipantCount={data.overview?.participant_count ?? data.entries.length}
           slug={slug}
         />
-
-        <article className="wf-panel-card wf-qr-card wf-live-qr-card">
-          <div className="wf-page-header" style={{ marginBottom: 16 }}>
-            <div>
-              <h3 style={{ margin: 0 }}>Kod QR do ankiety</h3>
-              <p className="wf-table-muted">Zeskanuj kod, aby od razu otworzyć formularz na telefonie.</p>
-            </div>
-            <QrCode size={20} />
-          </div>
-
-          <Image
-            alt={`Kod QR dla ${data.session.name}`}
-            className="wf-qr-image"
-            height={qrCodeSize}
-            src={qrCodeDataUrl}
-            width={qrCodeSize}
-          />
-
-          {!embed ? (
-            <div className="wf-card-actions">
-              <Link className="wf-btn wf-btn-secondary" href={`/flow/${slug}`}>
-                Otwórz ankietę
-              </Link>
-              <CopyButton className="wf-btn wf-btn-primary" label="Kopiuj link ankiety" value={publicUrl} />
-            </div>
-          ) : null}
-        </article>
 
         {!embed ? (
           <div className="wf-live-banner">
