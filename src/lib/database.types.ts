@@ -75,6 +75,8 @@ export interface Database {
           screen_time_minutes: number;
           detected_os: Database["public"]["Enums"]["os_family"];
           ip_address: string | null;
+          entered_at: string | null;
+          client_metadata: Json;
           user_agent: string | null;
           submitted_at: string;
           entry_date: string;
@@ -87,6 +89,8 @@ export interface Database {
           screen_time_minutes: number;
           detected_os?: Database["public"]["Enums"]["os_family"];
           ip_address?: string | null;
+          entered_at?: string | null;
+          client_metadata?: Json;
           user_agent?: string | null;
           submitted_at?: string;
           entry_date?: string;
@@ -99,6 +103,8 @@ export interface Database {
           screen_time_minutes?: number;
           detected_os?: Database["public"]["Enums"]["os_family"];
           ip_address?: string | null;
+          entered_at?: string | null;
+          client_metadata?: Json;
           user_agent?: string | null;
           submitted_at?: string;
           entry_date?: string;
@@ -152,6 +158,8 @@ export interface Database {
           screen_time_minutes: number;
           detected_os: Database["public"]["Enums"]["os_family"];
           ip_address: string | null;
+          entered_at: string | null;
+          client_metadata: Json;
           user_agent: string | null;
           submitted_at: string;
           entry_date: string;
@@ -164,6 +172,8 @@ export interface Database {
           screen_time_minutes?: number;
           detected_os?: Database["public"]["Enums"]["os_family"];
           ip_address?: string | null;
+          entered_at?: string | null;
+          client_metadata?: Json;
           user_agent?: string | null;
           submitted_at?: string;
           entry_date?: string;
@@ -176,6 +186,8 @@ export interface Database {
           screen_time_minutes?: number;
           detected_os?: Database["public"]["Enums"]["os_family"];
           ip_address?: string | null;
+          entered_at?: string | null;
+          client_metadata?: Json;
           user_agent?: string | null;
           submitted_at?: string;
           entry_date?: string;

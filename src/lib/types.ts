@@ -115,6 +115,27 @@ export interface ParticipantInsight {
   cohortAverageMinutes: number | null;
 }
 
+export interface ParticipantClientMetadata {
+  deviceTypeLabel: string | null;
+  operatingSystemLabel: string | null;
+  browserLabel: string | null;
+  screenDetails: string | null;
+  orientation: string | null;
+  browserLanguage: string | null;
+  timezone: string | null;
+  userLocalTime: string | null;
+  platform: string | null;
+  fullUserAgent: string | null;
+  memoryLabel: string | null;
+  cpuCores: number | null;
+  touchScreen: boolean | null;
+  cookiesEnabled: boolean | null;
+  webglGpu: string | null;
+  fontCount: number | null;
+  pluginsCount: number | null;
+  webdriverDetected: boolean | null;
+}
+
 export interface SessionParticipantRow {
   id: string;
   participantKey: string;
@@ -123,6 +144,11 @@ export interface SessionParticipantRow {
   screenTimeMinutes: number;
   statusTone: ResultTone;
   statusLabel: string;
+  detectedOperatingSystem: OperatingSystem;
+  enteredAt: string | null;
+  ipAddress: string | null;
+  userAgent: string | null;
+  clientMetadata: ParticipantClientMetadata | null;
   submittedAt: string;
 }
 

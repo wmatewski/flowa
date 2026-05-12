@@ -1,9 +1,15 @@
+import { QrCode } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
+import QRCode from "qrcode";
 
 import { CopyButton } from "@/components/session/copy-button";
 import { LiveResultsTable } from "@/components/session/live-results-table";
 import { getPublicLiveSessionData } from "@/lib/data";
 import { publicEnv } from "@/lib/env/public";
+
+const QR_CODE_SIZE_DEFAULT = 320;
+const QR_CODE_SIZE_EMBED = 256;
 
 export default async function PublicLiveSessionPage({
   params,
@@ -16,7 +22,18 @@ export default async function PublicLiveSessionPage({
   const query = await searchParams;
   const embed = query.embed === "1";
   const data = await getPublicLiveSessionData(slug);
-  const liveUrl = `${publicEnv.appUrl.replace(/\/$/, "")}/flow/${slug}/live`;
+  const baseUrl = publicEnv.appUrl.replace(/\/$/, "");
+  const liveUrl = `${baseUrl}/flow/${slug}/live`;
+  const publicUrl = `${baseUrl}/ankieta/${slug}`;
+  const qrCodeSize = embed ? QR_CODE_SIZE_EMBED : QR_CODE_SIZE_DEFAULT;
+  const qrCodeDataUrl = await QRCode.toDataURL(publicUrl, {
+    margin: 1,
+    width: qrCodeSize,
+    color: {
+      dark: "#1a1c1e",
+      light: "#ffffff",
+    },
+  });
 
   return (
     <main className={`wf-live-page${embed ? " is-embed" : ""}`}>
@@ -47,6 +64,33 @@ export default async function PublicLiveSessionPage({
           initialParticipantCount={data.overview?.participant_count ?? data.entries.length}
           slug={slug}
         />
+
+        <article className="wf-panel-card wf-qr-card wf-live-qr-card">
+          <div className="wf-page-header" style={{ marginBottom: 16 }}>
+            <div>
+              <h3 style={{ margin: 0 }}>Kod QR do ankiety</h3>
+              <p className="wf-table-muted">Zeskanuj kod, aby od razu otworzyć formularz na telefonie.</p>
+            </div>
+            <QrCode size={20} />
+          </div>
+
+          <Image
+            alt={`Kod QR dla ${data.session.name}`}
+            className="wf-qr-image"
+            height={qrCodeSize}
+            src={qrCodeDataUrl}
+            width={qrCodeSize}
+          />
+
+          {!embed ? (
+            <div className="wf-card-actions">
+              <Link className="wf-btn wf-btn-secondary" href={`/flow/${slug}`}>
+                Otwórz ankietę
+              </Link>
+              <CopyButton className="wf-btn wf-btn-primary" label="Kopiuj link ankiety" value={publicUrl} />
+            </div>
+          ) : null}
+        </article>
 
         {!embed ? (
           <div className="wf-live-banner">
