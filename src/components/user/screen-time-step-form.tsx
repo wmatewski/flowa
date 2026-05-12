@@ -60,6 +60,16 @@ const MOBILE_VIEWPORT_MAX_WIDTH = 900;
 
 interface NavigatorWithClientHints extends Navigator {
   deviceMemory?: number;
+  connection?: NavigatorConnectionData;
+  mozConnection?: NavigatorConnectionData;
+  webkitConnection?: NavigatorConnectionData;
+}
+
+interface NavigatorConnectionData {
+  effectiveType?: string;
+  rtt?: number;
+  downlink?: number;
+  saveData?: boolean;
 }
 
 const formatDeviceMemoryLabel = (deviceMemory: number | undefined) =>
@@ -194,6 +204,10 @@ export const ScreenTimeStepForm = ({
     }
 
     const navigatorData = navigator as NavigatorWithClientHints;
+    const connectionData =
+      navigatorData.connection ??
+      navigatorData.mozConnection ??
+      navigatorData.webkitConnection;
     const hasTouch = navigator.maxTouchPoints > 0 || "ontouchstart" in window;
     const deviceType = detectDeviceType(navigator.userAgent, hasTouch, window.innerWidth);
     const memoryValue = navigatorData.deviceMemory;
@@ -201,7 +215,9 @@ export const ScreenTimeStepForm = ({
       deviceTypeLabel: deviceType,
       operatingSystemLabel: parseOperatingSystemLabel(navigator.userAgent, operatingSystem),
       browserLabel: parseBrowserLabelBestEffort(navigator.userAgent, deviceType),
+      browserLanguages: navigator.languages?.join(", ") || null,
       screenDetails: formatScreenDetails(),
+      viewportDetails: `${window.innerWidth}x${window.innerHeight}`,
       orientation: window.screen.orientation?.type ?? null,
       browserLanguage: navigator.language || null,
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || null,
@@ -210,11 +226,17 @@ export const ScreenTimeStepForm = ({
         timeStyle: "medium",
       }).format(new Date()),
       platform: navigator.platform || null,
+      referrer: document.referrer || null,
       fullUserAgent: navigator.userAgent || null,
       memoryLabel: formatDeviceMemoryLabel(memoryValue),
       cpuCores: typeof navigator.hardwareConcurrency === "number" ? navigator.hardwareConcurrency : null,
       touchScreen: hasTouch,
       cookiesEnabled: navigator.cookieEnabled,
+      networkType: connectionData?.effectiveType ?? null,
+      networkRttMs: typeof connectionData?.rtt === "number" ? connectionData.rtt : null,
+      networkDownlinkMbps:
+        typeof connectionData?.downlink === "number" ? connectionData.downlink : null,
+      networkSaveData: typeof connectionData?.saveData === "boolean" ? connectionData.saveData : null,
       webglGpu: getWebglGpu(),
       fontCount: document.fonts ? Array.from(document.fonts).length : null,
       pluginsCount: typeof navigator.plugins?.length === "number" ? navigator.plugins.length : null,

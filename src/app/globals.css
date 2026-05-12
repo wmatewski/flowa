@@ -2382,6 +2382,27 @@ h6,
   text-align: right;
 }
 
+.wf-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  padding: 24px;
+  background: color-mix(in srgb, #030712 70%, transparent);
+  display: grid;
+  place-items: center;
+}
+
+.wf-modal-card {
+  width: min(960px, 100%);
+  max-height: min(90vh, 960px);
+  overflow: auto;
+  border: 1px solid color-mix(in srgb, var(--border-strong) 70%, transparent);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: 0 26px 52px color-mix(in srgb, #030712 34%, transparent);
+  padding: 28px;
+}
+
 .wf-live-overview-card,
 .wf-qr-card,
 .wf-live-banner {

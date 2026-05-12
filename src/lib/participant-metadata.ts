@@ -3,6 +3,8 @@ import type { ParticipantClientMetadata } from "@/lib/types";
 const MAX_CPU_CORES = 256;
 const MAX_FONT_COUNT = 100000;
 const MAX_PLUGIN_COUNT = 10000;
+const MAX_NETWORK_RTT_MS = 100000;
+const MAX_NETWORK_DOWNLINK_MBPS = 100000;
 
 const toRecord = (value: unknown) => {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
@@ -36,6 +38,16 @@ const toNumberValue = (value: unknown, minimum: number, maximum: number) => {
 
 const toBooleanValue = (value: unknown) => (typeof value === "boolean" ? value : null);
 
+const toRoundedNumberValue = (value: unknown, minimum: number, maximum: number) => {
+  const parsed = toNumberValue(value, minimum, maximum);
+
+  if (parsed == null) {
+    return null;
+  }
+
+  return Math.round(parsed * 100) / 100;
+};
+
 const hasAnyValidMetadata = (metadata: ParticipantClientMetadata) =>
   Object.values(metadata).some((item) => item !== null);
 
@@ -50,17 +62,24 @@ export const normalizeParticipantMetadata = (value: unknown): ParticipantClientM
     deviceTypeLabel: toStringValue(record.deviceTypeLabel, 32),
     operatingSystemLabel: toStringValue(record.operatingSystemLabel, 80),
     browserLabel: toStringValue(record.browserLabel, 80),
+    browserLanguages: toStringValue(record.browserLanguages, 128),
     screenDetails: toStringValue(record.screenDetails, 120),
+    viewportDetails: toStringValue(record.viewportDetails, 120),
     orientation: toStringValue(record.orientation, 64),
     browserLanguage: toStringValue(record.browserLanguage, 32),
     timezone: toStringValue(record.timezone, 64),
     userLocalTime: toStringValue(record.userLocalTime, 80),
     platform: toStringValue(record.platform, 64),
+    referrer: toStringValue(record.referrer, 1024),
     fullUserAgent: toStringValue(record.fullUserAgent, 1024),
     memoryLabel: toStringValue(record.memoryLabel, 32),
     cpuCores: toNumberValue(record.cpuCores, 1, MAX_CPU_CORES),
     touchScreen: toBooleanValue(record.touchScreen),
     cookiesEnabled: toBooleanValue(record.cookiesEnabled),
+    networkType: toStringValue(record.networkType, 32),
+    networkRttMs: toNumberValue(record.networkRttMs, 0, MAX_NETWORK_RTT_MS),
+    networkDownlinkMbps: toRoundedNumberValue(record.networkDownlinkMbps, 0, MAX_NETWORK_DOWNLINK_MBPS),
+    networkSaveData: toBooleanValue(record.networkSaveData),
     webglGpu: toStringValue(record.webglGpu, 256),
     fontCount: toNumberValue(record.fontCount, 0, MAX_FONT_COUNT),
     pluginsCount: toNumberValue(record.pluginsCount, 0, MAX_PLUGIN_COUNT),
