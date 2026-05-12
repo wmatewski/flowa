@@ -390,7 +390,7 @@ export default async function SessionAnalyticsPage({
                   </div>
                   <div className="wf-member-row">
                     <span>Sieć (downlink)</span>
-                    <strong>{formatNumberDetailValue(selectedParticipant.clientMetadata?.networkDownlinkMbps, " Mb/s")}</strong>
+                    <strong>{formatNumberDetailValue(selectedParticipant.clientMetadata?.networkDownlinkMbps, " Mbps")}</strong>
                   </div>
                   <div className="wf-member-row">
                     <span>Tryb oszczędzania danych</span>
