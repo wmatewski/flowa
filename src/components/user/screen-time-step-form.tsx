@@ -216,7 +216,9 @@ export const ScreenTimeStepForm = ({
       deviceTypeLabel: deviceType,
       operatingSystemLabel: parseOperatingSystemLabel(navigator.userAgent, operatingSystem),
       browserLabel: parseBrowserLabelBestEffort(navigator.userAgent, deviceType),
-      browserLanguages: navigator.languages?.join(BROWSER_LANGUAGES_SEPARATOR) ?? null,
+      browserLanguages: navigator.languages?.length
+        ? navigator.languages.join(BROWSER_LANGUAGES_SEPARATOR)
+        : null,
       screenDetails: formatScreenDetails(),
       viewportDetails: `${window.innerWidth}x${window.innerHeight}`,
       orientation: window.screen.orientation?.type ?? null,

@@ -29,7 +29,7 @@ const formatBooleanValue = (value: boolean | null | undefined, trueLabel = "Tak"
 const formatNumberDetailValue = (
   value: number | null | undefined,
   suffix = "",
-) => (value == null || Number.isNaN(value) ? "Brak danych" : `${value}${suffix}`);
+) => (value === null || value === undefined || Number.isNaN(value) ? "Brak danych" : `${value}${suffix}`);
 
 const hasValidDateTime = (value: string | null | undefined) => {
   if (!value) {
