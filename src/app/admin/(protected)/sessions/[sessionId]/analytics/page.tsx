@@ -319,7 +319,7 @@ export default async function SessionAnalyticsPage({
                     <strong>{formatDetailValue(selectedParticipant.clientMetadata?.browserLabel)}</strong>
                   </div>
                   <div className="wf-member-row">
-                    <span>Języki przeglądarki</span>
+                    <span>Preferowane języki</span>
                     <strong>{formatDetailValue(selectedParticipant.clientMetadata?.browserLanguages)}</strong>
                   </div>
                   <div className="wf-member-row">
@@ -335,7 +335,7 @@ export default async function SessionAnalyticsPage({
                     <strong>{formatDetailValue(selectedParticipant.clientMetadata?.orientation)}</strong>
                   </div>
                   <div className="wf-member-row">
-                    <span>Język przeglądarki</span>
+                    <span>Główny język</span>
                     <strong>{formatDetailValue(selectedParticipant.clientMetadata?.browserLanguage)}</strong>
                   </div>
                   <div className="wf-member-row">
