@@ -84,7 +84,7 @@ export const SessionEntryForm = ({
 
       <form action={submitAction} className="wf-form-stack">
         <input name="sessionId" type="hidden" value={session.id} />
-        <input name="sessionSlug" type="hidden" value={session.slug} />
+        <input name="sessionSlug" type="hidden" value={session.id} />
         <input name="age" type="hidden" value={String(age)} />
         <input name="operatingSystem" type="hidden" value={operatingSystem} />
 

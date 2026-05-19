@@ -1,7 +1,7 @@
 "use client";
 
 import { Pencil, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 interface SlugEditorProps {
   currentSlug: string;
@@ -20,25 +20,13 @@ export const SlugEditor = ({ currentSlug, sessionName }: SlugEditorProps) => {
   const [editing, setEditing] = useState(false);
   const [slugValue, setSlugValue] = useState(currentSlug);
 
-  useEffect(() => {
-    if (!editing) {
-      setSlugValue(currentSlug);
-    }
-  }, [currentSlug, editing]);
-
-  const handleNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (!editing) {
-      return;
-    }
-    setSlugValue(slugify(event.target.value) || slugValue);
-  };
-
   return (
     <div className="wf-slug-editor">
       <input name="slug" type="hidden" value={editing ? slugValue : currentSlug} />
       <div className="wf-slug-display">
         <span className="wf-table-muted" style={{ fontSize: 13 }}>
-          Slug sesji: <strong style={{ color: "var(--text)", fontFamily: "monospace" }}>{editing ? slugValue : currentSlug}</strong>
+          Slug sesji dla {sessionName}:{" "}
+          <strong style={{ color: "var(--text)", fontFamily: "monospace" }}>{editing ? slugValue : currentSlug}</strong>
         </span>
         {!editing ? (
           <button
@@ -64,18 +52,18 @@ export const SlugEditor = ({ currentSlug, sessionName }: SlugEditorProps) => {
       </div>
       {editing ? (
         <div className="wf-field" style={{ marginTop: 8 }}>
-          <span className="wf-field-label">Slug URL (tylko a-z, 0-9, myślniki)</span>
+          <span className="wf-field-label">Slug techniczny (tylko a-z, 0-9, myślniki)</span>
           <input
             className="wf-input"
             name="_slugInput"
-            onChange={(e) => setSlugValue(slugify(e.target.value) || e.target.value.replace(/[^a-zA-Z0-9-]/g, ""))}
+            onChange={(event) => setSlugValue(slugify(event.target.value) || event.target.value.replace(/[^a-zA-Z0-9-]/g, ""))}
             placeholder="np. badanie-klas-5"
             style={{ fontFamily: "monospace" }}
             type="text"
             value={slugValue}
           />
           <span className="wf-table-muted" style={{ fontSize: 12 }}>
-            Publiczny link: /ankieta/{slugValue || "..."}
+            Wykorzystanie wewnętrzne: {slugValue || "..."}
           </span>
         </div>
       ) : null}

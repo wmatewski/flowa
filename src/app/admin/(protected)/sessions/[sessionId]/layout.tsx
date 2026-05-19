@@ -26,7 +26,6 @@ export default async function SessionWorkspaceLayout({
       participantCount={overview?.participant_count ?? 0}
       sessionId={sessionId}
       sessionName={session.name}
-      sessionSlug={session.slug}
       sessionStatus={session.status}
     >
       {children}

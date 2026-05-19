@@ -5,6 +5,7 @@ import { getAuthenticatedAdmin } from "@/lib/admin-auth";
 import { getSessionWorkspaceSummary } from "@/lib/data";
 import { publicEnv } from "@/lib/env/public";
 import { formatMinutes, formatNumber } from "@/lib/format";
+import { buildSessionPublicUrl } from "@/lib/public-session";
 
 export default async function SessionLivePage({
   params,
@@ -25,7 +26,7 @@ export default async function SessionLivePage({
   const baseUrl = publicEnv.appUrl.replace(/\/$/, "");
   const liveUrl = `${baseUrl}/live/${sessionId}`;
   const embedUrl = `${liveUrl}?embed=1`;
-  const publicUrl = `${baseUrl}/ankieta/${session.slug}`;
+  const publicUrl = buildSessionPublicUrl(baseUrl, session.id);
   const iframeCode = `<iframe src="${embedUrl}" title="${session.name} - wyniki na żywo" width="1280" height="720" style="border:0;width:100%;height:100%"></iframe>`;
 
   return (
@@ -54,9 +55,9 @@ export default async function SessionLivePage({
             </div>
           </div>
 
-          <div className="wf-live-frame-shell">
-            <iframe className="wf-live-frame" src={`/live/${sessionId}?embed=1`} title={`${session.name} live embed`} />
-          </div>
+            <div className="wf-live-frame-shell">
+              <iframe className="wf-live-frame" src={`/live/${sessionId}?embed=1`} title={`${session.name} live embed`} />
+            </div>
         </article>
 
         <aside className="wf-panel-grid" style={{ gridTemplateColumns: "1fr" }}>
@@ -69,7 +70,7 @@ export default async function SessionLivePage({
               </label>
               <label className="wf-field">
                 <span className="wf-field-label">Kod iframe</span>
-                <textarea className="wf-textarea wf-code-block" readOnly value={iframeCode} />
+                <textarea className="wf-textarea wf-code-block" readOnly rows={7} style={{ minHeight: 180 }} value={iframeCode} />
               </label>
             </div>
 

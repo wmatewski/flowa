@@ -9,8 +9,12 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import Link from "next/link";
+import { auth } from "@clerk/nextjs/server";
 
-export default function HomePage() {
+export default async function HomePage() {
+  const { userId } = await auth();
+  const isSignedIn = Boolean(userId);
+
   return (
     <>
       <header className="wf-topbar">
@@ -29,18 +33,28 @@ export default function HomePage() {
             <Link className="wf-nav-link" href="/guides">
               Poradniki
             </Link>
-            <Link className="wf-nav-link" href="/admin">
-              Dashboard
-            </Link>
+            {isSignedIn ? (
+              <Link className="wf-nav-link" href="/admin">
+                Dashboard
+              </Link>
+            ) : null}
           </nav>
 
           <div className="wf-card-actions">
-            <Link className="wf-btn wf-btn-secondary" href="/auth?mode=login">
-              Zaloguj się
-            </Link>
-            <Link className="wf-btn wf-btn-primary" href="/auth?mode=register">
-              Zarejestruj
-            </Link>
+            {isSignedIn ? (
+              <Link className="wf-btn wf-btn-primary" href="/admin">
+                Dashboard
+              </Link>
+            ) : (
+              <>
+                <Link className="wf-btn wf-btn-secondary" href="/auth?mode=login">
+                  Zaloguj się
+                </Link>
+                <Link className="wf-btn wf-btn-primary" href="/auth?mode=register">
+                  Zarejestruj
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </header>
@@ -55,10 +69,16 @@ export default function HomePage() {
               wynikami na żywo i bezpiecznym dostępem do panelu organizatora.
             </p>
             <div className="wf-hero-actions">
-              <Link className="wf-btn wf-btn-primary" href="/auth?mode=register">
-                Rozpocznij ankietę
-                <ArrowRight size={18} />
-              </Link>
+              {isSignedIn ? (
+                <Link className="wf-btn wf-btn-primary" href="/admin">
+                  Dashboard
+                </Link>
+              ) : (
+                <Link className="wf-btn wf-btn-primary" href="/auth?mode=register">
+                  Rozpocznij ankietę
+                  <ArrowRight size={18} />
+                </Link>
+              )}
               <Link className="wf-btn wf-btn-secondary" href="/guides">
                 Zobacz poradniki
               </Link>
@@ -173,12 +193,20 @@ export default function HomePage() {
               Załóż konto organizatora, utwórz pierwszą ankietę i uruchom publiczny link albo widok na żywo w prezentacji.
             </p>
             <div className="wf-hero-actions" style={{ justifyContent: "center" }}>
-              <Link className="wf-btn wf-btn-primary" href="/auth?mode=register">
-                Załóż konto
-              </Link>
-              <Link className="wf-btn wf-btn-secondary" href="/admin">
-                Przejdź do dashboardu
-              </Link>
+              {isSignedIn ? (
+                <Link className="wf-btn wf-btn-primary" href="/admin">
+                  Dashboard
+                </Link>
+              ) : (
+                <>
+                  <Link className="wf-btn wf-btn-primary" href="/auth?mode=register">
+                    Załóż konto
+                  </Link>
+                  <Link className="wf-btn wf-btn-secondary" href="/admin">
+                    Przejdź do dashboardu
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </section>
@@ -192,11 +220,16 @@ export default function HomePage() {
             </div>
             <span>Wojticore Flowa</span>
           </div>
-          <div>© 2026 Wojticore Flowa. Open-source dla organizatorów i edukatorów.</div>
+          <div>
+            © 2026{" "}
+            <Link href="/">
+              Made with Wojticore Flowa
+            </Link>
+          </div>
           <nav className="wf-footer-nav">
             <Link href="/guides">Dokumentacja</Link>
             <Link href="/auth?mode=register">Rejestracja</Link>
-            <Link href="/admin">Dashboard</Link>
+            {isSignedIn ? <Link href="/admin">Dashboard</Link> : null}
           </nav>
         </div>
       </footer>

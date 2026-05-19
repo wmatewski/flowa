@@ -5,10 +5,13 @@ import { auth, clerkClient } from "@clerk/nextjs/server";
 import { saveSessionMessagesAction, saveSessionSettingsAction } from "@/app/admin/actions";
 import { CopyButton } from "@/components/session/copy-button";
 import { SlugEditor } from "@/components/admin/slug-editor";
+import { TimeThresholdRulesEditor } from "@/components/admin/time-threshold-rules-editor";
 import { getAuthenticatedAdmin } from "@/lib/admin-auth";
 import { getSessionSettingsData } from "@/lib/data";
 import { publicEnv } from "@/lib/env/public";
 import { formatMinutes, formatNumber, formatSessionStatus } from "@/lib/format";
+import { buildSessionPublicUrl } from "@/lib/public-session";
+import { normalizeTimeThresholdRules } from "@/lib/time-thresholds";
 import type { FlashMessage, SessionStatus } from "@/lib/types";
 
 const getFlashMessage = (params: Record<string, string | string[] | undefined>): FlashMessage | null => {
@@ -39,18 +42,6 @@ const getStatusTone = (status: SessionStatus) => {
   return "critical";
 };
 
-const getRoleLabel = (role: string) => {
-  if (role === "owner") {
-    return "Właściciel";
-  }
-
-  if (role === "admin") {
-    return "Administrator";
-  }
-
-  return "Moderator";
-};
-
 export default async function SessionSettingsPage({
   params,
   searchParams,
@@ -73,13 +64,23 @@ export default async function SessionSettingsPage({
     sessionId,
   );
   const baseUrl = publicEnv.appUrl.replace(/\/$/, "");
-  const publicUrl = `${baseUrl}/ankieta/${data.session.slug}`;
+  const publicUrl = buildSessionPublicUrl(baseUrl, data.session.id);
   const liveUrl = `${baseUrl}/live/${sessionId}`;
 
   let orgMeta: {
     defaultGoodTimeMessage?: string | null;
     defaultExceededTimeMessage?: string | null;
-    sessionMessages?: Record<string, { useCustomMessages?: boolean; goodTimeMessage?: string | null; exceededTimeMessage?: string | null } | undefined>;
+    defaultTimeThresholdRules?: unknown;
+    sessionMessages?: Record<
+      string,
+      | {
+          useCustomMessages?: boolean;
+          goodTimeMessage?: string | null;
+          exceededTimeMessage?: string | null;
+          timeThresholdRules?: unknown;
+        }
+      | undefined
+    >;
   } = {};
 
   if (orgId) {
@@ -90,6 +91,8 @@ export default async function SessionSettingsPage({
 
   const sessionMessagesMeta = orgMeta.sessionMessages?.[sessionId];
   const useCustomMessages = sessionMessagesMeta?.useCustomMessages ?? false;
+  const organizationThresholdRules = normalizeTimeThresholdRules(orgMeta.defaultTimeThresholdRules);
+  const sessionThresholdRules = normalizeTimeThresholdRules(sessionMessagesMeta?.timeThresholdRules);
 
   return (
     <div className="wf-page">
@@ -113,7 +116,7 @@ export default async function SessionSettingsPage({
         <article className="wf-hero-preview-card">
           <span className="wf-table-muted">Status</span>
           <div className={`wf-status-chip ${getStatusTone(data.session.status)}`}>{formatSessionStatus(data.session.status)}</div>
-          <span className="wf-table-muted">Publiczna ścieżka: /ankieta/{data.session.slug}</span>
+          <span className="wf-table-muted">Krótki link: {buildSessionPublicUrl(baseUrl, data.session.id)}</span>
         </article>
         <article className="wf-hero-preview-card">
           <span className="wf-table-muted">Uczestnicy</span>
@@ -232,7 +235,7 @@ export default async function SessionSettingsPage({
             <div className="wf-settings-radio-grid">
               <label className={`wf-settings-radio${!useCustomMessages ? " is-active" : ""}`}>
                 <div className="wf-settings-radio-top">
-                  <input defaultChecked={!useCustomMessages} name="useCustomMessages" type="radio" value="0" onChange={() => {}} />
+                  <input defaultChecked={!useCustomMessages} name="useCustomMessages" type="radio" value="0" />
                   <div>
                     <strong>Domyślne z ustawień konta</strong>
                     <p className="wf-table-muted">Używaj komunikatów ustawionych globalnie dla organizacji.</p>
@@ -241,7 +244,7 @@ export default async function SessionSettingsPage({
               </label>
               <label className={`wf-settings-radio${useCustomMessages ? " is-active" : ""}`}>
                 <div className="wf-settings-radio-top">
-                  <input defaultChecked={useCustomMessages} name="useCustomMessages" type="radio" value="1" onChange={() => {}} />
+                  <input defaultChecked={useCustomMessages} name="useCustomMessages" type="radio" value="1" />
                   <div>
                     <strong>Niestandardowe dla tej ankiety</strong>
                     <p className="wf-table-muted">Wpisz własne komunikaty widoczne tylko w tej sesji.</p>
@@ -251,52 +254,48 @@ export default async function SessionSettingsPage({
             </div>
 
             {useCustomMessages ? (
-              <div className="wf-settings-grid" style={{ marginTop: 16 }}>
-                <label className="wf-field wf-settings-field-full">
-                  <span className="wf-field-label">Komunikat dla dobrego wyniku</span>
-                  <textarea
-                    className="wf-textarea"
-                    defaultValue={sessionMessagesMeta?.goodTimeMessage ?? ""}
-                    name="goodTimeMessage"
-                    placeholder="np. Świetnie! Twój wynik mieści się w zalecanym limicie."
-                    rows={3}
-                  />
-                </label>
-                <label className="wf-field wf-settings-field-full">
-                  <span className="wf-field-label">Komunikat dla przekroczonego wyniku</span>
-                  <textarea
-                    className="wf-textarea"
-                    defaultValue={sessionMessagesMeta?.exceededTimeMessage ?? ""}
-                    name="exceededTimeMessage"
-                    placeholder="np. Twój wynik przekracza zalecany limit."
-                    rows={3}
-                  />
-                </label>
-              </div>
+              <>
+                <div className="wf-settings-grid" style={{ marginTop: 16 }}>
+                  <label className="wf-field wf-settings-field-full">
+                    <span className="wf-field-label">Komunikat dla dobrego wyniku</span>
+                    <textarea
+                      className="wf-textarea"
+                      defaultValue={sessionMessagesMeta?.goodTimeMessage ?? ""}
+                      name="goodTimeMessage"
+                      placeholder="np. Świetnie! Twój wynik mieści się w zalecanym limicie."
+                      rows={3}
+                    />
+                  </label>
+                  <label className="wf-field wf-settings-field-full">
+                    <span className="wf-field-label">Komunikat dla przekroczonego wyniku</span>
+                    <textarea
+                      className="wf-textarea"
+                      defaultValue={sessionMessagesMeta?.exceededTimeMessage ?? ""}
+                      name="exceededTimeMessage"
+                      placeholder="np. Twój wynik przekracza zalecany limit."
+                      rows={3}
+                    />
+                  </label>
+                </div>
+
+                <TimeThresholdRulesEditor initialRules={sessionThresholdRules} name="timeThresholdRules" />
+              </>
             ) : (
-              <div className="wf-settings-grid" style={{ marginTop: 16 }}>
-                <label className="wf-field wf-settings-field-full">
-                  <span className="wf-field-label">Komunikat dla dobrego wyniku (podgląd domyślnego)</span>
-                  <textarea
-                    className="wf-textarea"
-                    disabled
-                    name="goodTimeMessage"
-                    rows={3}
-                    value={orgMeta.defaultGoodTimeMessage ?? "Twój wynik mieści się w docelowym przedziale tej sesji. Zachowujesz zdrowy poziom obciążenia ekranem."}
-                    readOnly
-                  />
-                </label>
-                <label className="wf-field wf-settings-field-full">
-                  <span className="wf-field-label">Komunikat dla przekroczonego wyniku (podgląd domyślnego)</span>
-                  <textarea
-                    className="wf-textarea"
-                    disabled
-                    name="exceededTimeMessage"
-                    rows={3}
-                    value={orgMeta.defaultExceededTimeMessage ?? "Jesteś powyżej celu sesji. Warto zaplanować krótką przerwę."}
-                    readOnly
-                  />
-                </label>
+              <div className="wf-panel-card" style={{ marginTop: 16, padding: 20 }}>
+                <div className="wf-member-list">
+                  <div className="wf-member-row">
+                    <span>Domyślny dobry wynik</span>
+                    <strong>{orgMeta.defaultGoodTimeMessage ?? "Twój wynik mieści się w docelowym przedziale tej sesji."}</strong>
+                  </div>
+                  <div className="wf-member-row">
+                    <span>Domyślny przekroczony wynik</span>
+                    <strong>{orgMeta.defaultExceededTimeMessage ?? "Jesteś powyżej celu sesji. Warto zaplanować krótką przerwę."}</strong>
+                  </div>
+                  <div className="wf-member-row">
+                    <span>Domyślne progi</span>
+                    <strong>{organizationThresholdRules.length ? `${organizationThresholdRules.length} zdefiniowanych` : "Brak, używany będzie fallback"}</strong>
+                  </div>
+                </div>
               </div>
             )}
 
@@ -353,7 +352,7 @@ export default async function SessionSettingsPage({
             </label>
 
             <div className="wf-card-actions">
-              <CopyButton className="wf-btn wf-btn-secondary" label="Kopiuj ankietę" value={publicUrl} />
+              <CopyButton className="wf-btn wf-btn-secondary" label="Kopiuj krótki link" value={publicUrl} />
               <CopyButton className="wf-btn wf-btn-secondary" label="Kopiuj live" value={liveUrl} />
             </div>
           </article>

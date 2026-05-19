@@ -59,17 +59,16 @@ const parseScreenTimeValue = (value: FormDataEntryValue | null) => {
 
 export const submitSessionEntryAction = async (formData: FormData) => {
   const sessionId = String(formData.get("sessionId") ?? "").trim();
-  const sessionSlug = String(formData.get("sessionSlug") ?? "").trim();
   const age = Number(formData.get("age") ?? "0");
   const requestedOperatingSystem = String(formData.get("operatingSystem") ?? "").trim();
   const parsedTime = parseScreenTimeValue(formData.get("screenTimeValue"));
 
-  if (!sessionId || !sessionSlug) {
+  if (!sessionId) {
     redirect("/");
   }
 
   if (Number.isNaN(age) || age < 1 || age > 120) {
-    redirect(`/flow/${sessionSlug}/age?error=invalid-age`);
+    redirect(`/ankieta/${sessionId}/age?error=invalid-age`);
   }
 
   if (
@@ -80,7 +79,7 @@ export const submitSessionEntryAction = async (formData: FormData) => {
     parsedTime.totalMinutes > 1440
   ) {
     const osQuery = requestedOperatingSystem ? `&os=${requestedOperatingSystem}` : "";
-    redirect(`/flow/${sessionSlug}/time?error=invalid-time&age=${age}${osQuery}`);
+    redirect(`/ankieta/${sessionId}/time?error=invalid-time&age=${age}${osQuery}`);
   }
 
   const headerStore = await headers();
@@ -112,7 +111,22 @@ export const submitSessionEntryAction = async (formData: FormData) => {
 
   if (sessionError || !sessionRow) {
     const osQuery = requestedOperatingSystem ? `&os=${requestedOperatingSystem}` : "";
-    redirect(`/flow/${sessionSlug}/time?error=save-failed&age=${age}${osQuery}`);
+    redirect(`/ankieta/${sessionId}/time?error=save-failed&age=${age}${osQuery}`);
+  }
+
+  const { data: existingSubmission, error: existingSubmissionError } = await supabase
+    .from("latest_session_participants")
+    .select("id")
+    .eq("session_id", sessionId)
+    .eq("participant_key", participantKey)
+    .maybeSingle();
+
+  if (existingSubmissionError) {
+    redirect(`/ankieta/${sessionId}/time?error=save-failed&age=${age}&os=${operatingSystem}`);
+  }
+
+  if (existingSubmission) {
+    redirect(`/ankieta/${sessionId}/submitted`);
   }
 
   const { error } = await supabase.from("session_submissions").insert({
@@ -131,7 +145,7 @@ export const submitSessionEntryAction = async (formData: FormData) => {
   });
 
   if (error) {
-    redirect(`/flow/${sessionSlug}/time?error=save-failed&age=${age}&os=${operatingSystem}`);
+    redirect(`/ankieta/${sessionId}/time?error=save-failed&age=${age}&os=${operatingSystem}`);
   }
 
   await supabase.from("activity_log").insert({
@@ -147,7 +161,7 @@ export const submitSessionEntryAction = async (formData: FormData) => {
     },
   });
 
-  redirect(`/flow/${sessionSlug}/submitted?saved=1&age=${age}&os=${operatingSystem}`);
+  redirect(`/ankieta/${sessionId}/submitted?saved=1&age=${age}&os=${operatingSystem}`);
 };
 
 export const submitScreenTimeAction = submitSessionEntryAction;

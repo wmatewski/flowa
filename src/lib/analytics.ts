@@ -1,9 +1,14 @@
 import type {
   FocusScore,
+  ParticipantMessageConfig,
   ParticipantInsight,
   ResultTone,
   SessionSubmission,
 } from "@/lib/types";
+import {
+  calculatePercentOverLimit,
+  getTimeThresholdRule,
+} from "@/lib/time-thresholds";
 
 export const average = (values: number[]) => {
   if (!values.length) {
@@ -90,7 +95,7 @@ export const buildParticipantInsight = (
   latestSubmission: SessionSubmission | null,
   cohortEntries: SessionSubmission[],
   limitMinutes: number,
-  customMessages?: { goodTimeMessage?: string | null; exceededTimeMessage?: string | null },
+  customMessages?: ParticipantMessageConfig,
 ): ParticipantInsight | null => {
   if (!latestSubmission) {
     return null;
@@ -107,6 +112,13 @@ export const buildParticipantInsight = (
             100,
         );
   const tone = getParticipantTone(latestSubmission.screen_time_minutes, limitMinutes);
+  const percentOverLimit = calculatePercentOverLimit(
+    latestSubmission.screen_time_minutes,
+    limitMinutes,
+  );
+  const matchedRule = percentOverLimit > 0
+    ? getTimeThresholdRule(customMessages?.thresholdRules ?? [], percentOverLimit)
+    : null;
 
   if (tone === "optimal") {
     return {
@@ -125,6 +137,7 @@ export const buildParticipantInsight = (
       tone,
       label: "Wynik podwyższony",
       description:
+        matchedRule?.message ||
         customMessages?.exceededTimeMessage ||
         "Jesteś nieco powyżej celu sesji. Warto zaplanować krótką przerwę i ograniczyć dodatkowe bodźce po spotkaniu.",
       deltaPercentage,
@@ -136,6 +149,7 @@ export const buildParticipantInsight = (
     tone,
     label: "Potrzebny reset",
     description:
+      matchedRule?.message ||
       customMessages?.exceededTimeMessage ||
       "Twój wynik wyraźnie przekracza limit tej sesji. Najlepiej wprowadzić dłuższy blok offline i wrócić tylko do najważniejszych zadań.",
     deltaPercentage,

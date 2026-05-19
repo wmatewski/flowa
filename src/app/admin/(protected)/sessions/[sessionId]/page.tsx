@@ -7,6 +7,7 @@ import { getAuthenticatedAdmin } from "@/lib/admin-auth";
 import { getSessionStatisticsData } from "@/lib/data";
 import { publicEnv } from "@/lib/env/public";
 import { formatDateTime, formatMinutes, formatNumber } from "@/lib/format";
+import { buildSessionPublicUrl } from "@/lib/public-session";
 
 export default async function SessionOverviewPage({
   params,
@@ -25,12 +26,12 @@ export default async function SessionOverviewPage({
     sessionId,
   );
   const baseUrl = publicEnv.appUrl.replace(/\/$/, "");
-  const publicUrl = `${baseUrl}/ankieta/${data.session.slug}`;
+  const publicUrl = buildSessionPublicUrl(baseUrl, data.session.id);
   const liveUrl = `${baseUrl}/live/${sessionId}`;
   const embedUrl = `${liveUrl}?embed=1`;
   const qrCodeDataUrl = await (await import("qrcode")).toDataURL(publicUrl, {
     margin: 1,
-    width: 320,
+    width: 448,
     color: {
       dark: "#1a1c1e",
       light: "#ffffff",
@@ -96,7 +97,7 @@ export default async function SessionOverviewPage({
                 Otwórz panel live
               </Link>
               <CopyButton className="wf-btn wf-btn-secondary" label="Kopiuj link embed" value={embedUrl} />
-              <CopyButton className="wf-btn wf-btn-secondary" label="Kopiuj link ankiety" value={publicUrl} />
+              <CopyButton className="wf-btn wf-btn-secondary" label="Kopiuj krótki link" value={publicUrl} />
             </div>
           </article>
 
@@ -151,17 +152,17 @@ export default async function SessionOverviewPage({
             <Image
               alt={`Kod QR dla ${data.session.name}`}
               className="wf-qr-image"
-              height={320}
+              height={448}
               src={qrCodeDataUrl}
-              width={320}
+              width={448}
             />
 
             <div className="wf-card-actions">
-              <a className="wf-btn wf-btn-secondary" download={`qr-${data.session.slug}.png`} href={qrCodeDataUrl}>
+              <a className="wf-btn wf-btn-secondary" download={`qr-${data.session.id.slice(0, 5)}.png`} href={qrCodeDataUrl}>
                 <Download size={18} />
                 Pobierz QR
               </a>
-              <CopyButton className="wf-btn wf-btn-primary" label="Kopiuj link" value={publicUrl} />
+              <CopyButton className="wf-btn wf-btn-primary" label="Kopiuj krótki link" value={publicUrl} />
             </div>
           </article>
 

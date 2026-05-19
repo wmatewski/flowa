@@ -2,7 +2,6 @@ import Link from "next/link";
 
 import { saveSessionSettingsAction } from "@/app/admin/actions";
 import { SessionAgeControls } from "@/components/admin/session-age-controls";
-import { publicEnv } from "@/lib/env/public";
 import type { FlashMessage } from "@/lib/types";
 
 const getFlashMessage = (params: Record<string, string | string[] | undefined>): FlashMessage | null => {
@@ -20,7 +19,6 @@ export default async function NewSessionPage({
 }) {
   const params = await searchParams;
   const flash = getFlashMessage(params);
-  const baseUrl = publicEnv.appUrl.replace(/\/$/, "");
 
   return (
     <div className="wf-page">
@@ -42,9 +40,9 @@ export default async function NewSessionPage({
           </label>
 
           <label className="wf-field">
-            <span className="wf-field-label">Slug ankiety (URL uczestnika)</span>
+            <span className="wf-field-label">Slug techniczny ankiety</span>
             <input className="wf-input" name="slug" placeholder="np. klasa-6a-maj" type="text" />
-            <span className="wf-table-muted">Link uczestnika: {baseUrl}/ankieta/twoj-slug</span>
+            <span className="wf-table-muted">Link uczestnika zostanie nadany automatycznie po zapisaniu sesji.</span>
           </label>
 
           <label className="wf-field">

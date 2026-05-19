@@ -28,26 +28,6 @@ const formatMinutesToInput = (minutes: number | null | undefined) => {
   return `${hours}:${String(remainingMinutes).padStart(2, "0")}`;
 };
 
-const presets = [30, 60, 120, 240];
-
-const presetToInput = (minutes: number) => {
-  const hours = Math.floor(minutes / 60);
-  const remainingMinutes = minutes % 60;
-  return `${hours}:${String(remainingMinutes).padStart(2, "0")}`;
-};
-
-const presetLabel = (minutes: number) => {
-  if (minutes < 60) {
-    return `${minutes} min`;
-  }
-
-  if (minutes % 60 === 0) {
-    return `${minutes / 60}h`;
-  }
-
-  return `${Math.floor(minutes / 60)}h ${minutes % 60}m`;
-};
-
 const osLabelFallback: Record<OperatingSystem, string> = {
   android: "Android",
   ios: "iOS",
@@ -268,19 +248,6 @@ export const ScreenTimeStepForm = ({
           value={screenTimeValue}
         />
       </label>
-
-      <div className="wf-chip-row">
-        {presets.map((minutes) => (
-          <button
-            className="wf-chip-button"
-            key={minutes}
-            onClick={() => setScreenTimeValue(presetToInput(minutes))}
-            type="button"
-          >
-            {presetLabel(minutes)}
-          </button>
-        ))}
-      </div>
 
       <button className="wf-btn wf-btn-primary wf-btn-block wf-btn-large" type="submit">
         Wyślij wynik

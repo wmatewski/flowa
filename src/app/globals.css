@@ -1475,6 +1475,16 @@ h6,
   background: var(--surface-soft);
 }
 
+.wf-btn.danger {
+  color: var(--error);
+  border-color: color-mix(in srgb, var(--error) 22%, var(--border));
+  background: color-mix(in srgb, var(--error) 8%, var(--surface));
+}
+
+.wf-btn.danger:hover {
+  background: color-mix(in srgb, var(--error) 12%, var(--surface));
+}
+
 .wf-input,
 .wf-textarea,
 .wf-search-input,
@@ -2454,7 +2464,7 @@ h6,
 }
 
 .wf-qr-image {
-  width: min(100%, 260px);
+  width: min(100%, 360px);
   margin: 0 auto;
   border-radius: var(--radius-md);
   border: 1px solid var(--border);
@@ -2560,14 +2570,14 @@ h6,
 }
 
 .wf-live-header-qr-image {
-  width: 112px !important;
-  height: 112px !important;
+  width: 152px !important;
+  height: 152px !important;
   border-radius: var(--radius-sm) !important;
 }
 
 .is-embed .wf-live-header-qr-image {
-  width: 88px !important;
-  height: 88px !important;
+  width: 120px !important;
+  height: 120px !important;
 }
 
 .wf-live-header-qr-label {
@@ -2646,6 +2656,26 @@ h6,
   display: grid;
   gap: 20px;
   padding: 24px;
+}
+
+@keyframes wf-step-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.wf-step-container-animated > * {
+  animation: wf-step-enter 320ms ease both;
+}
+
+.wf-step-panel-animated {
+  animation: wf-step-enter 360ms ease both;
 }
 
 .wf-step-title {

@@ -6,6 +6,7 @@ import { DeleteSessionButton } from "@/components/admin/delete-session-button";
 import { getAuthenticatedAdmin } from "@/lib/admin-auth";
 import { getSessionsListData } from "@/lib/data";
 import { formatDate, formatMinutes, formatNumber, formatSessionStatus } from "@/lib/format";
+import { buildSessionShortPath } from "@/lib/public-session";
 import type { FlashMessage, SessionOverview, SessionStatus } from "@/lib/types";
 
 const getFlashMessage = (params: Record<string, string | string[] | undefined>): FlashMessage | null => {
@@ -175,7 +176,7 @@ export default async function SessionsPage({
                       <Link className="wf-sessions-name-link" href={`/admin/sessions/${session.session_id}`}>
                         {session.name}
                       </Link>
-                      <span className="wf-sessions-subtitle">/{session.slug}</span>
+                      <span className="wf-sessions-subtitle">{buildSessionShortPath(session.session_id)}</span>
                     </div>
                   </td>
                   <td>

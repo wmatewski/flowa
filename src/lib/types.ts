@@ -51,6 +51,18 @@ export interface FlashMessage {
   message: string;
 }
 
+export interface TimeThresholdRule {
+  minPercent: number;
+  maxPercent: number;
+  message: string;
+}
+
+export interface ParticipantMessageConfig {
+  goodTimeMessage?: string | null;
+  exceededTimeMessage?: string | null;
+  thresholdRules?: TimeThresholdRule[];
+}
+
 export interface OperatingSystemConfig {
   key: OperatingSystem;
   label: string;

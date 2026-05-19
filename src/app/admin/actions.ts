@@ -6,8 +6,10 @@ import { redirect } from "next/navigation";
 import { getAuthenticatedAdmin } from "@/lib/admin-auth";
 import type { Database, Json } from "@/lib/database.types";
 import { publicEnv } from "@/lib/env/public";
+import { createSessionId } from "@/lib/session";
 import { getAccessibleSession } from "@/lib/session-access";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { parseTimeThresholdRules } from "@/lib/time-thresholds";
 import type { MembershipRole } from "@/lib/types";
 
 type SessionAgeMode = "fixed" | "variable";
@@ -75,6 +77,30 @@ const ensureUniqueSlug = async (source: string) => {
   }
 
   return `${baseSlug}-${suffix}`;
+};
+
+const ensureUniqueSessionId = async () => {
+  const adminClient = createSupabaseAdminClient();
+
+  for (let attempt = 0; attempt < 20; attempt += 1) {
+    const candidateId = createSessionId();
+    const shortCode = candidateId.replace(/-/g, "").slice(0, 5).toLowerCase();
+    const { data, error } = await adminClient
+      .from("sessions")
+      .select("id")
+      .ilike("id", `${shortCode}%`)
+      .limit(2);
+
+    if (error) {
+      throw error;
+    }
+
+    if (!((data as Array<{ id: string }> | null) ?? []).length) {
+      return candidateId;
+    }
+  }
+
+  return createSessionId();
 };
 
 const parsePositiveNumber = (value: FormDataEntryValue | null, fallback: number) => {
@@ -272,10 +298,12 @@ export const createSessionAction = async (formData: FormData) => {
   const ageRecommendationsEnabled = String(formData.get("ageRecommendationsEnabled") ?? "") === "1";
   const ageRecommendations = parseAgeRecommendations(formData.get("ageRecommendations"));
   const slug = await ensureUniqueSlug(name);
+  const id = await ensureUniqueSessionId();
   const adminClient = createSupabaseAdminClient();
   const { data, error } = await adminClient
     .from<Pick<SessionRow, "id">>("sessions")
     .insert({
+      id,
       organization_id: organization.id,
       slug,
       name,
@@ -477,6 +505,57 @@ export const deleteSessionAction = async (formData: FormData) => {
   redirect("/admin/sessions?deleted=1");
 };
 
+export const deleteSessionSubmissionAction = async (formData: FormData) => {
+  const sessionId = String(formData.get("sessionId") ?? "").trim();
+  const participantKey = String(formData.get("participantKey") ?? "").trim();
+  const returnUrl = String(formData.get("returnUrl") ?? "").trim();
+  const { user, organization, membership } = await getAuthenticatedAdmin();
+
+  if (!sessionId || !participantKey) {
+    redirect(returnUrl || "/admin/sessions");
+  }
+
+  const accessibleSession = await getAccessibleSession(
+    {
+      organizationId: organization.id,
+      membershipId: membership.id,
+      role: membership.role,
+      userId: user.id,
+    },
+    sessionId,
+  );
+
+  if (!accessibleSession) {
+    redirect("/admin/sessions?error=forbidden");
+  }
+
+  const adminClient = createSupabaseAdminClient();
+  const { error } = await adminClient
+    .from("session_submissions")
+    .delete()
+    .eq("session_id", sessionId)
+    .eq("participant_key", participantKey);
+
+  if (error) {
+    throw error;
+  }
+
+  await logOrganizationActivity({
+    organizationId: organization.id,
+    actorUserId: user.id,
+    activityType: "submission_deleted",
+    title: `Usunięto odpowiedź z sesji \"${accessibleSession.name}\"`,
+    description: "Odpowiedź uczestnika została usunięta z systemu.",
+    sessionId,
+    metadata: {
+      participantKey,
+    },
+  });
+
+  const separator = returnUrl.includes("?") ? "&" : "?";
+  redirect(`${returnUrl || `/admin/sessions/${sessionId}/analytics`}${separator}deleted=1`);
+};
+
 export const saveOrganizationSettingsAction = async (formData: FormData) => {
   const { organization } = await getAuthenticatedAdmin();
   const { orgId } = await auth();
@@ -487,6 +566,7 @@ export const saveOrganizationSettingsAction = async (formData: FormData) => {
 
   const defaultGoodTimeMessage = String(formData.get("defaultGoodTimeMessage") ?? "").trim();
   const defaultExceededTimeMessage = String(formData.get("defaultExceededTimeMessage") ?? "").trim();
+  const defaultTimeThresholdRules = parseTimeThresholdRules(formData.get("defaultTimeThresholdRules"));
 
   const clerk = await clerkClient();
   const existing = await clerk.organizations.getOrganization({ organizationId: orgId });
@@ -497,6 +577,7 @@ export const saveOrganizationSettingsAction = async (formData: FormData) => {
       ...existingMeta,
       defaultGoodTimeMessage: defaultGoodTimeMessage || null,
       defaultExceededTimeMessage: defaultExceededTimeMessage || null,
+      defaultTimeThresholdRules,
     },
   });
 
@@ -512,7 +593,7 @@ export const saveOrganizationSettingsAction = async (formData: FormData) => {
 };
 
 export const saveSessionMessagesAction = async (formData: FormData) => {
-  const { organization } = await getAuthenticatedAdmin();
+  await getAuthenticatedAdmin();
   const { orgId } = await auth();
   const sessionId = String(formData.get("sessionId") ?? "").trim();
 
@@ -521,13 +602,25 @@ export const saveSessionMessagesAction = async (formData: FormData) => {
   }
 
   const useCustomMessages = String(formData.get("useCustomMessages") ?? "") === "1";
-  const goodTimeMessage = String(formData.get("goodTimeMessage") ?? "").trim();
-  const exceededTimeMessage = String(formData.get("exceededTimeMessage") ?? "").trim();
 
   const clerk = await clerkClient();
   const existing = await clerk.organizations.getOrganization({ organizationId: orgId });
   const existingMeta = (existing.publicMetadata ?? {}) as Record<string, unknown>;
   const sessionMessages = (existingMeta.sessionMessages ?? {}) as Record<string, unknown>;
+  const existingSessionMessages = (sessionMessages[sessionId] ?? {}) as {
+    goodTimeMessage?: string | null;
+    exceededTimeMessage?: string | null;
+    timeThresholdRules?: unknown;
+  };
+  const goodTimeMessage = formData.has("goodTimeMessage")
+    ? String(formData.get("goodTimeMessage") ?? "").trim()
+    : String(existingSessionMessages.goodTimeMessage ?? "").trim();
+  const exceededTimeMessage = formData.has("exceededTimeMessage")
+    ? String(formData.get("exceededTimeMessage") ?? "").trim()
+    : String(existingSessionMessages.exceededTimeMessage ?? "").trim();
+  const timeThresholdRules = formData.has("timeThresholdRules")
+    ? parseTimeThresholdRules(formData.get("timeThresholdRules"))
+    : parseTimeThresholdRules(JSON.stringify(existingSessionMessages.timeThresholdRules ?? []));
 
   await clerk.organizations.updateOrganizationMetadata(orgId, {
     publicMetadata: {
@@ -538,6 +631,7 @@ export const saveSessionMessagesAction = async (formData: FormData) => {
           useCustomMessages,
           goodTimeMessage: goodTimeMessage || null,
           exceededTimeMessage: exceededTimeMessage || null,
+          timeThresholdRules,
         },
       },
     },

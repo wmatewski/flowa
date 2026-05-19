@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
 
-import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { findSessionIdBySlug } from "@/lib/public-session";
 
-export default async function PublicLiveSessionPage({
+export default async function FlowLegacyLivePage({
   params,
   searchParams,
 }: {
@@ -11,17 +11,12 @@ export default async function PublicLiveSessionPage({
 }) {
   const { slug } = await params;
   const query = await searchParams;
-  const supabase = createSupabaseAdminClient();
-  const { data: session } = await supabase
-    .from<{ id: string }>("sessions")
-    .select("id")
-    .eq("slug", slug)
-    .maybeSingle();
+  const sessionId = await findSessionIdBySlug(slug);
 
-  if (!session?.id) {
-    redirect("/auth");
+  if (!sessionId) {
+    redirect("/");
   }
 
-  const embed = query.embed === "1";
-  redirect(`/live/${session.id}${embed ? "?embed=1" : ""}`);
+  const embed = query.embed === "1" ? "?embed=1" : "";
+  redirect(`/live/${sessionId}${embed}`);
 }

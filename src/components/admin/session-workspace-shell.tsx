@@ -5,12 +5,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { formatNumber, formatSessionStatus } from "@/lib/format";
+import { buildSessionShortPath } from "@/lib/public-session-url";
 import type { SessionStatus } from "@/lib/types";
 
 interface SessionWorkspaceShellProps {
   sessionId: string;
   sessionName: string;
-  sessionSlug: string;
   sessionStatus: SessionStatus;
   participantCount: number;
   children: React.ReactNode;
@@ -19,7 +19,6 @@ interface SessionWorkspaceShellProps {
 export const SessionWorkspaceShell = ({
   sessionId,
   sessionName,
-  sessionSlug,
   sessionStatus,
   participantCount,
   children,
@@ -89,8 +88,8 @@ export const SessionWorkspaceShell = ({
         </nav>
 
         <div className="wf-session-sidebar-meta">
-          <div className="wf-small-label">Publiczny link</div>
-          <Link className="wf-btn wf-btn-secondary wf-btn-block" href={`/ankieta/${sessionSlug}`}>
+          <div className="wf-small-label">Krótki link uczestnika</div>
+          <Link className="wf-btn wf-btn-secondary wf-btn-block" href={buildSessionShortPath(sessionId)}>
             Otwórz ankietę
           </Link>
           <Link

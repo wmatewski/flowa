@@ -2,9 +2,13 @@ import type { CSSProperties } from "react";
 
 import Link from "next/link";
 
+import { deleteSessionSubmissionAction } from "@/app/admin/actions";
+import { DeleteParticipantButton } from "@/components/admin/delete-participant-button";
 import { getAuthenticatedAdmin } from "@/lib/admin-auth";
 import { getSessionStatisticsData } from "@/lib/data";
 import { formatDateTime, formatDateTimeWithSeconds, formatMinutes, formatNumber } from "@/lib/format";
+import { publicEnv } from "@/lib/env/public";
+import { buildSessionPublicUrl } from "@/lib/public-session";
 
 const operatingSystemLabels = {
   android: "Android",
@@ -51,6 +55,14 @@ const createParticipantHref = (
     : `/admin/sessions/${sessionId}/analytics`;
 };
 
+const getFlashMessage = (query: Record<string, string | string[] | undefined>) => {
+  if (query.deleted === "1") {
+    return { type: "success" as const, message: "Odpowiedź została usunięta z systemu." };
+  }
+
+  return null;
+};
+
 export default async function SessionAnalyticsPage({
   params,
   searchParams,
@@ -60,6 +72,7 @@ export default async function SessionAnalyticsPage({
 }) {
   const { sessionId } = await params;
   const query = await searchParams;
+  const flash = getFlashMessage(query);
   const { organization, membership, user } = await getAuthenticatedAdmin();
   const data = await getSessionStatisticsData(
     {
@@ -86,6 +99,7 @@ export default async function SessionAnalyticsPage({
     data.participants.find((participant) => participant.id === selectedParticipantId) ?? null;
   const maxBarValue = Math.max(...data.ageStatistics.map((stat) => stat.average_minutes ?? 0), 1);
   const maxParticipantTime = data.participants[0]?.screenTimeMinutes ?? 0;
+  const publicUrl = buildSessionPublicUrl(publicEnv.appUrl, data.session.id);
 
   return (
     <div className="wf-page">
@@ -105,6 +119,8 @@ export default async function SessionAnalyticsPage({
           </Link>
         </div>
       </div>
+
+      {flash ? <div className={`wf-flash ${flash.type}`}>{flash.message}</div> : null}
 
       <section className="wf-metric-grid" style={{ marginBottom: 24 }}>
         <article className="wf-metric-card">
@@ -223,7 +239,7 @@ export default async function SessionAnalyticsPage({
             <h3>Link sesji</h3>
             <p>Udostępnij uczestnikom publiczny adres do rejestracji czasu przed ekranem.</p>
             <div className="wf-field" style={{ marginTop: 16 }}>
-              <input className="wf-input" readOnly type="text" value={`/ankieta/${data.session.slug}`} />
+              <input className="wf-input" readOnly type="text" value={publicUrl} />
             </div>
           </article>
         </aside>
@@ -290,6 +306,12 @@ export default async function SessionAnalyticsPage({
                 </div>
               </div>
 
+              <form action={deleteSessionSubmissionAction} className="wf-card-actions" style={{ marginTop: 20 }}>
+                <input name="sessionId" type="hidden" value={sessionId} />
+                <input name="participantKey" type="hidden" value={selectedParticipant.participantKey} />
+                <input name="returnUrl" type="hidden" value={createParticipantHref(sessionId, null, query.q)} />
+                <DeleteParticipantButton sessionName={data.session.name} />
+              </form>
             </div>
           </article>
         </div>

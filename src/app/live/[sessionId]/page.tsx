@@ -8,9 +8,10 @@ import { LiveResultsTable } from "@/components/session/live-results-table";
 import { getAuthenticatedAdmin } from "@/lib/admin-auth";
 import { getLiveSessionDataForAccess } from "@/lib/data";
 import { publicEnv } from "@/lib/env/public";
+import { buildSessionPublicUrl, buildSessionShortPath } from "@/lib/public-session";
 
-const QR_CODE_SIZE_DEFAULT = 280;
-const QR_CODE_SIZE_EMBED = 220;
+const QR_CODE_SIZE_DEFAULT = 352;
+const QR_CODE_SIZE_EMBED = 260;
 
 export default async function LiveSessionPage({
   params,
@@ -35,7 +36,7 @@ export default async function LiveSessionPage({
   );
   const baseUrl = publicEnv.appUrl.replace(/\/$/, "");
   const liveUrl = `${baseUrl}/live/${sessionId}`;
-  const publicUrl = `${baseUrl}/ankieta/${data.session.slug}`;
+  const publicUrl = buildSessionPublicUrl(baseUrl, data.session.id);
   const qrCodeSize = embed ? QR_CODE_SIZE_EMBED : QR_CODE_SIZE_DEFAULT;
   const qrCodeDataUrl = await QRCode.toDataURL(publicUrl, {
     margin: 1,
@@ -65,9 +66,9 @@ export default async function LiveSessionPage({
               <Image
                 alt={`Kod QR dla ${data.session.name}`}
                 className="wf-qr-image wf-live-header-qr-image"
-                height={embed ? 110 : 140}
+                height={embed ? 120 : 152}
                 src={qrCodeDataUrl}
-                width={embed ? 110 : 140}
+                width={embed ? 120 : 152}
               />
               <span className="wf-live-header-qr-label">
                 <QrCode size={12} />
@@ -77,7 +78,7 @@ export default async function LiveSessionPage({
 
             {!embed ? (
               <div className="wf-card-actions">
-                <Link className="wf-btn wf-btn-secondary" href={`/ankieta/${data.session.slug}`}>
+                <Link className="wf-btn wf-btn-secondary" href={buildSessionShortPath(data.session.id)}>
                   Otwórz ankietę
                 </Link>
                 <CopyButton className="wf-btn wf-btn-primary" label="Kopiuj link live" value={liveUrl} />

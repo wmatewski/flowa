@@ -10,6 +10,8 @@ import {
   percentageDelta,
 } from "@/lib/analytics";
 import { formatInitials } from "@/lib/format";
+import { getSessionById } from "@/lib/public-session";
+import { normalizeTimeThresholdRules } from "@/lib/time-thresholds";
 import {
   getAccessibleSession,
   getVisibleSessionIds,
@@ -687,22 +689,16 @@ export const getOrganizationMembersData = async (
 };
 
 export const getPublicSessionExperienceData = async (
-  slug: string,
+  sessionId: string,
   participantKey: string,
   detectedOperatingSystem: SessionExperienceData["detectedOperatingSystem"],
 ): Promise<SessionExperienceData> => {
   const supabase = createSupabaseAdminClient();
-  const { data: sessionRow, error: sessionError } = await supabase
-    .from("sessions")
-    .select(sessionColumns)
-    .eq("slug", slug)
-    .single();
+  const session = await getSessionById(sessionId);
 
-  if (sessionError) {
-    throw sessionError;
+  if (!session) {
+    redirect("/");
   }
-
-  const session = sessionRow as Session;
   const [organizationResult, latestSubmissionResult, cohortResult] = await Promise.all([
     getClerkOrganizationSummary(session.organization_id),
     supabase
@@ -732,12 +728,25 @@ export const getPublicSessionExperienceData = async (
   const orgMeta = (organizationResult.publicMetadata ?? {}) as {
     defaultGoodTimeMessage?: string | null;
     defaultExceededTimeMessage?: string | null;
-    sessionMessages?: Record<string, { useCustomMessages?: boolean; goodTimeMessage?: string | null; exceededTimeMessage?: string | null } | undefined>;
+    defaultTimeThresholdRules?: unknown;
+    sessionMessages?: Record<
+      string,
+      | {
+          useCustomMessages?: boolean;
+          goodTimeMessage?: string | null;
+          exceededTimeMessage?: string | null;
+          timeThresholdRules?: unknown;
+        }
+      | undefined
+    >;
   };
   const sessionMeta = orgMeta.sessionMessages?.[session.id];
   const customMessages = sessionMeta?.useCustomMessages
     ? { goodTimeMessage: sessionMeta.goodTimeMessage, exceededTimeMessage: sessionMeta.exceededTimeMessage }
     : { goodTimeMessage: orgMeta.defaultGoodTimeMessage, exceededTimeMessage: orgMeta.defaultExceededTimeMessage };
+  const thresholdRules = sessionMeta?.useCustomMessages
+    ? normalizeTimeThresholdRules(sessionMeta.timeThresholdRules)
+    : normalizeTimeThresholdRules(orgMeta.defaultTimeThresholdRules);
 
   return {
     organization: organizationResult,
@@ -750,7 +759,10 @@ export const getPublicSessionExperienceData = async (
       latestSubmission,
       cohortEntries,
       session.screen_time_limit_minutes,
-      customMessages,
+      {
+        ...customMessages,
+        thresholdRules,
+      },
     ),
   };
 };

@@ -107,9 +107,7 @@ export const getAuthenticatedUser = async (): Promise<AuthenticatedUser> => {
       : user.emailAddresses.find((address) => address.id === user.primaryEmailAddressId) ??
         user.emailAddresses[0];
   const email = normalizeEmail(primaryAddress?.emailAddress);
-  const verificationClaim = getSessionVerificationClaim(
-    sessionClaims as Record<string, unknown> | null | undefined,
-  );
+  const verificationClaim = getSessionVerificationClaim(sessionClaims as Record<string, unknown> | null | undefined);
 
   if (!email) {
     throw new Error("Authenticated Clerk user is missing an e-mail address.");
@@ -118,7 +116,14 @@ export const getAuthenticatedUser = async (): Promise<AuthenticatedUser> => {
   return {
     id: user.id,
     email,
-    displayName: [user.firstName, user.lastName].filter(Boolean).join(" "),
+    displayName:
+      [user.firstName, user.lastName].filter(Boolean).join(" ") || deriveDisplayName({
+        id: user.id,
+        email,
+        displayName: "",
+        createdAt: toIsoString((user as { createdAt?: Date | string | number }).createdAt ?? Date.now()),
+        emailVerified: verificationClaim ?? String(primaryAddress?.verification?.status ?? "") === "verified",
+      }),
     createdAt: toIsoString((user as { createdAt?: Date | string | number }).createdAt ?? Date.now()),
     emailVerified: verificationClaim ?? String(primaryAddress?.verification?.status ?? "") === "verified",
   };
@@ -130,7 +135,7 @@ export const getAuthenticatedAdmin = async (): Promise<{
   membership: Membership;
   memberships: Membership[];
 }> => {
-  const { orgId, orgRole, sessionClaims, userId } = await auth();
+  const { orgId, orgRole, userId } = await auth();
   const user = await getAuthenticatedUser();
   const verificationStatus = getEmailVerificationStatus(user);
 
@@ -148,17 +153,36 @@ export const getAuthenticatedAdmin = async (): Promise<{
     organizationId: orgId,
     limit: 100,
   });
-  const currentMembership = (membershipList.data ?? []).find((item: any) => {
+  type ClerkMembershipRecord = {
+    id: string;
+    role?: string | null;
+    publicUserData?: {
+      userId?: string | null;
+      id?: string | null;
+      identifier?: string | null;
+      emailAddress?: string | null;
+      primaryEmailAddress?: {
+        emailAddress?: string | null;
+      } | null;
+      emailAddresses?: Array<{ emailAddress?: string | null }> | null;
+      firstName?: string | null;
+      lastName?: string | null;
+    } | null;
+    createdAt?: unknown;
+  };
+
+  const membershipRecords = (membershipList.data ?? []) as ClerkMembershipRecord[];
+  const currentMembership = membershipRecords.find((item) => {
     const memberUserId = String(item.publicUserData?.userId ?? item.publicUserData?.id ?? "");
     return memberUserId === userId;
-  }) as any;
+  });
 
   if (!currentMembership) {
     redirect("/auth?error=not-authorized");
   }
 
   const currentRole = mapOrganizationRole(orgRole ?? currentMembership.role);
-  const memberships = (membershipList.data ?? []).map((item: any) => {
+  const memberships = membershipRecords.map((item) => {
     const publicUserData = item.publicUserData ?? {};
     const email = normalizeEmail(
       publicUserData.identifier ??

@@ -3,6 +3,8 @@ import { auth, clerkClient } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 
 import { saveOrganizationSettingsAction } from "@/app/admin/actions";
+import { TimeThresholdRulesEditor } from "@/components/admin/time-threshold-rules-editor";
+import { normalizeTimeThresholdRules } from "@/lib/time-thresholds";
 import type { FlashMessage } from "@/lib/types";
 
 const getFlashMessage = (params: Record<string, string | string[] | undefined>): FlashMessage | null => {
@@ -34,7 +36,9 @@ export default async function OrganizationSettingsPage({
   const meta = (org.publicMetadata ?? {}) as {
     defaultGoodTimeMessage?: string | null;
     defaultExceededTimeMessage?: string | null;
+    defaultTimeThresholdRules?: unknown;
   };
+  const defaultTimeThresholdRules = normalizeTimeThresholdRules(meta.defaultTimeThresholdRules);
 
   return (
     <div className="wf-page">
@@ -87,6 +91,8 @@ export default async function OrganizationSettingsPage({
                 />
               </label>
             </div>
+
+            <TimeThresholdRulesEditor initialRules={defaultTimeThresholdRules} name="defaultTimeThresholdRules" />
 
             <div className="wf-card-actions">
               <button className="wf-btn wf-btn-primary" type="submit">
