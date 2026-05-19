@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { getAuthenticatedAdmin } from "@/lib/admin-auth";
 import type { Database, Json } from "@/lib/database.types";
 import { publicEnv } from "@/lib/env/public";
+import { getNeonPool } from "@/lib/neon";
 import { createSessionId } from "@/lib/session";
 import { getAccessibleSession } from "@/lib/session-access";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -80,22 +81,20 @@ const ensureUniqueSlug = async (source: string) => {
 };
 
 const ensureUniqueSessionId = async () => {
-  const adminClient = createSupabaseAdminClient();
+  const pool = getNeonPool();
 
   for (let attempt = 0; attempt < 20; attempt += 1) {
     const candidateId = createSessionId();
     const shortCode = candidateId.replace(/-/g, "").slice(0, 5).toLowerCase();
-    const { data, error } = await adminClient
-      .from("sessions")
-      .select("id")
-      .ilike("id", `${shortCode}%`)
-      .limit(2);
+    const { rows } = await pool.query<{ id: string }>(
+      `SELECT id
+       FROM public.sessions
+       WHERE id::text ILIKE $1
+       LIMIT 2`,
+      [`${shortCode}%`],
+    );
 
-    if (error) {
-      throw error;
-    }
-
-    if (!((data as Array<{ id: string }> | null) ?? []).length) {
+    if (!rows.length) {
       return candidateId;
     }
   }

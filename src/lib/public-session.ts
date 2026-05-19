@@ -1,5 +1,6 @@
 import "server-only";
 
+import { getNeonPool } from "@/lib/neon";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import type { Session } from "@/lib/types";
 export { buildSessionPublicUrl, buildSessionShortCode, buildSessionShortPath } from "@/lib/public-session-url";
@@ -11,23 +12,15 @@ export const findSessionIdByPrefix = async (prefix: string) => {
     return null;
   }
 
-  const supabase = createSupabaseAdminClient();
-  const { data, error } = await supabase
-    .from<Pick<Session, "id">>("sessions")
-    .select("id, created_at")
-    .ilike("id", `${code}%`)
-    .order("created_at", { ascending: false })
-    .limit(2);
-
-  if (error) {
-    throw error;
-  }
-
-  const rows = Array.isArray(data)
-    ? (data as Array<{ id: string }>)
-    : data
-      ? ([data] as Array<{ id: string }>)
-      : [];
+  const pool = getNeonPool();
+  const { rows } = await pool.query<{ id: string }>(
+    `SELECT id
+     FROM public.sessions
+     WHERE id::text ILIKE $1
+     ORDER BY created_at DESC
+     LIMIT 2`,
+    [`${code}%`],
+  );
 
   return rows[0]?.id ?? null;
 };
