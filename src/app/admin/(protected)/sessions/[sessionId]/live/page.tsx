@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { getAuthenticatedAdmin } from "@/lib/admin-auth";
 import { getSessionWorkspaceSummary } from "@/lib/data";
 import { publicEnv } from "@/lib/env/public";
-import { createLiveDisplayToken, buildLiveDisplayUrl } from "@/lib/live-display-session";
 import { formatMinutes, formatNumber } from "@/lib/format";
 import { buildSessionPublicUrl } from "@/lib/public-session";
 import { escapeHtmlAttribute } from "@/lib/html";
@@ -28,17 +27,8 @@ export default async function SessionLivePage({
   );
   const baseUrl = publicEnv.appUrl.replace(/\/$/, "");
   const liveUrl = `${baseUrl}/live/${sessionId}`;
-  const displayToken = createLiveDisplayToken({
-    sessionId: session.id,
-    organizationId: session.organization_id,
-    userId: user.id,
-    deviceLabel: "Panel organizatora",
-    ipAddress: null,
-    userAgent: null,
-  });
-  const embedUrlString = buildLiveDisplayUrl(baseUrl, sessionId, displayToken);
   const publicUrl = buildSessionPublicUrl(baseUrl, session.id);
-  const iframeCode = `<iframe src="${escapeHtmlAttribute(embedUrlString)}" title="${escapeHtmlAttribute(`${session.name} - widok na żywo`)}" width="1280" height="720" style="border:0;width:100%;height:100%"></iframe>`;
+  const iframeCode = `<iframe src="${escapeHtmlAttribute(liveUrl)}" title="${escapeHtmlAttribute(`${session.name} - widok na zywo`)}" width="1280" height="720" style="border:0;width:100%;height:100%"></iframe>`;
 
   return (
     <div className="wf-page">
@@ -46,7 +36,7 @@ export default async function SessionLivePage({
         <div>
           <div className="wf-badge">Wyniki na żywo</div>
           <h1 className="wf-page-title" style={{ marginTop: 16 }}>{session.name}</h1>
-          <p className="wf-page-subtitle">Podgląd na żywo oraz link do wyświetlania odpowiedzi.</p>
+          <p className="wf-page-subtitle">Podgląd live uruchamia kod autoryzacji, a po potwierdzeniu pokazuje wyniki.</p>
         </div>
 
         <div className="wf-card-actions">
@@ -55,7 +45,7 @@ export default async function SessionLivePage({
               Otwórz podgląd
             </Link>
           </Button>
-          <CopyButton className="wf-btn wf-btn-primary" label="Kopiuj link osadzenia" value={embedUrlString} />
+          <CopyButton className="wf-btn wf-btn-primary" label="Kopiuj link podgladu" value={liveUrl} />
         </div>
       </div>
 
@@ -64,12 +54,12 @@ export default async function SessionLivePage({
           <div className="wf-page-header" style={{ marginBottom: 16 }}>
             <div>
               <h3 style={{ margin: 0 }}>Podgląd na żywo</h3>
-              <p className="wf-table-muted">To dokładnie ten widok, który możesz wyświetlić na ekranie.</p>
+              <p className="wf-table-muted">Na ekranie najpierw pokaże się 6-cyfrowy kod, a po autoryzacji wyniki live.</p>
             </div>
-          </div>
+            </div>
 
             <div className="wf-live-frame-shell">
-              <iframe className="wf-live-frame" src={embedUrlString} title={`${session.name} - widok na żywo`} />
+              <iframe className="wf-live-frame" src={liveUrl} title={`${session.name} - widok na zywo`} />
             </div>
         </article>
 
@@ -80,10 +70,12 @@ export default async function SessionLivePage({
               <label className="wf-field">
                 <span className="wf-field-label">Link do podglądu</span>
                 <input className="wf-input" readOnly type="text" value={liveUrl} />
+                <span className="wf-table-muted">To ten adres otwierasz w Canvie lub na ekranie prezentacji.</span>
               </label>
               <label className="wf-field">
                 <span className="wf-field-label">Gotowy fragment strony</span>
                 <textarea className="wf-textarea wf-code-block" readOnly rows={7} style={{ minHeight: 180 }} value={iframeCode} />
+                <span className="wf-table-muted">Po osadzeniu ekran poprosi o autoryzacje 6-cyfrowym kodem na `/link`.</span>
               </label>
             </div>
 

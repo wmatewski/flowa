@@ -134,6 +134,25 @@ create table if not exists public.activity_log (
   created_at timestamptz not null default timezone('utc', now())
 );
 
+create table if not exists public.live_display_requests (
+  id uuid primary key default gen_random_uuid(),
+  session_id uuid not null references public.sessions (id) on delete cascade,
+  viewer_key text not null,
+  authorization_code text not null,
+  status text not null default 'pending',
+  device_label text,
+  requested_ip inet,
+  approximate_location text,
+  request_user_agent text,
+  requested_at timestamptz not null default timezone('utc', now()),
+  last_seen_at timestamptz not null default timezone('utc', now()),
+  authorized_at timestamptz,
+  authorized_by_user_id text,
+  expires_at timestamptz not null default (timezone('utc', now()) + interval '12 hours'),
+  constraint public_live_display_requests_code_check check (authorization_code ~ '^[0-9]{6}$'),
+  constraint public_live_display_requests_status_check check (status in ('pending', 'authorized', 'revoked', 'expired'))
+);
+
 alter table if exists public.sessions
   alter column organization_id type text using organization_id::text;
 
@@ -166,6 +185,15 @@ create index if not exists public_session_submissions_os_idx
 
 create index if not exists public_activity_log_org_idx
   on public.activity_log (organization_id, created_at desc);
+
+create index if not exists public_live_display_requests_session_viewer_idx
+  on public.live_display_requests (session_id, viewer_key, requested_at desc);
+
+create index if not exists public_live_display_requests_code_idx
+  on public.live_display_requests (authorization_code, requested_at desc);
+
+create index if not exists public_live_display_requests_status_expiry_idx
+  on public.live_display_requests (status, expires_at desc);
 
 create or replace function public.set_updated_at()
 returns trigger

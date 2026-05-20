@@ -1,194 +1,246 @@
 import { auth } from "@clerk/nextjs/server";
+import {
+  ArrowRight,
+  CheckCircle2,
+  Clock3,
+  Globe2,
+  MapPin,
+  MonitorSmartphone,
+  ShieldCheck,
+} from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { pairLiveDisplayAction } from "@/app/link/actions";
-import { CopyButton } from "@/components/session/copy-button";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import {
+  authorizeLiveDisplayRequestAction,
+  lookupLiveDisplayRequestAction,
+} from "@/app/link/actions";
+import { LinkCodeForm } from "@/components/link/link-code-form";
 import { getClerkOrganizationSummary } from "@/lib/clerk-organizations";
-import { getLiveSessionDataById } from "@/lib/data";
-import { publicEnv } from "@/lib/env/public";
-import { buildLiveDisplayUrl, verifyLiveDisplayToken } from "@/lib/live-display-session";
-import { escapeHtmlAttribute } from "@/lib/html";
-import { buildSessionShortCode } from "@/lib/public-session";
+import { getLiveDisplayRequestById } from "@/lib/live-display-request";
+import { getSessionById } from "@/lib/public-session";
+import { getAccessibleSession, normalizeMembershipRole } from "@/lib/session-access";
 import type { FlashMessage } from "@/lib/types";
 
 const getFlashMessage = (params: Record<string, string | string[] | undefined>): FlashMessage | null => {
   if (params.error === "missing-code") {
-    return { type: "error", message: "Podaj kod prezentacji." };
+    return { type: "error", message: "Wpisz pelny 6-cyfrowy kod autoryzacji." };
   }
 
   if (params.error === "invalid-code") {
-    return { type: "error", message: "Nie znaleziono prezentacji dla tego kodu." };
+    return { type: "error", message: "Ten kod wygasl albo nie istnieje." };
   }
 
   if (params.error === "forbidden") {
-    return { type: "error", message: "Nie masz uprawnień do tej prezentacji." };
+    return { type: "error", message: "Nie masz uprawnien do tej prezentacji." };
   }
 
   if (params.error === "not-authorized") {
-    return { type: "error", message: "Nie masz aktywnej organizacji lub uprawnień do podglądu." };
+    return { type: "error", message: "To konto nie ma aktywnej organizacji do autoryzacji live." };
   }
 
-  if (params.error === "invalid-token") {
-    return { type: "error", message: "Wygenerowany link do podglądu jest nieprawidłowy." };
+  if (params.error === "invalid-request") {
+    return { type: "error", message: "To zadanie autoryzacji jest juz nieaktywne." };
   }
 
   return null;
 };
+
+const formatDateTime = (value: string) =>
+  new Date(value).toLocaleString("pl-PL", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+const LinkPageShell = ({
+  children,
+}: {
+  children: React.ReactNode;
+}) => (
+  <div className="wf-link-app-shell">
+    <header className="wf-link-topbar">
+      <div className="wf-link-topbar-brand">Wojticore Flowa</div>
+    </header>
+
+    <main className="wf-link-main">{children}</main>
+
+    <footer className="wf-link-footer">
+      <div className="wf-link-footer-copy">© 2024 Wojticore Flowa. Analytical & Transparent.</div>
+      <nav className="wf-link-footer-links" aria-label="Linki stopki">
+        <Link href="#">Privacy</Link>
+        <Link href="#">Terms</Link>
+        <Link href="#">API Status</Link>
+      </nav>
+    </footer>
+  </div>
+);
 
 export default async function LiveLinkPage({
   searchParams,
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const { userId } = await auth();
   const query = await searchParams;
+  const { userId, orgId, orgRole } = await auth();
 
   if (!userId) {
     redirect("/auth?redirect_url=/link");
   }
 
-  const flash = getFlashMessage(query);
-  const baseUrl = publicEnv.appUrl.replace(/\/$/, "");
-  const displayToken = typeof query.display_token === "string" ? query.display_token : null;
-  const tokenPayload = displayToken ? verifyLiveDisplayToken(displayToken) : null;
-  const pairedSessionId = typeof query.sessionId === "string" ? query.sessionId : tokenPayload?.sessionId ?? null;
-  const isPaired = Boolean(displayToken && tokenPayload && pairedSessionId === tokenPayload.sessionId);
+  if (!orgId) {
+    redirect("/auth?redirect_url=/link");
+  }
 
-  const pairedData = isPaired && pairedSessionId ? await getLiveSessionDataById(pairedSessionId) : null;
-  const organization = pairedData ? await getClerkOrganizationSummary(pairedData.session.organization_id) : null;
-  const liveUrl =
-    pairedData && displayToken ? buildLiveDisplayUrl(baseUrl, pairedData.session.id, displayToken) : "";
-  const iframeCode =
-    pairedData && displayToken
-      ? `<iframe src="${escapeHtmlAttribute(liveUrl)}" title="${escapeHtmlAttribute(`${pairedData.session.name} - widok na żywo`)}" width="1280" height="720" style="border:0;width:100%;height:100%"></iframe>`
-      : "";
+  const flash = getFlashMessage(query);
+  const requestId = typeof query.request === "string" ? query.request : null;
+  const authorizedId = typeof query.authorized === "string" ? query.authorized : null;
+  const currentRequestId = authorizedId ?? requestId;
+  const liveRequest = currentRequestId ? await getLiveDisplayRequestById(currentRequestId) : null;
+
+  if (currentRequestId && !liveRequest) {
+    redirect("/link?error=invalid-request");
+  }
+
+  if (liveRequest) {
+    const accessibleSession = await getAccessibleSession(
+      {
+        organizationId: orgId,
+        role: normalizeMembershipRole(orgRole),
+        userId,
+      },
+      liveRequest.session_id,
+    );
+
+    if (!accessibleSession) {
+      redirect("/link?error=forbidden");
+    }
+  }
+
+  if (authorizedId && liveRequest && liveRequest.status === "authorized") {
+    const session = await getSessionById(liveRequest.session_id);
+
+    return (
+      <LinkPageShell>
+        <section className="wf-link-state-shell wf-link-state-shell-success">
+          <div className="wf-link-success-orb">
+            <CheckCircle2 size={82} strokeWidth={1.8} />
+          </div>
+
+          <h1 className="wf-link-success-title">Urzadzenie autoryzowane pomyslnie</h1>
+
+          <div className="wf-link-success-actions">
+            <Link className="wf-link-primary-button wf-link-primary-link" href={session ? `/admin/sessions/${session.id}/live` : "/admin"}>
+              Przejdz do panelu sterowania
+              <ArrowRight size={18} />
+            </Link>
+          </div>
+        </section>
+      </LinkPageShell>
+    );
+  }
+
+  if (requestId && liveRequest && liveRequest.status === "pending") {
+    const session = await getSessionById(liveRequest.session_id);
+
+    if (!session) {
+      redirect("/link?error=invalid-request");
+    }
+
+    const organization = await getClerkOrganizationSummary(session.organization_id);
+
+    return (
+      <LinkPageShell>
+        <section className="wf-link-card-shell">
+          <article className="wf-link-verification-card">
+            <div className="wf-link-hero-icon">
+              <ShieldCheck size={34} />
+            </div>
+
+            <h1 className="wf-link-card-title">Potwierdz logowanie</h1>
+            <p className="wf-link-card-subtitle">Upewnij sie, ze to Ty probujesz uruchomic widok live.</p>
+
+            <div className="wf-link-presentation-summary">
+              <div className="wf-link-presentation-label">Prezentacja</div>
+              <div className="wf-link-presentation-title">{session.name}</div>
+              <div className="wf-link-presentation-subtitle">{organization.name}</div>
+            </div>
+
+            <div className="wf-link-details-list">
+              <div className="wf-link-details-row">
+                <span className="wf-link-details-label">Godzina</span>
+                <div className="wf-link-details-value">
+                  <Clock3 size={16} />
+                  <span>{formatDateTime(liveRequest.requested_at)}</span>
+                </div>
+              </div>
+
+              <div className="wf-link-details-row">
+                <span className="wf-link-details-label">Miejsce</span>
+                <div className="wf-link-details-value">
+                  <MapPin size={16} />
+                  <span>{liveRequest.approximate_location ?? "Nieznane przyblizone miejsce"}</span>
+                </div>
+              </div>
+
+              <div className="wf-link-details-row">
+                <span className="wf-link-details-label">Adres IP</span>
+                <div className="wf-link-details-value">
+                  <Globe2 size={16} />
+                  <span className="wf-link-mono">{liveRequest.requested_ip ?? "Brak danych"}</span>
+                </div>
+              </div>
+
+              <div className="wf-link-details-row wf-link-details-row-last">
+                <span className="wf-link-details-label">Urzadzenie</span>
+                <div className="wf-link-details-value">
+                  <MonitorSmartphone size={16} />
+                  <span>{liveRequest.device_label ?? "Nieznane urzadzenie"}</span>
+                </div>
+              </div>
+            </div>
+
+            <form action={authorizeLiveDisplayRequestAction} className="wf-link-actions-stack">
+              <input name="requestId" type="hidden" value={liveRequest.id} />
+              <button className="wf-link-primary-button" type="submit">
+                <CheckCircle2 size={18} />
+                Autoryzuj
+              </button>
+            </form>
+
+            <Link className="wf-link-secondary-button" href="/link">
+              Anuluj
+            </Link>
+          </article>
+        </section>
+      </LinkPageShell>
+    );
+  }
+
+  if (authorizedId || requestId) {
+    redirect("/link?error=invalid-request");
+  }
 
   return (
-    <main className="wf-auth-layout">
-      <section className="wf-auth-panel wf-auth-panel-wide">
-        <section className="wf-auth-card wf-auth-link-card">
-          <div className="wf-auth-header">
-            <div className="wf-auth-subtitle">Link</div>
-            <h1>{isPaired ? "Połączone urządzenie" : "Połącz widok live"}</h1>
-            <p className="wf-page-subtitle" style={{ marginTop: 0 }}>
-              {isPaired
-                ? "Masz już aktywny token dla konkretnej prezentacji. Możesz go wkleić do Canvy lub otworzyć bezpośrednio."
-                : "Wpisz kod prezentacji, aby po zalogowaniu uruchomić osobną sesję tylko do podglądu na żywo."}
-            </p>
+    <LinkPageShell>
+      <section className="wf-link-card-shell">
+        <article className="wf-link-entry-card">
+          <div className="wf-link-hero-icon">
+            <MonitorSmartphone size={34} />
           </div>
+
+          <h1 className="wf-link-card-title">Autoryzacja urzadzenia</h1>
+          <p className="wf-link-card-subtitle">Wpisz kod wyswietlony na ekranie glownym prezentacji</p>
 
           {flash ? <div className={`wf-flash ${flash.type}`}>{flash.message}</div> : null}
 
-          {isPaired && pairedData && tokenPayload && organization ? (
-            <div className="wf-live-links-grid">
-              <article className="wf-panel-card">
-                <h3>Sesja podglądu</h3>
-                <div className="wf-member-list" style={{ marginTop: 16 }}>
-                  <div className="wf-member-row">
-                    <span>Organizacja</span>
-                    <strong>{organization.name}</strong>
-                  </div>
-                  <div className="wf-member-row">
-                    <span>Prezentacja</span>
-                    <strong>{pairedData.session.name}</strong>
-                  </div>
-                  <div className="wf-member-row">
-                    <span>Kod</span>
-                    <strong>{buildSessionShortCode(pairedData.session.id)}</strong>
-                  </div>
-                  <div className="wf-member-row">
-                    <span>Urządzenie</span>
-                    <strong style={{ textAlign: "right" }}>{tokenPayload.deviceLabel}</strong>
-                  </div>
-                  <div className="wf-member-row">
-                    <span>Adres IP</span>
-                    <strong style={{ textAlign: "right" }}>{tokenPayload.ipAddress ?? "Brak danych"}</strong>
-                  </div>
-                  <div className="wf-member-row">
-                    <span>Ważny do</span>
-                    <strong style={{ textAlign: "right" }}>{new Date(tokenPayload.expiresAt).toLocaleString("pl-PL")}</strong>
-                  </div>
-                </div>
-              </article>
-
-              <article className="wf-panel-card">
-                <h3>Widok osadzony</h3>
-                <div className="wf-live-frame-shell" style={{ marginTop: 16 }}>
-                  <iframe
-                    className="wf-live-frame"
-                    src={liveUrl}
-                    title={`${pairedData.session.name} - widok na żywo`}
-                  />
-                </div>
-              </article>
-
-              <article className="wf-panel-card wf-live-links-card" style={{ gridColumn: "1 / -1" }}>
-                <h3>Kod do Canvy</h3>
-                <div className="wf-form-stack" style={{ marginTop: 16 }}>
-                  <label className="wf-field">
-                    <span className="wf-field-label">Link do podglądu</span>
-                    <Input readOnly type="text" value={liveUrl} />
-                  </label>
-                  <label className="wf-field">
-                    <span className="wf-field-label">Gotowy fragment iframe</span>
-                    <Textarea className="wf-code-block" readOnly rows={7} style={{ minHeight: 180 }} value={iframeCode} />
-                  </label>
-                </div>
-
-                <div className="wf-card-actions" style={{ marginTop: 16 }}>
-                  <CopyButton className="wf-btn wf-btn-secondary" label="Kopiuj link" value={liveUrl} />
-                  <CopyButton className="wf-btn wf-btn-primary" label="Kopiuj fragment" value={iframeCode} />
-                </div>
-              </article>
-            </div>
-          ) : (
-            <div className="wf-auth-stage">
-              <form className="wf-form-stack wf-auth-form wf-auth-stage-panel" action={pairLiveDisplayAction}>
-                <label className="wf-field">
-                  <span className="wf-field-label">Kod prezentacji</span>
-                  <Input autoComplete="off" autoFocus name="code" placeholder="np. abc12" type="text" />
-                </label>
-
-                <Button className="wf-btn wf-btn-primary wf-btn-block" type="submit">
-                  Połącz widok
-                </Button>
-              </form>
-
-              <div className="wf-panel-card">
-                <h3>Jak to działa</h3>
-                <div className="wf-member-list" style={{ marginTop: 16 }}>
-                  <div className="wf-member-row">
-                    <span>1. Zaloguj się</span>
-                    <strong>Potrzebujesz dostępu do organizacji.</strong>
-                  </div>
-                  <div className="wf-member-row">
-                    <span>2. Wpisz kod</span>
-                    <strong>Każda prezentacja ma swój krótki kod.</strong>
-                  </div>
-                  <div className="wf-member-row">
-                    <span>3. Skopiuj iframe</span>
-                    <strong>Wklej gotowy link do Canvy lub innego embedera.</strong>
-                  </div>
-                </div>
-              </div>
-
-              <div className="wf-panel-card">
-                <h3>Powrót</h3>
-                <p className="wf-table-muted" style={{ marginBottom: 16 }}>
-                  Jeśli chcesz tylko podejrzeć publiczny ekran bez logowania, otwórz stronę live danej prezentacji.
-                </p>
-                <Link className="wf-link-button" href="/">
-                  Wróć na stronę główną
-                </Link>
-              </div>
-            </div>
-          )}
-        </section>
+          <form action={lookupLiveDisplayRequestAction} className="wf-link-entry-form">
+            <LinkCodeForm actionLabel="Dalej" />
+          </form>
+        </article>
       </section>
-    </main>
+    </LinkPageShell>
   );
 }

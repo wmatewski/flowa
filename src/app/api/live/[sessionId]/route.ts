@@ -1,8 +1,12 @@
+import { auth } from "@clerk/nextjs/server";
+import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 import { getAuthenticatedAdmin } from "@/lib/admin-auth";
 import { getLiveSessionDataById, getLiveSessionDataForAccess } from "@/lib/data";
-import { resolveLiveSessionAccess } from "@/lib/live-session-access";
+import { publicEnv } from "@/lib/env/public";
+import { getAuthorizedLiveDisplayRequestForViewer } from "@/lib/live-display-request";
+import { getAccessibleSession, normalizeMembershipRole } from "@/lib/session-access";
 
 export async function GET(
   _request: Request,
@@ -10,29 +14,52 @@ export async function GET(
 ) {
   try {
     const { sessionId } = await params;
-    const url = new URL(_request.url);
-    const displayToken = url.searchParams.get("display_token");
-    const access = await resolveLiveSessionAccess(sessionId, displayToken);
+    const { userId, orgId, orgRole } = await auth();
 
-    if (!access) {
+    if (userId && orgId) {
+      const accessibleSession = await getAccessibleSession(
+        {
+          organizationId: orgId,
+          role: normalizeMembershipRole(orgRole),
+          userId,
+        },
+        sessionId,
+      );
+
+      if (accessibleSession) {
+        const { organization, membership, user } = await getAuthenticatedAdmin();
+        const data = await getLiveSessionDataForAccess(
+          {
+            organizationId: organization.id,
+            membershipId: membership.id,
+            role: membership.role,
+            userId: user.id,
+          },
+          sessionId,
+        );
+
+        return NextResponse.json({
+          participantCount: data.overview?.participant_count ?? data.entries.length,
+          averageMinutes: data.overview?.average_minutes ?? null,
+          entries: data.entries,
+        });
+      }
+    }
+
+    const cookieStore = await cookies();
+    const viewerKey = cookieStore.get(publicEnv.sessionCookieName)?.value ?? null;
+
+    if (!viewerKey) {
       return NextResponse.json({ error: "not-found" }, { status: 404 });
     }
 
-    const data =
-      access.source === "display"
-        ? await getLiveSessionDataById(sessionId)
-        : await (async () => {
-            const { organization, membership, user } = await getAuthenticatedAdmin();
-            return getLiveSessionDataForAccess(
-              {
-                organizationId: organization.id,
-                membershipId: membership.id,
-                role: membership.role,
-                userId: user.id,
-              },
-              sessionId,
-            );
-          })();
+    const authorizedRequest = await getAuthorizedLiveDisplayRequestForViewer(sessionId, viewerKey);
+
+    if (!authorizedRequest) {
+      return NextResponse.json({ error: "not-found" }, { status: 404 });
+    }
+
+    const data = await getLiveSessionDataById(sessionId);
 
     return NextResponse.json({
       participantCount: data.overview?.participant_count ?? data.entries.length,

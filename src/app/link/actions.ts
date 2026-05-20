@@ -1,16 +1,21 @@
 "use server";
 
 import { auth } from "@clerk/nextjs/server";
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
-import { createLiveDisplayToken } from "@/lib/live-display-session";
-import { getClientIp } from "@/lib/request";
-import { detectOperatingSystem, getOperatingSystemConfig } from "@/lib/os";
-import { findSessionIdByShortCode, getSessionById } from "@/lib/public-session";
+import {
+  authorizeLiveDisplayRequest,
+  getLiveDisplayRequestById,
+  getPendingLiveDisplayRequestByCode,
+} from "@/lib/live-display-request";
 import { getAccessibleSession, normalizeMembershipRole } from "@/lib/session-access";
 
-export const pairLiveDisplayAction = async (formData: FormData) => {
+const normalizeCode = (value: FormDataEntryValue | null) =>
+  String(value ?? "")
+    .replace(/\D/g, "")
+    .slice(0, 6);
+
+const ensureSessionAccess = async (sessionId: string) => {
   const { userId, orgId, orgRole } = await auth();
 
   if (!userId) {
@@ -19,18 +24,6 @@ export const pairLiveDisplayAction = async (formData: FormData) => {
 
   if (!orgId) {
     redirect("/link?error=not-authorized");
-  }
-
-  const code = String(formData.get("code") ?? "").trim().toLowerCase();
-
-  if (!code) {
-    redirect("/link?error=missing-code");
-  }
-
-  const sessionId = (await findSessionIdByShortCode(code)) ?? null;
-
-  if (!sessionId) {
-    redirect("/link?error=invalid-code");
   }
 
   const accessibleSession = await getAccessibleSession(
@@ -46,29 +39,45 @@ export const pairLiveDisplayAction = async (formData: FormData) => {
     redirect("/link?error=forbidden");
   }
 
-  const session = await getSessionById(sessionId);
+  return { userId, orgId };
+};
 
-  if (!session) {
+export const lookupLiveDisplayRequestAction = async (formData: FormData) => {
+  const code = normalizeCode(formData.get("code"));
+
+  if (code.length !== 6) {
+    redirect("/link?error=missing-code");
+  }
+
+  const liveRequest = await getPendingLiveDisplayRequestByCode(code);
+
+  if (!liveRequest) {
     redirect("/link?error=invalid-code");
   }
 
-  const headerStore = await headers();
-  const userAgent = headerStore.get("user-agent");
-  const operatingSystem = detectOperatingSystem(userAgent);
-  const deviceLabel = getOperatingSystemConfig(operatingSystem).shortLabel;
-  const displayToken = createLiveDisplayToken({
-    sessionId: session.id,
-    organizationId: session.organization_id,
-    userId,
-    deviceLabel,
-    ipAddress: getClientIp(headerStore),
-    userAgent,
-  });
+  await ensureSessionAccess(liveRequest.session_id);
+  redirect(`/link?request=${liveRequest.id}`);
+};
 
-  const query = new URLSearchParams();
-  query.set("sessionId", session.id);
-  query.set("display_token", displayToken);
-  query.set("paired", "1");
+export const authorizeLiveDisplayRequestAction = async (formData: FormData) => {
+  const requestId = String(formData.get("requestId") ?? "").trim();
 
-  redirect(`/link?${query.toString()}`);
+  if (!requestId) {
+    redirect("/link?error=invalid-request");
+  }
+
+  const liveRequest = await getLiveDisplayRequestById(requestId);
+
+  if (!liveRequest || liveRequest.status !== "pending") {
+    redirect("/link?error=invalid-request");
+  }
+
+  const { userId } = await ensureSessionAccess(liveRequest.session_id);
+  const authorizedRequest = await authorizeLiveDisplayRequest(requestId, userId);
+
+  if (!authorizedRequest) {
+    redirect("/link?error=invalid-request");
+  }
+
+  redirect(`/link?authorized=${authorizedRequest.id}`);
 };
