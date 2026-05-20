@@ -6,6 +6,7 @@ import QRCode from "qrcode";
 import { notFound } from "next/navigation";
 
 import { LiveAuthorizationScreen } from "@/components/live/live-authorization-screen";
+import { LivePageAutoRefresh } from "@/components/live/live-page-auto-refresh";
 import { LiveAverageCard } from "@/components/session/live-average-card";
 import { FullscreenButton } from "@/components/session/fullscreen-button";
 import { LiveResultsTable } from "@/components/session/live-results-table";
@@ -46,6 +47,7 @@ const renderLiveResults = async (input: {
 
   return (
     <main className="wf-live-results-page">
+      <LivePageAutoRefresh />
       <FullscreenButton />
       <div className="wf-live-results-shell">
         <header className="wf-live-results-header">

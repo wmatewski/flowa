@@ -1,7 +1,6 @@
 import { cookies, headers } from "next/headers";
-import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowRight, CheckCircle2 } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 
 import { SessionEntryState } from "@/components/user/session-entry-state";
 import {
@@ -46,14 +45,6 @@ export default async function PublicSessionSubmittedPage({
     <>
       <SessionEntryState mode="reset" sessionId={sessionId} />
       <PublicSurveyShell
-        actions={
-          <div className="wf-survey-success-actions">
-            <Link className="wf-survey-action wf-survey-action-primary" href="/">
-              <span>Zakoncz</span>
-              <ArrowRight size={18} />
-            </Link>
-          </div>
-        }
         description="Ostatni krok pokazuje tylko potwierdzenie i komunikat z ustawien sesji lub organizacji."
         organizationName={data.organization.name}
         sidebarDescription={`Ankieta "${data.session.name}" zostala zakonczona. Wynik jest juz zapisany i gotowy do analizy.`}
