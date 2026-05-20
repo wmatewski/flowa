@@ -39,16 +39,16 @@ export default async function SessionLivePage({
         <div>
           <div className="wf-badge">Wyniki na żywo</div>
           <h1 className="wf-page-title" style={{ marginTop: 16 }}>{session.name}</h1>
-          <p className="wf-page-subtitle">Widok prezentacyjny oraz gotowy link embed do wyświetlania napływających odpowiedzi.</p>
+          <p className="wf-page-subtitle">Podgląd na żywo oraz link do wyświetlania odpowiedzi.</p>
         </div>
 
         <div className="wf-card-actions">
           <Button asChild variant="secondary">
             <Link href={`/live/${sessionId}`} target="_blank" rel="noopener noreferrer">
-              Otwórz widok na żywo
+              Otwórz podgląd
             </Link>
           </Button>
-          <CopyButton className="wf-btn wf-btn-primary" label="Kopiuj URL embed" value={embedUrlString} />
+          <CopyButton className="wf-btn wf-btn-primary" label="Kopiuj link podglądu" value={embedUrlString} />
         </div>
       </div>
 
@@ -56,8 +56,8 @@ export default async function SessionLivePage({
         <article className="wf-panel-card">
           <div className="wf-page-header" style={{ marginBottom: 16 }}>
             <div>
-              <h3 style={{ margin: 0 }}>Podgląd embeda</h3>
-              <p className="wf-table-muted">To dokładnie ten widok, który możesz osadzić w prezentacji.</p>
+              <h3 style={{ margin: 0 }}>Podgląd na żywo</h3>
+              <p className="wf-table-muted">To dokładnie ten widok, który możesz wyświetlić na ekranie.</p>
             </div>
           </div>
 
@@ -68,29 +68,29 @@ export default async function SessionLivePage({
 
         <aside className="wf-panel-grid" style={{ gridTemplateColumns: "1fr" }}>
           <article className="wf-panel-card">
-            <h3>Linki i kod embed</h3>
+            <h3>Udostępnianie</h3>
             <div className="wf-form-stack" style={{ marginTop: 16 }}>
               <label className="wf-field">
-                <span className="wf-field-label">Publiczny link live</span>
+                <span className="wf-field-label">Link do podglądu</span>
                 <input className="wf-input" readOnly type="text" value={liveUrl} />
               </label>
               <label className="wf-field">
-                <span className="wf-field-label">Kod do osadzenia</span>
+                <span className="wf-field-label">Gotowy fragment strony</span>
                 <textarea className="wf-textarea wf-code-block" readOnly rows={7} style={{ minHeight: 180 }} value={iframeCode} />
               </label>
             </div>
 
             <div className="wf-card-actions" style={{ marginTop: 16 }}>
-              <CopyButton className="wf-btn wf-btn-secondary" label="Kopiuj link live" value={liveUrl} />
-              <CopyButton className="wf-btn wf-btn-primary" label="Kopiuj iframe" value={iframeCode} />
+              <CopyButton className="wf-btn wf-btn-secondary" label="Kopiuj link" value={liveUrl} />
+              <CopyButton className="wf-btn wf-btn-primary" label="Kopiuj fragment" value={iframeCode} />
             </div>
           </article>
 
           <article className="wf-panel-card">
-            <h3>Stan widoku</h3>
+            <h3>Podsumowanie</h3>
             <div className="wf-member-list">
               <div className="wf-member-row">
-                <span>Odpowiedzi</span>
+                <span>Liczba odpowiedzi</span>
                 <strong>{formatNumber(overview?.participant_count)}</strong>
               </div>
               <div className="wf-member-row">

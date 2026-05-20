@@ -90,7 +90,7 @@ export default async function SessionSettingsPage({
         <div>
           <div className="wf-badge">Ustawienia sesji</div>
           <h1 className="wf-page-title" style={{ marginTop: 16 }}>{data.session.name}</h1>
-          <p className="wf-page-subtitle">Skonfiguruj parametry ankiety, limity odpowiedzi i zachowaj aktualny dostęp zespołu.</p>
+          <p className="wf-page-subtitle">Skonfiguruj ankietę, komunikaty i dostęp w jednym miejscu.</p>
         </div>
 
         <div className="wf-card-actions">
@@ -110,7 +110,7 @@ export default async function SessionSettingsPage({
             </div>
             <div>
               <h2>Podsumowanie</h2>
-              <p>Najważniejsze informacje o ankiecie i szybkie skróty do udostępniania.</p>
+            <p>Najważniejsze informacje o ankiecie i skróty do udostępniania.</p>
             </div>
           </div>
 
@@ -131,13 +131,13 @@ export default async function SessionSettingsPage({
           </label>
 
           <label className="wf-field">
-            <span className="wf-field-label">Widok live</span>
+            <span className="wf-field-label">Link do widoku</span>
             <Input readOnly type="text" value={liveUrl} />
           </label>
 
           <div className="wf-card-actions">
-            <CopyButton className="wf-btn wf-btn-secondary" label="Kopiuj krótki link" value={publicUrl} />
-            <CopyButton className="wf-btn wf-btn-secondary" label="Kopiuj live" value={liveUrl} />
+            <CopyButton className="wf-btn wf-btn-secondary" label="Kopiuj link" value={publicUrl} />
+            <CopyButton className="wf-btn wf-btn-secondary" label="Kopiuj widok" value={liveUrl} />
           </div>
         </article>
 
@@ -148,12 +148,12 @@ export default async function SessionSettingsPage({
             </div>
             <div>
               <h2>Dostęp zespołu</h2>
-              <p>Dostęp do ankiet i zaproszenia są zarządzane wspólnie dla całego zespołu.</p>
+              <p>Dostęp do ankiet i zaproszeń jest zarządzany wspólnie dla całego zespołu.</p>
             </div>
           </div>
 
           <p className="wf-empty">
-            Ta ankieta korzysta z członków aktywnego zespołu, bez lokalnej listy przypisań.
+            Do tej ankiety mają dostęp tylko osoby z Twojego zespołu.
           </p>
 
           <div className="wf-card-actions">
@@ -199,8 +199,8 @@ export default async function SessionSettingsPage({
                 <Link2 size={22} />
               </div>
               <div>
-                <h2>Reguły odpowiedzi</h2>
-                <p>To ustawienia, które wpływają na przebieg formularza uczestnika i sposób interpretacji wyniku.</p>
+                <h2>Jak działa ankieta</h2>
+                <p>To ustawienia, które wpływają na przebieg formularza i sposób interpretacji wyniku.</p>
               </div>
             </div>
 
@@ -213,7 +213,7 @@ export default async function SessionSettingsPage({
               <label className="wf-field">
                 <span className="wf-field-label">Stały wiek</span>
                 <Input defaultValue={String(data.session.fixed_age ?? 18)} min="1" name="fixedAge" type="number" />
-                <span className="wf-table-muted">Wartość jest używana tylko wtedy, gdy wybierzesz stały wiek dla całej sesji.</span>
+                <span className="wf-table-muted">Wartość jest używana tylko wtedy, gdy wybierzesz stały wiek dla całej ankiety.</span>
               </label>
             </div>
 
@@ -268,7 +268,7 @@ export default async function SessionSettingsPage({
                 <div className="wf-settings-radio-top">
                   <input defaultChecked={!useCustomMessages} name="useCustomMessages" type="radio" value="0" />
                   <div>
-                    <strong>Domyślne z ustawień konta</strong>
+                    <strong>Domyślne z ustawień organizacji</strong>
                     <p className="wf-table-muted">Używaj komunikatów ustawionych globalnie dla organizacji.</p>
                   </div>
                 </div>
@@ -332,11 +332,11 @@ export default async function SessionSettingsPage({
               <button className="wf-btn wf-btn-primary" type="submit">
                 Zapisz komunikaty
               </button>
-              <Link className="wf-btn wf-btn-secondary" href="/admin/settings">
-                Edytuj domyślne
-              </Link>
-            </div>
-          </section>
+                <Link className="wf-btn wf-btn-secondary" href="/admin/settings">
+                  Edytuj ustawienia organizacji
+                </Link>
+              </div>
+            </section>
         </form>
       </div>
     </div>

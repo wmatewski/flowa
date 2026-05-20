@@ -25,7 +25,7 @@ export const SlugEditor = ({ currentSlug, sessionName }: SlugEditorProps) => {
       <input name="slug" type="hidden" value={editing ? slugValue : currentSlug} />
       <div className="wf-slug-display">
         <span className="wf-table-muted" style={{ fontSize: 13 }}>
-          Slug sesji dla {sessionName}:{" "}
+          Adres sesji dla {sessionName}:{" "}
           <strong style={{ color: "var(--text)", fontFamily: "monospace" }}>{editing ? slugValue : currentSlug}</strong>
         </span>
         {!editing ? (
@@ -52,7 +52,7 @@ export const SlugEditor = ({ currentSlug, sessionName }: SlugEditorProps) => {
       </div>
       {editing ? (
         <div className="wf-field" style={{ marginTop: 8 }}>
-          <span className="wf-field-label">Slug techniczny (tylko a-z, 0-9, myślniki)</span>
+          <span className="wf-field-label">Adres sesji (tylko a-z, 0-9 i myślniki)</span>
           <input
             className="wf-input"
             name="_slugInput"
@@ -63,7 +63,7 @@ export const SlugEditor = ({ currentSlug, sessionName }: SlugEditorProps) => {
             value={slugValue}
           />
           <span className="wf-table-muted" style={{ fontSize: 12 }}>
-            Wykorzystanie wewnętrzne: {slugValue || "..."}
+            Zobaczysz tu skróconą nazwę sesji: {slugValue || "..."}
           </span>
         </div>
       ) : null}

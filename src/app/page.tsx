@@ -153,9 +153,9 @@ export default async function HomePage() {
                 <div className="wf-feature-icon">
                   <Code2 size={24} />
                 </div>
-                <h3>Łatwa integracja</h3>
+                <h3>Łatwe udostępnianie</h3>
                 <p>
-                  QR, embed i publiczny link umożliwiają szybkie wdrożenie bez dodatkowej konfiguracji po stronie uczestnika.
+                  QR i link uczestnika umożliwiają szybkie wdrożenie bez dodatkowej konfiguracji po stronie uczestnika.
                 </p>
               </article>
             </div>

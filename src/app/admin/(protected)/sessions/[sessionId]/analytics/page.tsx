@@ -10,6 +10,7 @@ import { getSessionStatisticsData } from "@/lib/data";
 import { formatDateTime, formatDateTimeWithSeconds, formatMinutes, formatNumber } from "@/lib/format";
 import { publicEnv } from "@/lib/env/public";
 import { buildSessionPublicUrl } from "@/lib/public-session";
+import { detectOperatingSystem } from "@/lib/os";
 
 const operatingSystemLabels = {
   android: "Android",
@@ -22,17 +23,6 @@ const operatingSystemLabels = {
 
 const formatDetailValue = (value: string | number | null | undefined) =>
   value == null || value === "" ? "Brak danych" : String(value);
-
-const hasValidDateTime = (value: string | null | undefined) => {
-  if (!value) {
-    return false;
-  }
-
-  return !Number.isNaN(new Date(value).getTime());
-};
-
-const getEntryDateLabel = (value: string | null | undefined) =>
-  hasValidDateTime(value) ? "Data wejścia" : "Data wejścia (wg czasu zapisu)";
 
 const createParticipantHref = (
   sessionId: string,
@@ -108,7 +98,7 @@ export default async function SessionAnalyticsPage({
         <div>
           <div className="wf-badge">Analityka ankiety</div>
           <h1 className="wf-page-title" style={{ marginTop: 16 }}>{data.session.name}</h1>
-          <p className="wf-page-subtitle">Szczegółowa analiza czasu przed ekranem, wieku i poziomu skupienia uczestników.</p>
+          <p className="wf-page-subtitle">Przegląd odpowiedzi i najważniejszych szczegółów uczestników.</p>
         </div>
 
         <div className="wf-card-actions">
@@ -140,7 +130,7 @@ export default async function SessionAnalyticsPage({
 
       <section className="wf-stats-grid" style={{ marginBottom: 24 }}>
         <article className="wf-chart-card wf-surface-card">
-          <h3>Średni czas dla grup wiekowych</h3>
+          <h3>Średni czas według wieku</h3>
           <div className="wf-bars" style={{ marginTop: 28 }}>
             {data.ageStatistics.length ? (
               data.ageStatistics.map((stat) => (
@@ -189,8 +179,8 @@ export default async function SessionAnalyticsPage({
         <article className="wf-table-card">
           <div className="wf-page-header" style={{ marginBottom: 16 }}>
             <div>
-              <h3 style={{ margin: 0 }}>Uczestnicy</h3>
-              <p className="wf-table-muted">Lista wyników i możliwość szybkiego filtrowania odpowiedzi.</p>
+              <h3 style={{ margin: 0 }}>Wyniki uczestników</h3>
+              <p className="wf-table-muted">Lista odpowiedzi z możliwością szybkiego filtrowania.</p>
             </div>
           </div>
 
@@ -205,7 +195,7 @@ export default async function SessionAnalyticsPage({
             <span>Uczestnik</span>
             <span>Wiek</span>
             <span>Czas</span>
-            <span>Status</span>
+            <span>Ocena</span>
             <span>Przesłano</span>
           </div>
 
@@ -237,8 +227,8 @@ export default async function SessionAnalyticsPage({
 
         <aside className="wf-panel-grid" style={{ gridTemplateColumns: "1fr" }}>
           <article className="wf-panel-card">
-            <h3>Link uczestnika</h3>
-            <p>Udostępnij uczestnikom publiczny adres do rejestracji czasu przed ekranem.</p>
+            <h3>Link do ankiety</h3>
+            <p>Udostępnij uczestnikom publiczny link do formularza.</p>
             <div className="wf-field" style={{ marginTop: 16 }}>
               <input className="wf-input" readOnly type="text" value={publicUrl} />
             </div>
@@ -257,7 +247,7 @@ export default async function SessionAnalyticsPage({
             <div className="wf-page-header" style={{ marginBottom: 16 }}>
               <div>
                 <h3 id="participant-details-title" style={{ margin: 0 }}>Szczegóły uczestnika</h3>
-                <p className="wf-table-muted">Pełny zapis danych odpowiedzi i sesji.</p>
+                <p className="wf-table-muted">Dane zapisane dla tej odpowiedzi.</p>
               </div>
               <div className="wf-card-actions">
                 <span className={`wf-status-chip ${selectedParticipant.statusTone}`}>{selectedParticipant.statusLabel}</span>
@@ -277,21 +267,26 @@ export default async function SessionAnalyticsPage({
                   <strong>{selectedParticipant.label}</strong>
                 </div>
                 <div className="wf-member-row">
-                  <span>{getEntryDateLabel(selectedParticipant.enteredAt)}</span>
+                  <span>Godzina wejścia</span>
                   <strong>{formatDateTimeWithSeconds(selectedParticipant.enteredAt)}</strong>
                 </div>
                 <div className="wf-member-row">
-                  <span>Data zatwierdzenia wyniku</span>
+                  <span>Godzina zatwierdzenia</span>
                   <strong>{formatDateTimeWithSeconds(selectedParticipant.submittedAt)}</strong>
                 </div>
                 <div className="wf-member-row">
-                  <span>System</span>
+                  <span>Adres IP</span>
                   <strong>
-                    {formatDetailValue(
-                      selectedParticipant.clientMetadata?.operatingSystemLabel ??
-                        operatingSystemLabels[selectedParticipant.detectedOperatingSystem],
-                    )}
+                    {formatDetailValue(selectedParticipant.ipAddress)}
                   </strong>
+                </div>
+                <div className="wf-member-row">
+                  <span>System operacyjny wybrany</span>
+                  <strong>{formatDetailValue(operatingSystemLabels[selectedParticipant.detectedOperatingSystem])}</strong>
+                </div>
+                <div className="wf-member-row">
+                  <span>System operacyjny wykryty</span>
+                  <strong>{formatDetailValue(operatingSystemLabels[detectOperatingSystem(selectedParticipant.userAgent)])}</strong>
                 </div>
                 <div className="wf-member-row">
                   <span>Czas przed ekranem</span>

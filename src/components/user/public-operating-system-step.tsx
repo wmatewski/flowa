@@ -25,12 +25,10 @@ export const PublicOperatingSystemStep = ({
   sessionId,
   showBackLink = true,
 }: PublicOperatingSystemStepProps) => {
-  const isMobileSession = initialOperatingSystem === "android" || initialOperatingSystem === "ios";
-  const availableSystems = isMobileSession
-    ? (["ios", "android"] as const)
-    : operatingSystemOrder;
   const initialSelection: OperatingSystem =
-    isMobileSession && initialOperatingSystem !== "android" ? "ios" : initialOperatingSystem;
+    initialOperatingSystem === "android" || initialOperatingSystem === "ios"
+      ? initialOperatingSystem
+      : "ios";
   const [operatingSystem, setOperatingSystem] = useState<OperatingSystem>(initialSelection);
   const config = getOperatingSystemConfig(operatingSystem);
   const nextHref = `/ankieta/${sessionId}/time?age=${age}&os=${operatingSystem}`;
@@ -51,8 +49,8 @@ export const PublicOperatingSystemStep = ({
           <CardDescription>Wybór zmienia instrukcję poniżej bez przeładowania strony.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-5">
-          <div className="wf-os-list" role="radiogroup" aria-label="Wybór systemu urządzenia">
-            {availableSystems.map((candidate) => {
+          <div className="wf-os-list wf-os-list-desktop" role="radiogroup" aria-label="Wybór systemu urządzenia">
+            {operatingSystemOrder.map((candidate) => {
               const candidateConfig = getOperatingSystemConfig(candidate);
               const isActive = candidate === operatingSystem;
 
@@ -74,6 +72,25 @@ export const PublicOperatingSystemStep = ({
               );
             })}
           </div>
+
+          <label className="wf-field wf-os-picker-mobile">
+            <span className="wf-field-label">System urządzenia</span>
+            <select
+              className="wf-select wf-os-select"
+              value={operatingSystem}
+              onChange={(event) => setOperatingSystem(event.target.value as OperatingSystem)}
+            >
+              {["ios", "android"].map((candidate) => {
+                const candidateConfig = getOperatingSystemConfig(candidate as OperatingSystem);
+
+                return (
+                  <option key={candidate} value={candidate}>
+                    {candidateConfig.label}
+                  </option>
+                );
+              })}
+            </select>
+          </label>
 
           <div className="wf-step-note" style={{ marginBottom: 0 }}>
             <div className="wf-inline-meta" style={{ color: "var(--text)", fontWeight: 700 }}>

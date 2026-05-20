@@ -29,7 +29,6 @@ export default async function SessionOverviewPage({
   const baseUrl = publicEnv.appUrl.replace(/\/$/, "");
   const publicUrl = buildSessionPublicUrl(baseUrl, data.session.id);
   const liveUrl = `${baseUrl}/live/${sessionId}`;
-  const embedUrl = `${liveUrl}?embed=1`;
   const qrCodeDataUrl = await (await import("qrcode")).toDataURL(publicUrl, {
     margin: 1,
     width: 448,
@@ -50,7 +49,7 @@ export default async function SessionOverviewPage({
           <div className="wf-badge">Przegląd ankiety</div>
           <h1 className="wf-page-title" style={{ marginTop: 16 }}>{data.session.name}</h1>
           <p className="wf-page-subtitle">
-            Szybki podgląd linków, QR kodu i najnowszych odpowiedzi bez opuszczania panelu ankiety.
+            Szybki podgląd odpowiedzi, QR kodu i podglądu na żywo.
           </p>
         </div>
 
@@ -64,7 +63,7 @@ export default async function SessionOverviewPage({
           <Button asChild>
             <Link href={`/admin/sessions/${sessionId}/live`}>
               <Radio size={18} />
-              Widok na żywo
+              Podgląd na żywo
             </Link>
           </Button>
         </div>
@@ -91,17 +90,16 @@ export default async function SessionOverviewPage({
           <article className="wf-panel-card wf-live-overview-card">
             <div className="wf-page-header" style={{ marginBottom: 16 }}>
               <div>
-                <h3 style={{ margin: 0 }}>Prezentacja wyników</h3>
-                <p className="wf-table-muted">Przełącz się do widoku na żywo lub osadź go w prezentacji.</p>
+                <h3 style={{ margin: 0 }}>Podgląd na żywo</h3>
+                <p className="wf-table-muted">Przejdź do podglądu albo skopiuj link dla uczestników.</p>
               </div>
-              <div className="wf-pill wf-pill-soft">Embed ready</div>
+              <div className="wf-pill wf-pill-soft">Gotowe</div>
             </div>
 
             <div className="wf-card-actions">
               <Button asChild>
-                <Link href={`/admin/sessions/${sessionId}/live`}>Otwórz widok na żywo</Link>
+                <Link href={`/admin/sessions/${sessionId}/live`}>Otwórz podgląd</Link>
               </Button>
-              <CopyButton className="wf-btn wf-btn-secondary" label="Kopiuj link embed" value={embedUrl} />
               <CopyButton className="wf-btn wf-btn-secondary" label="Kopiuj link uczestnika" value={publicUrl} />
             </div>
           </article>
@@ -109,8 +107,8 @@ export default async function SessionOverviewPage({
           <article className="wf-table-card">
             <div className="wf-page-header" style={{ marginBottom: 16 }}>
               <div>
-                <h3 style={{ margin: 0 }}>Ostatnie odpowiedzi</h3>
-                <p className="wf-table-muted">Najnowsze wpisy uczestników w tej ankiecie.</p>
+              <h3 style={{ margin: 0 }}>Najnowsze odpowiedzi</h3>
+              <p className="wf-table-muted">Najświeższe wpisy uczestników w tej ankiecie.</p>
               </div>
             </div>
 
@@ -118,7 +116,7 @@ export default async function SessionOverviewPage({
               <span>Czas wpisu</span>
               <span>Wiek</span>
               <span>Czas przed ekranem</span>
-              <span>Status</span>
+              <span>Ocena</span>
             </div>
 
             <div>
@@ -148,8 +146,8 @@ export default async function SessionOverviewPage({
           <article className="wf-panel-card wf-qr-card">
             <div className="wf-page-header" style={{ marginBottom: 16 }}>
               <div>
-                <h3 style={{ margin: 0 }}>Kod QR do ankiety</h3>
-                <p className="wf-table-muted">Udostępnij uczestnikom szybki dostęp do formularza.</p>
+                <h3 style={{ margin: 0 }}>Szybki dostęp</h3>
+                <p className="wf-table-muted">Udostępnij uczestnikom gotowy adres do formularza.</p>
               </div>
               <QrCode size={20} />
             </div>
@@ -167,27 +165,27 @@ export default async function SessionOverviewPage({
                 <Download size={18} />
                 Pobierz QR
               </a>
-              <CopyButton className="wf-btn wf-btn-primary" label="Kopiuj krótki link" value={publicUrl} />
+              <CopyButton className="wf-btn wf-btn-primary" label="Kopiuj link uczestnika" value={publicUrl} />
             </div>
           </article>
 
           <article className="wf-panel-card">
-            <h3>Linki sesji</h3>
+            <h3>Linki do udostępnienia</h3>
             <div className="wf-form-stack" style={{ marginTop: 16 }}>
               <label className="wf-field">
-                <span className="wf-field-label">Ankieta publiczna</span>
+                <span className="wf-field-label">Link uczestnika</span>
                 <input className="wf-input" readOnly type="text" value={publicUrl} />
               </label>
               <label className="wf-field">
-                <span className="wf-field-label">Wyniki na żywo</span>
+                <span className="wf-field-label">Link do podglądu</span>
                 <input className="wf-input" readOnly type="text" value={liveUrl} />
               </label>
             </div>
           </article>
 
           <article className="wf-panel-card">
-            <h3>Dostęp zespołu</h3>
-            <p>Dostęp do tej ankiety wynika z członkostwa w zespole, a nie z lokalnej listy przypisań.</p>
+            <h3>Zespół z dostępem</h3>
+            <p>Do tej ankiety mają dostęp tylko osoby z Twojego zespołu.</p>
           </article>
         </aside>
       </section>

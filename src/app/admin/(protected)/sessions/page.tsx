@@ -116,7 +116,7 @@ export default async function SessionsPage({
           <strong className="wf-metric-value" style={{ fontSize: "2.25rem" }}>
             {formatNumber(filteredSessions.length)}
           </strong>
-          <span className="wf-table-muted">Po uprawnieniach i aktywnych filtrach</span>
+          <span className="wf-table-muted">Po wybranych filtrach</span>
         </article>
         <article className="wf-hero-preview-card">
           <span className="wf-table-muted">Aktywne</span>

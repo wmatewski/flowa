@@ -30,7 +30,7 @@ export default async function NewSessionPage({
         <div>
           <div className="wf-badge">Utwórz sesję</div>
           <h1 className="wf-page-title" style={{ marginTop: 16 }}>Ustawienia nowej sesji</h1>
-          <p className="wf-page-subtitle">Skonfiguruj nazwę, opis, limit czasu i tryb wieku dla nowej sesji.</p>
+          <p className="wf-page-subtitle">Skonfiguruj nazwę, opis, limit czasu i wiek dla nowej sesji.</p>
         </div>
       </div>
 
@@ -65,9 +65,7 @@ export default async function NewSessionPage({
         <Card>
           <CardHeader>
             <CardTitle>Co stanie się po zapisaniu?</CardTitle>
-            <CardDescription>
-              Po utworzeniu sesji otrzymasz publiczny link dla uczestników i osobny widok statystyk do monitorowania zgłoszeń.
-            </CardDescription>
+            <CardDescription>Po utworzeniu sesji od razu dostaniesz link dla uczestników i widok wyników.</CardDescription>
           </CardHeader>
         </Card>
       </div>

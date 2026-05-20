@@ -28,25 +28,25 @@ export const SessionWorkspaceShell = ({
     {
       href: `/admin/sessions/${sessionId}`,
       label: "Przegląd",
-      description: "QR, link i odpowiedzi",
+      description: "Link i odpowiedzi",
       icon: Eye,
     },
     {
       href: `/admin/sessions/${sessionId}/analytics`,
       label: "Analityka",
-      description: "Wyniki i statystyki",
+      description: "Wyniki i szczegóły",
       icon: BarChart3,
     },
     {
       href: `/admin/sessions/${sessionId}/live`,
       label: "Wyniki na żywo",
-      description: "Widok prezentacyjny",
+      description: "Podgląd na żywo",
       icon: Radio,
     },
     {
       href: `/admin/sessions/${sessionId}/settings`,
       label: "Ustawienia",
-      description: "Konfiguracja ankiety",
+      description: "Konfiguracja sesji",
       icon: Settings,
     },
   ];
@@ -90,7 +90,7 @@ export const SessionWorkspaceShell = ({
         <div className="wf-session-sidebar-meta">
           <div className="wf-small-label">Link uczestnika</div>
           <Link className="wf-btn wf-btn-secondary wf-btn-block" href={buildSessionShortPath(sessionId)}>
-            Otwórz ankietę
+            Otwórz link
           </Link>
           <Link
             className="wf-btn wf-btn-primary wf-btn-block"
@@ -98,7 +98,7 @@ export const SessionWorkspaceShell = ({
             target="_blank"
             rel="noopener noreferrer"
           >
-            Widok na żywo
+            Podgląd na żywo
           </Link>
         </div>
       </aside>
