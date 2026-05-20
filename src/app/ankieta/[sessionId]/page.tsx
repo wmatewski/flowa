@@ -45,7 +45,7 @@ export default async function PublicSessionInstructionsPage({
   return (
     <>
       <main className="wf-step-shell">
-        <SessionEntryState sessionSlug={sessionId} />
+        <SessionEntryState sessionId={sessionId} />
         <div className="wf-step-container wf-step-container-animated">
           <div className="wf-step-topbar">
             <Link className="wf-brand" href="/">

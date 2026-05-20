@@ -6,16 +6,16 @@ import { getSessionEntryStorageKey } from "@/lib/session-entry";
 
 interface SessionEntryStateProps {
   mode?: "start" | "reset";
-  sessionSlug: string;
+  sessionId: string;
 }
 
 export const SessionEntryState = ({
   mode = "start",
-  sessionSlug,
+  sessionId,
 }: SessionEntryStateProps) => {
   useEffect(() => {
     try {
-      const storageKey = getSessionEntryStorageKey(sessionSlug);
+      const storageKey = getSessionEntryStorageKey(sessionId);
 
       if (mode === "reset") {
         window.sessionStorage.removeItem(storageKey);
@@ -28,7 +28,7 @@ export const SessionEntryState = ({
     } catch {
       return;
     }
-  }, [mode, sessionSlug]);
+  }, [mode, sessionId]);
 
   return null;
 };

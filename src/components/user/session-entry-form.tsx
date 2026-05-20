@@ -1,9 +1,11 @@
 "use client";
 
-import { ChevronDown, CheckCircle2, MonitorSmartphone, Smartphone } from "lucide-react";
+import { ChevronDown, CheckCircle2, MonitorSmartphone } from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getOperatingSystemConfig, operatingSystemOrder } from "@/lib/os";
 import type { OperatingSystem, Session } from "@/lib/types";
 import { TimeInputMask } from "@/components/user/time-input-mask";
@@ -40,102 +42,100 @@ export const SessionEntryForm = ({
   const operatingSystemConfig = getOperatingSystemConfig(operatingSystem);
 
   return (
-    <div className="wf-flow-card">
-      <div className="wf-os-badge-row">
-        <div className="wf-os-badge">
-          <span className="wf-os-badge-copy">
-            <Smartphone size={14} />
-            Wykryty system: {operatingSystemConfig.label}
-          </span>
-          <button
-            className="wf-link-button"
-            onClick={() => setShowPicker((current) => !current)}
-            type="button"
-          >
-            Zmień
-          </button>
-        </div>
-      </div>
-
-      {showPicker ? (
-        <div className="wf-chip-row" style={{ marginBottom: 24 }}>
-          {operatingSystemOrder.map((candidate) => (
-            <button
-              className={`wf-chip-button${candidate === operatingSystem ? " is-active" : ""}`}
-              key={candidate}
-              onClick={() => {
-                setOperatingSystem(candidate);
-                setShowPicker(false);
-              }}
-              type="button"
-            >
-              {getOperatingSystemConfig(candidate).label}
-            </button>
-          ))}
-        </div>
-      ) : null}
-
-      <div className="wf-flow-header">
+    <Card className="wf-flow-card">
+      <CardHeader>
         <div className="wf-flow-icon">
           <MonitorSmartphone size={30} />
         </div>
-        <h1>Cyfrowe Zdrowie</h1>
-        <p>Podziel się informacją o swoim dzisiejszym czasie przed ekranem.</p>
-      </div>
-
-      <form action={submitAction} className="wf-form-stack">
-        <input name="sessionId" type="hidden" value={session.id} />
-        <input name="sessionSlug" type="hidden" value={session.id} />
-        <input name="age" type="hidden" value={String(age)} />
-        <input name="operatingSystem" type="hidden" value={operatingSystem} />
-
-        <label className="wf-field">
-          <span className="wf-field-label">Twój czas przed ekranem dzisiaj (godziny i minuty)</span>
-          <TimeInputMask
-            className="wf-step-time-input"
-            name="screenTimeValue"
-            onChange={setScreenTimeValue}
-            value={screenTimeValue}
-          />
-          <span className="wf-field-hint">
-            Wpisz godziny i minuty — dwukropek jest stały i widoczny.
-          </span>
-        </label>
-
-        <Button className="wf-btn-block wf-btn-large" type="submit">
-          <CheckCircle2 size={20} />
-          Wyślij
-        </Button>
-
-        <details className="wf-accordion">
-          <summary>
-            <span>Instrukcja: Jak sprawdzić czas przed ekranem?</span>
-            <ChevronDown size={18} />
-          </summary>
-          <div className="wf-accordion-body">
-            <div>
-              <div className="wf-chip-row" style={{ marginBottom: 16 }}>
-                {operatingSystemOrder.map((candidate) => (
-                  <button
-                    className={`wf-chip-button${candidate === operatingSystem ? " is-active" : ""}`}
-                    key={candidate}
-                    onClick={() => setOperatingSystem(candidate)}
-                    type="button"
-                  >
-                    {getOperatingSystemConfig(candidate).label}
-                  </button>
-                ))}
-              </div>
-              <div className="wf-accordion-title">{operatingSystemConfig.label}</div>
-              <ol className="wf-steps-list">
-                {operatingSystemConfig.steps.map((step) => (
-                  <li key={step}>{step}</li>
-                ))}
-              </ol>
-            </div>
+        <Badge variant="secondary">Dopasowany system</Badge>
+        <CardTitle>Cyfrowe Zdrowie</CardTitle>
+        <CardDescription>Podziel się informacją o swoim dzisiejszym czasie przed ekranem.</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-5">
+        <div className="wf-os-badge-row">
+          <div className="wf-os-badge">
+            <span className="wf-os-badge-copy">Wybrany system: {operatingSystemConfig.label}</span>
+            <button
+              className="wf-link-button"
+              onClick={() => setShowPicker((current) => !current)}
+              type="button"
+            >
+              Zmień
+            </button>
           </div>
-        </details>
-      </form>
-    </div>
+        </div>
+
+        {showPicker ? (
+          <div className="wf-chip-row" style={{ marginBottom: 24 }}>
+            {operatingSystemOrder.map((candidate) => (
+              <button
+                className={`wf-chip-button${candidate === operatingSystem ? " is-active" : ""}`}
+                key={candidate}
+                onClick={() => {
+                  setOperatingSystem(candidate);
+                  setShowPicker(false);
+                }}
+                type="button"
+              >
+                {getOperatingSystemConfig(candidate).label}
+              </button>
+            ))}
+          </div>
+        ) : null}
+
+        <form action={submitAction} className="wf-form-stack">
+          <input name="sessionId" type="hidden" value={session.id} />
+          <input name="age" type="hidden" value={String(age)} />
+          <input name="operatingSystem" type="hidden" value={operatingSystem} />
+
+          <label className="wf-field">
+            <span className="wf-field-label">Twój czas przed ekranem dzisiaj (godziny i minuty)</span>
+            <TimeInputMask
+              className="wf-step-time-input"
+              name="screenTimeValue"
+              onChange={setScreenTimeValue}
+              value={screenTimeValue}
+            />
+            <span className="wf-field-hint">
+              Wpisz godziny i minuty — dwukropek jest stały i widoczny.
+            </span>
+          </label>
+
+          <Button className="wf-btn-block wf-btn-large" type="submit">
+            <CheckCircle2 size={20} />
+            Wyślij
+          </Button>
+
+          <details className="wf-accordion">
+            <summary>
+              <span>Instrukcja: Jak sprawdzić czas przed ekranem?</span>
+              <ChevronDown size={18} />
+            </summary>
+            <div className="wf-accordion-body">
+              <div>
+                <div className="wf-chip-row" style={{ marginBottom: 16 }}>
+                  {operatingSystemOrder.map((candidate) => (
+                    <button
+                      className={`wf-chip-button${candidate === operatingSystem ? " is-active" : ""}`}
+                      key={candidate}
+                      onClick={() => setOperatingSystem(candidate)}
+                      type="button"
+                    >
+                      {getOperatingSystemConfig(candidate).label}
+                    </button>
+                  ))}
+                </div>
+                <div className="wf-accordion-title">{operatingSystemConfig.label}</div>
+                <ol className="wf-steps-list">
+                  {operatingSystemConfig.steps.map((step) => (
+                    <li key={step}>{step}</li>
+                  ))}
+                </ol>
+              </div>
+            </div>
+          </details>
+        </form>
+      </CardContent>
+    </Card>
   );
 };

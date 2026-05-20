@@ -6,9 +6,11 @@ import { Leaf } from "lucide-react";
 import { submitSessionEntryAction } from "@/app/actions";
 import { ScreenTimeStepForm } from "@/components/user/screen-time-step-form";
 import { SessionEntryState } from "@/components/user/session-entry-state";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getPublicSessionExperienceData } from "@/lib/data";
 import { publicEnv } from "@/lib/env/public";
-import { detectOperatingSystem, getOperatingSystemConfig, isOperatingSystem } from "@/lib/os";
+import { detectOperatingSystem, isOperatingSystem } from "@/lib/os";
 import type { FlashMessage, OperatingSystem } from "@/lib/types";
 
 const getFlashMessage = (params: Record<string, string | string[] | undefined>): FlashMessage | null => {
@@ -53,7 +55,6 @@ export default async function PublicSessionTimePage({
     typeof query.os === "string" && isOperatingSystem(query.os)
       ? query.os
       : data.detectedOperatingSystem;
-  const operatingSystemConfig = getOperatingSystemConfig(selectedOperatingSystem as OperatingSystem);
   const flash = getFlashMessage(query);
   const totalSteps = data.session.age_mode === "variable" ? 4 : 3;
   const currentStep = data.session.age_mode === "variable" ? 3 : 2;
@@ -62,7 +63,7 @@ export default async function PublicSessionTimePage({
   return (
     <>
       <main className="wf-step-shell">
-        <SessionEntryState sessionSlug={sessionId} />
+        <SessionEntryState sessionId={sessionId} />
         <div className="wf-step-container wf-step-container-animated">
           <div className="wf-step-topbar">
             <Link className="wf-brand" href="/">
@@ -89,31 +90,29 @@ export default async function PublicSessionTimePage({
             </div>
           </div>
 
-          <section className="wf-step-card wf-step-panel-animated">
-            <div>
-              <h1 className="wf-step-title">Wpisz czas przed ekranem</h1>
-              <p className="wf-step-description">
-                Dla systemu {operatingSystemConfig.label}. Podaj dzisiejszy wynik w godzinach i minutach.
-              </p>
-            </div>
+          <Card className="wf-step-card wf-step-panel-animated">
+            <CardHeader>
+              <CardTitle style={{ margin: 0 }}>Wpisz czas przed ekranem</CardTitle>
+              <CardDescription>Podaj dzisiejszy wynik w godzinach i minutach.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              {flash ? <div className={`wf-flash ${flash.type}`}>{flash.message}</div> : null}
 
-            {flash ? <div className={`wf-flash ${flash.type}`}>{flash.message}</div> : null}
+              <ScreenTimeStepForm
+                age={age}
+                initialMinutes={initialMinutes}
+                operatingSystem={selectedOperatingSystem as OperatingSystem}
+                sessionId={data.session.id}
+                submitAction={submitSessionEntryAction}
+              />
 
-            <ScreenTimeStepForm
-              age={age}
-              initialMinutes={initialMinutes}
-              operatingSystem={selectedOperatingSystem as OperatingSystem}
-              sessionId={data.session.id}
-              sessionSlug={data.session.id}
-              submitAction={submitSessionEntryAction}
-            />
-
-            <div className="wf-step-actions">
-              <Link className="wf-btn wf-btn-secondary" href={`/ankieta/${sessionId}?age=${age}&os=${selectedOperatingSystem}`}>
-                Wróć do instrukcji
-              </Link>
-            </div>
-          </section>
+              <div className="wf-step-actions">
+                <Button asChild variant="secondary">
+                  <Link href={`/ankieta/${sessionId}?age=${age}&os=${selectedOperatingSystem}`}>Wróć do instrukcji</Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </main>
       <footer className="wf-footer">

@@ -1,1 +1,1 @@
-export const getSessionEntryStorageKey = (sessionSlug: string) => `flowa:session-entry-start:${sessionSlug}`;
+export const getSessionEntryStorageKey = (sessionId: string) => `flowa:session-entry-start:${sessionId}`;

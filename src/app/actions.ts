@@ -6,7 +6,6 @@ import { redirect } from "next/navigation";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { publicEnv } from "@/lib/env/public";
 import { detectOperatingSystem, isOperatingSystem } from "@/lib/os";
-import { parseParticipantMetadata } from "@/lib/participant-metadata";
 import { getClientIp } from "@/lib/request";
 import { createSessionId, sessionCookieOptions } from "@/lib/session";
 
@@ -99,7 +98,6 @@ export const submitSessionEntryAction = async (formData: FormData) => {
     submittedOperatingSystem && submittedOperatingSystem !== "unknown" && isOperatingSystem(submittedOperatingSystem)
     ? submittedOperatingSystem
     : detectedOperatingSystem;
-  const participantMetadata = parseParticipantMetadata(formData.get("participantMetadata"));
 
   const supabase = createSupabaseAdminClient();
   const { data: sessionRowRaw, error: sessionError } = await supabase
@@ -140,7 +138,7 @@ export const submitSessionEntryAction = async (formData: FormData) => {
       parsedParticipantEnteredAt && !Number.isNaN(parsedParticipantEnteredAt.getTime())
         ? parsedParticipantEnteredAt.toISOString()
         : null,
-    client_metadata: participantMetadata ?? {},
+    client_metadata: {},
     user_agent: headerStore.get("user-agent"),
   });
 

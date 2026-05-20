@@ -3,8 +3,24 @@
 import { Maximize2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { formatDateTime, formatMinutes, formatNumber } from "@/lib/format";
-import type { LiveSessionEntry, OperatingSystem } from "@/lib/types";
+import type { LiveSessionEntry } from "@/lib/types";
 
 interface LiveResultsTableProps {
   refreshUrl: string;
@@ -19,15 +35,6 @@ interface LiveResultsState {
   averageMinutes: number | null;
   entries: LiveSessionEntry[];
 }
-
-const osLabels: Record<OperatingSystem, string> = {
-  android: "Android",
-  ios: "iOS",
-  linux: "Linux",
-  macos: "macOS",
-  unknown: "Nieznany",
-  windows: "Windows",
-};
 
 export const LiveResultsTable = ({
   refreshUrl,
@@ -84,63 +91,75 @@ export const LiveResultsTable = ({
     <section className="wf-live-table-shell">
       {!embed ? (
         <div className="wf-metric-grid" style={{ marginBottom: 24 }}>
-          <article className="wf-metric-card">
-            <h3>Odpowiedzi na żywo</h3>
-            <div className="wf-metric-value">{formatNumber(state.participantCount)}</div>
-          </article>
-          <article className="wf-metric-card">
-            <h3>Średni czas</h3>
-            <div className="wf-metric-value">{formatMinutes(state.averageMinutes)}</div>
-          </article>
+          <Card>
+            <CardHeader>
+              <CardTitle>Odpowiedzi na żywo</CardTitle>
+              <CardDescription>Aktualna liczba zapisanych odpowiedzi.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="wf-metric-value">{formatNumber(state.participantCount)}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Średni czas</CardTitle>
+              <CardDescription>Średnia z całej sesji, odświeżana automatycznie.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="wf-metric-value">{formatMinutes(state.averageMinutes)}</div>
+            </CardContent>
+          </Card>
         </div>
       ) : null}
 
-      <div className="wf-table-card">
-        <div className="wf-page-header" style={{ marginBottom: 12 }}>
+      <Card>
+        <CardHeader className="items-start justify-between gap-4 md:flex-row md:items-center">
           <div>
-            <h3 style={{ margin: 0 }}>Najnowsze odpowiedzi</h3>
-            <p className="wf-table-muted">Automatyczne odświeżanie co 5 sekund.</p>
+            <CardTitle>Najnowsze odpowiedzi</CardTitle>
+            <CardDescription>Widok odświeża się automatycznie co kilka sekund.</CardDescription>
           </div>
-          <div className="wf-pill wf-pill-soft">Realtime</div>
-        </div>
+          <span className="wf-pill wf-pill-soft">Na żywo</span>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Czas wpisu</TableHead>
+                <TableHead>Czas przed ekranem</TableHead>
+                <TableHead>Wiek</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {state.entries.length ? (
+                state.entries.map((entry) => (
+                  <TableRow key={entry.id}>
+                    <TableCell>{formatDateTime(entry.submittedAt)}</TableCell>
+                    <TableCell>{formatMinutes(entry.screenTimeMinutes)}</TableCell>
+                    <TableCell>{entry.age}</TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={3}>
+                    <p className="wf-empty">Brak odpowiedzi do wyświetlenia.</p>
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
 
-        <div className="wf-table-head" style={{ gridTemplateColumns: "1fr 0.8fr 0.8fr 0.5fr" }}>
-          <span>Czas wpisu</span>
-          <span>System</span>
-          <span>Czas przed ekranem</span>
-          <span>Wiek</span>
-        </div>
-
-        <div>
-          {state.entries.length ? (
-            state.entries.map((entry) => (
-              <div
-                className="wf-table-row"
-                key={entry.id}
-                style={{ display: "grid", gridTemplateColumns: "1fr 0.8fr 0.8fr 0.5fr", gap: 16 }}
-              >
-                <div>{formatDateTime(entry.submittedAt)}</div>
-                <div>
-                  <span className="wf-pill">{osLabels[entry.operatingSystem] ?? "Inny"}</span>
-                </div>
-                <div>{formatMinutes(entry.screenTimeMinutes)}</div>
-                <div>{entry.age}</div>
-              </div>
-            ))
-          ) : (
-            <p className="wf-empty">Brak odpowiedzi do wyświetlenia.</p>
-          )}
-        </div>
-      </div>
-
-      <button
+      <Button
         className="wf-fullscreen-btn"
+        size="icon"
+        variant="secondary"
         onClick={handleFullscreen}
         title="Pełny ekran"
         type="button"
       >
         <Maximize2 size={20} />
-      </button>
+      </Button>
     </section>
   );
 };

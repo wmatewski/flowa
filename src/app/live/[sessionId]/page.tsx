@@ -5,6 +5,9 @@ import QRCode from "qrcode";
 
 import { CopyButton } from "@/components/session/copy-button";
 import { LiveResultsTable } from "@/components/session/live-results-table";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getAuthenticatedAdmin } from "@/lib/admin-auth";
 import { getLiveSessionDataForAccess } from "@/lib/data";
 import { publicEnv } from "@/lib/env/public";
@@ -50,42 +53,42 @@ export default async function LiveSessionPage({
   return (
     <main className={`wf-live-page${embed ? " is-embed" : ""}`}>
       <div className="wf-live-page-shell">
-        <header className="wf-live-page-header">
-          <div>
-            <div className="wf-badge">Wyniki na żywo</div>
-            <h1 className="wf-page-title" style={{ marginTop: 16 }}>{data.session.name}</h1>
-            {!embed ? (
-              <p className="wf-page-subtitle">
-                Widok prezentacyjny z automatycznym odświeżaniem wyników.
-              </p>
-            ) : null}
-          </div>
-
-          <div className="wf-live-header-right">
-            <div className="wf-live-header-qr">
-              <Image
-                alt={`Kod QR dla ${data.session.name}`}
-                className="wf-qr-image wf-live-header-qr-image"
-                height={embed ? 120 : 152}
-                src={qrCodeDataUrl}
-                width={embed ? 120 : 152}
-              />
-              <span className="wf-live-header-qr-label">
-                <QrCode size={12} />
-                Zeskanuj
-              </span>
+        <Card className="wf-live-page-header">
+          <CardHeader className="items-start justify-between gap-6 md:flex-row md:items-center">
+            <div className="space-y-3">
+              <Badge variant="secondary">Na żywo</Badge>
+              <CardTitle className="wf-page-title" style={{ margin: 0 }}>{data.session.name}</CardTitle>
+              <CardDescription>
+                {embed ? "Widok osadzony do prezentacji." : "Udostępnij ekran z wynikami bez przeładowań."}
+              </CardDescription>
             </div>
 
-            {!embed ? (
-              <div className="wf-card-actions">
-                <Link className="wf-btn wf-btn-secondary" href={buildSessionShortPath(data.session.id)}>
-                  Otwórz ankietę
-                </Link>
-                <CopyButton className="wf-btn wf-btn-primary" label="Kopiuj link live" value={liveUrl} />
+            <div className="wf-live-header-right">
+              <div className="wf-live-header-qr">
+                <Image
+                  alt={`Kod QR dla ${data.session.name}`}
+                  className="wf-qr-image wf-live-header-qr-image"
+                  height={embed ? 120 : 168}
+                  src={qrCodeDataUrl}
+                  width={embed ? 120 : 168}
+                />
+                <span className="wf-live-header-qr-label">
+                  <QrCode size={12} />
+                  Zeskanuj
+                </span>
               </div>
-            ) : null}
-          </div>
-        </header>
+
+              {!embed ? (
+                <div className="wf-card-actions">
+                  <Button asChild variant="secondary">
+                    <Link href={buildSessionShortPath(data.session.id)}>Otwórz ankietę</Link>
+                  </Button>
+                  <CopyButton className="wf-btn wf-btn-primary" label="Kopiuj link live" value={liveUrl} />
+                </div>
+              ) : null}
+            </div>
+          </CardHeader>
+        </Card>
 
         <LiveResultsTable
           embed={embed}
@@ -96,19 +99,19 @@ export default async function LiveSessionPage({
         />
 
         {!embed ? (
-          <div className="wf-live-banner">
+          <Card className="wf-live-banner">
             <div>
-              <strong>Embed do prezentacji</strong>
-              <p className="wf-table-muted" style={{ marginTop: 6 }}>
+              <CardTitle style={{ margin: 0 }}>Embed do prezentacji</CardTitle>
+              <CardDescription>
                 Użyj tego linku w iframe albo wyświetl go bezpośrednio na drugim ekranie.
-              </p>
+              </CardDescription>
             </div>
             <CopyButton
               className="wf-btn wf-btn-secondary"
               label="Kopiuj URL embed"
               value={`${liveUrl}?embed=1`}
             />
-          </div>
+          </Card>
         ) : null}
       </div>
     </main>

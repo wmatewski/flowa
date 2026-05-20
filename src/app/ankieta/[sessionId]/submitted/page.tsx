@@ -4,6 +4,9 @@ import { redirect } from "next/navigation";
 import { CheckCircle2, Leaf } from "lucide-react";
 
 import { SessionEntryState } from "@/components/user/session-entry-state";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { getPublicSessionExperienceData } from "@/lib/data";
 import { publicEnv } from "@/lib/env/public";
 import { formatMinutes } from "@/lib/format";
@@ -39,7 +42,7 @@ export default async function PublicSessionSubmittedPage({
   return (
     <>
       <main className="wf-step-shell">
-        <SessionEntryState mode="reset" sessionSlug={sessionId} />
+        <SessionEntryState mode="reset" sessionId={sessionId} />
         <div className="wf-step-container wf-step-container-animated">
           <div className="wf-step-topbar">
             <Link className="wf-brand" href="/">
@@ -66,29 +69,34 @@ export default async function PublicSessionSubmittedPage({
             </div>
           </div>
 
-          <section className="wf-step-card wf-step-success-card wf-step-panel-animated">
-            <div className="wf-step-success-icon">
-              <CheckCircle2 size={40} />
-            </div>
-
-            <div>
-              <h1 className="wf-step-title">Wynik zapisany</h1>
-              <p className="wf-step-description">Twoja odpowiedź została dodana do sesji {data.session.name}.</p>
-            </div>
-
-            <div className="wf-step-note">
-              <strong>Twój wynik</strong>
-              <p style={{ margin: "8px 0 0" }}>
-                Zapisano {formatMinutes(data.latestSubmission?.screen_time_minutes)}. Średnia sesji wynosi {formatMinutes(data.sessionAverageMinutes)}.
-              </p>
-            </div>
-
-            {data.participantInsight ? (
-              <div className={`wf-flash ${data.participantInsight.tone === "optimal" ? "success" : data.participantInsight.tone === "warning" ? "info" : "error"}`}>
-                {data.participantInsight.description}
+          <Card className="wf-step-card wf-step-success-card wf-step-panel-animated">
+            <CardHeader>
+              <div className="wf-step-success-icon">
+                <CheckCircle2 size={40} />
               </div>
-            ) : null}
-          </section>
+              <Badge variant="secondary">Zakończono</Badge>
+              <CardTitle style={{ margin: 0 }}>Wynik zapisany</CardTitle>
+              <CardDescription>Twoja odpowiedź została dodana do sesji {data.session.name}.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              <div className="wf-step-note">
+                <strong>Twój wynik</strong>
+                <p style={{ margin: "8px 0 0" }}>
+                  Zapisano {formatMinutes(data.latestSubmission?.screen_time_minutes)}. Średnia sesji wynosi {formatMinutes(data.sessionAverageMinutes)}.
+                </p>
+              </div>
+
+              {data.participantInsight ? (
+                <div className={`wf-flash ${data.participantInsight.tone === "optimal" ? "success" : data.participantInsight.tone === "warning" ? "info" : "error"}`}>
+                  {data.participantInsight.description}
+                </div>
+              ) : null}
+
+              <Button asChild className="w-full" variant="secondary">
+                <Link href="/">Wróć na stronę główną</Link>
+              </Button>
+            </CardContent>
+          </Card>
         </div>
       </main>
       <footer className="wf-footer">

@@ -4,6 +4,10 @@ import { redirect } from "next/navigation";
 import { Leaf } from "lucide-react";
 
 import { SessionEntryState } from "@/components/user/session-entry-state";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { getPublicSessionExperienceData } from "@/lib/data";
 import { publicEnv } from "@/lib/env/public";
 import { detectOperatingSystem } from "@/lib/os";
@@ -49,7 +53,7 @@ export default async function PublicSessionAgePage({
   return (
     <>
       <main className="wf-step-shell">
-        <SessionEntryState sessionSlug={sessionId} />
+        <SessionEntryState sessionId={sessionId} />
         <div className="wf-step-container wf-step-container-animated">
           <div className="wf-step-topbar">
             <Link className="wf-brand" href="/">
@@ -76,33 +80,34 @@ export default async function PublicSessionAgePage({
             </div>
           </div>
 
-          <section className="wf-step-card wf-step-panel-animated">
-            <div>
-              <h1 className="wf-step-title">Podaj swój wiek</h1>
-              <p className="wf-step-description">Dzięki temu dopasujemy późniejszy wynik do odpowiedniej grupy wiekowej.</p>
-            </div>
+          <Card className="wf-step-card wf-step-panel-animated">
+            <CardHeader>
+              <CardTitle style={{ margin: 0 }}>Podaj swój wiek</CardTitle>
+              <CardDescription>Dzięki temu dopasujemy późniejszy wynik do odpowiedniej grupy wiekowej.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              {flash ? <div className={`wf-flash ${flash.type}`}>{flash.message}</div> : null}
 
-            {flash ? <div className={`wf-flash ${flash.type}`}>{flash.message}</div> : null}
+              <form action={`/ankieta/${sessionId}`} className="space-y-5" method="get">
+                <div className="space-y-2">
+                  <Label htmlFor="age">Wiek uczestnika</Label>
+                  <Input
+                    id="age"
+                    inputMode="numeric"
+                    max={120}
+                    min={1}
+                    name="age"
+                    placeholder="25"
+                    type="number"
+                  />
+                </div>
 
-            <form action={`/ankieta/${sessionId}`} className="wf-form-stack" method="get">
-              <label className="wf-field">
-                <span className="wf-field-label">Wiek uczestnika</span>
-                <input
-                  className="wf-time-input wf-step-time-input"
-                  inputMode="numeric"
-                  max="120"
-                  min="1"
-                  name="age"
-                  placeholder="25"
-                  type="number"
-                />
-              </label>
-
-              <button className="wf-btn wf-btn-primary wf-btn-block wf-btn-large" type="submit">
-                Dalej
-              </button>
-            </form>
-          </section>
+                <Button className="w-full" type="submit">
+                  Dalej
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
         </div>
       </main>
       <footer className="wf-footer">
