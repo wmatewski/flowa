@@ -79,5 +79,5 @@ export const authorizeLiveDisplayRequestAction = async (formData: FormData) => {
     redirect("/link?error=invalid-request");
   }
 
-  redirect(`/live/${liveRequest.session_id}?request=${authorizedRequest.id}`);
+  redirect(`/link?authorized=${authorizedRequest.id}`);
 };

@@ -1,5 +1,6 @@
 import { auth } from "@clerk/nextjs/server";
 import {
+  ArrowRight,
   CheckCircle2,
   Clock3,
   Globe2,
@@ -118,10 +119,6 @@ export default async function LiveLinkPage({
     }
   }
 
-  if (currentRequestId && liveRequest && liveRequest.status === "authorized") {
-    redirect(`/live/${liveRequest.session_id}?request=${liveRequest.id}`);
-  }
-
   if (requestId && liveRequest && liveRequest.status === "pending") {
     const session = await getSessionById(liveRequest.session_id);
 
@@ -194,6 +191,45 @@ export default async function LiveLinkPage({
               Anuluj
             </Link>
           </article>
+        </section>
+      </LinkPageShell>
+    );
+  }
+
+  if (currentRequestId && liveRequest && liveRequest.status === "authorized") {
+    const session = await getSessionById(liveRequest.session_id);
+
+    if (!session) {
+      redirect("/link?error=invalid-request");
+    }
+
+    return (
+      <LinkPageShell>
+        <section className="wf-link-state-shell wf-link-state-shell-success">
+          <div className="wf-link-success-orb">
+            <CheckCircle2 size={82} strokeWidth={1.8} />
+          </div>
+
+          <h1 className="wf-link-success-title">Autoryzacja zakończona pomyślnie</h1>
+          <p className="wf-link-success-subtitle">
+            Sesja live dla prezentacji {session.name} jest już aktywna.
+          </p>
+
+          <div className="wf-link-presentation-summary">
+            <div className="wf-link-presentation-label">Prezentacja</div>
+            <div className="wf-link-presentation-title">{session.name}</div>
+            <div className="wf-link-presentation-subtitle">{liveRequest.session_id}</div>
+          </div>
+
+          <div className="wf-link-success-actions">
+            <Link
+              className="wf-link-primary-button wf-link-primary-link"
+              href={`/live/${liveRequest.session_id}?request=${liveRequest.id}`}
+            >
+              Otwórz live
+              <ArrowRight size={18} />
+            </Link>
+          </div>
         </section>
       </LinkPageShell>
     );
