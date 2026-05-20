@@ -1,16 +1,15 @@
 "use client";
 
-import { ArrowRight } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
-import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { TimeInputMask } from "@/components/user/time-input-mask";
 import { getSessionEntryStorageKey } from "@/lib/session-entry";
 import type { OperatingSystem } from "@/lib/types";
-import { TimeInputMask } from "@/components/user/time-input-mask";
 
 interface ScreenTimeStepFormProps {
   age: number;
+  formId?: string;
   initialMinutes?: number | null;
   operatingSystem: OperatingSystem;
   sessionId: string;
@@ -31,6 +30,7 @@ const formatMinutesToInput = (minutes: number | null | undefined) => {
 
 export const ScreenTimeStepForm = ({
   age,
+  formId,
   initialMinutes,
   operatingSystem,
   sessionId,
@@ -61,14 +61,14 @@ export const ScreenTimeStepForm = ({
   }, [sessionId]);
 
   return (
-    <form action={submitAction} className="wf-form-stack wf-step-form">
+    <form action={submitAction} className="wf-form-stack wf-step-form" id={formId}>
       <input name="sessionId" type="hidden" value={sessionId} />
       <input name="age" type="hidden" value={String(age)} />
       <input name="operatingSystem" type="hidden" value={operatingSystem} />
       <input defaultValue="" name="participantEnteredAt" ref={participantEnteredAtRef} type="hidden" />
 
-      <div className="space-y-2">
-        <Label>Liczba godzin i minut</Label>
+      <div className="wf-survey-time-field">
+        <Label className="wf-survey-time-label">Liczba godzin i minut</Label>
         <TimeInputMask
           className="wf-step-time-input"
           name="screenTimeValue"
@@ -76,11 +76,6 @@ export const ScreenTimeStepForm = ({
           value={screenTimeValue}
         />
       </div>
-
-      <Button className="wf-btn-block wf-btn-large" type="submit">
-        Wyślij wynik
-        <ArrowRight size={18} />
-      </Button>
     </form>
   );
 };

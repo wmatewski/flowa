@@ -1,135 +1,217 @@
 "use client";
 
-import { ArrowRight, Check } from "lucide-react";
+import { ArrowLeft, ArrowRight, Apple, Check, Monitor, Smartphone } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { getOperatingSystemConfig, operatingSystemOrder } from "@/lib/os";
-import type { OperatingSystem } from "@/lib/types";
+import {
+  PublicSurveyShell,
+  buildPublicSurveyStepItems,
+} from "@/components/user/public-survey-shell";
+import { getOperatingSystemConfig } from "@/lib/os";
+import type { AgeMode, OperatingSystem } from "@/lib/types";
 
 interface PublicOperatingSystemStepProps {
   age: number;
+  ageMode: AgeMode;
+  availableOperatingSystems: OperatingSystem[];
   initialOperatingSystem: OperatingSystem;
   organizationName: string;
   sessionId: string;
-  showBackLink?: boolean;
+  sessionName: string;
 }
+
+const getOperatingSystemIcon = (value: OperatingSystem) => {
+  if (value === "ios") {
+    return Apple;
+  }
+
+  if (value === "android") {
+    return Smartphone;
+  }
+
+  return Monitor;
+};
+
+const getOperatingSystemHint = (value: OperatingSystem) => {
+  if (value === "ios") {
+    return "Apple iPhone i iPad";
+  }
+
+  if (value === "android") {
+    return "Telefony z Androidem";
+  }
+
+  if (value === "windows") {
+    return "Komputery i laptopy z Windows";
+  }
+
+  if (value === "macos") {
+    return "Komputery Apple Mac";
+  }
+
+  if (value === "linux") {
+    return "Komputery z Linuxem";
+  }
+
+  return "Wybierz urzadzenie";
+};
 
 export const PublicOperatingSystemStep = ({
   age,
+  ageMode,
+  availableOperatingSystems,
   initialOperatingSystem,
   organizationName,
   sessionId,
-  showBackLink = true,
+  sessionName,
 }: PublicOperatingSystemStepProps) => {
-  const initialSelection: OperatingSystem =
-    initialOperatingSystem === "android" || initialOperatingSystem === "ios"
-      ? initialOperatingSystem
-      : "ios";
-  const [operatingSystem, setOperatingSystem] = useState<OperatingSystem>(initialSelection);
-  const config = getOperatingSystemConfig(operatingSystem);
-  const nextHref = `/ankieta/${sessionId}/time?age=${age}&os=${operatingSystem}`;
+  const allowedOperatingSystems = useMemo(() => {
+    const filtered = availableOperatingSystems.filter((value) => value !== "unknown");
+
+    return filtered.length ? filtered : (["ios", "android"] as OperatingSystem[]);
+  }, [availableOperatingSystems]);
+  const hasAgeStep = ageMode === "variable";
+  const totalSteps = hasAgeStep ? 4 : 3;
+  const previousHref = hasAgeStep ? `/ankieta/${sessionId}?age=${age}` : "/";
+  const seededSelection = allowedOperatingSystems.includes(initialOperatingSystem)
+    ? initialOperatingSystem
+    : allowedOperatingSystems[0];
+  const shouldOpenInstructionsByDefault = allowedOperatingSystems.includes(initialOperatingSystem);
+  const [selectedOperatingSystem, setSelectedOperatingSystem] = useState<OperatingSystem>(
+    seededSelection,
+  );
+  const [view, setView] = useState<"select" | "instructions">(
+    shouldOpenInstructionsByDefault ? "instructions" : "select",
+  );
+  const selectedConfig = getOperatingSystemConfig(selectedOperatingSystem);
+  const nextHref = `/ankieta/${sessionId}/time?age=${age}&os=${selectedOperatingSystem}`;
+
+  const leadingAction =
+    view === "instructions" ? (
+      <button
+        aria-label="Wroc do wyboru systemu"
+        className="wf-survey-icon-button"
+        onClick={() => setView("select")}
+        type="button"
+      >
+        <ArrowLeft size={18} />
+      </button>
+    ) : (
+      <Link aria-label="Wstecz" className="wf-survey-icon-button" href={previousHref}>
+        <ArrowLeft size={18} />
+      </Link>
+    );
 
   return (
-    <section className="wf-step-card wf-step-panel-animated">
-      <div className="wf-step-header-copy">
-        <Badge style={{ marginBottom: 12 }}>Wybór systemu</Badge>
-        <h1 className="wf-step-title">Wybierz system urządzenia</h1>
-        <p className="wf-step-description">
-          {organizationName}. Po wyborze od razu pokażemy dopasowaną instrukcję.
-        </p>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle style={{ margin: 0 }}>Wybierz z listy</CardTitle>
-          <CardDescription>Wybór zmienia instrukcję poniżej bez przeładowania strony.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-5">
-          <div className="wf-os-list wf-os-list-desktop" role="radiogroup" aria-label="Wybór systemu urządzenia">
-            {operatingSystemOrder.map((candidate) => {
-              const candidateConfig = getOperatingSystemConfig(candidate);
-              const isActive = candidate === operatingSystem;
-
-              return (
-                <button
-                  aria-checked={isActive}
-                  className={`wf-os-list-item${isActive ? " is-active" : ""}`}
-                  key={candidate}
-                  onClick={() => setOperatingSystem(candidate)}
-                  role="radio"
-                  type="button"
-                >
-                  <span className="wf-os-list-item-copy">
-                    <strong>{candidateConfig.label}</strong>
-                    <span>{candidateConfig.shortLabel}</span>
-                  </span>
-                  {isActive ? <Check size={18} /> : null}
-                </button>
-              );
-            })}
-          </div>
-
-          <label className="wf-field wf-os-picker-mobile">
-            <span className="wf-field-label">System urządzenia</span>
-            <select
-              className="wf-select wf-os-select"
-              value={operatingSystem}
-              onChange={(event) => setOperatingSystem(event.target.value as OperatingSystem)}
+    <PublicSurveyShell
+      actions={
+        <div className="wf-survey-action-bar">
+          {view === "instructions" ? (
+            <button
+              className="wf-survey-action wf-survey-action-secondary"
+              onClick={() => setView("select")}
+              type="button"
             >
-              {["ios", "android"].map((candidate) => {
-                const candidateConfig = getOperatingSystemConfig(candidate as OperatingSystem);
+              <ArrowLeft size={18} />
+              <span>Wstecz</span>
+            </button>
+          ) : (
+            <Link className="wf-survey-action wf-survey-action-secondary" href={previousHref}>
+              <ArrowLeft size={18} />
+              <span>Wstecz</span>
+            </Link>
+          )}
 
-                return (
-                  <option key={candidate} value={candidate}>
-                    {candidateConfig.label}
-                  </option>
-                );
-              })}
-            </select>
-          </label>
+          {view === "instructions" ? (
+            <Link className="wf-survey-action wf-survey-action-primary" href={nextHref}>
+              <span>Dalej</span>
+              <ArrowRight size={18} />
+            </Link>
+          ) : (
+            <button
+              className="wf-survey-action wf-survey-action-primary is-disabled"
+              disabled
+              type="button"
+            >
+              <span>Dalej</span>
+              <ArrowRight size={18} />
+            </button>
+          )}
+        </div>
+      }
+      description="Wybierz system urzadzenia, a potem od razu zobaczysz dopasowana instrukcje dla tego kroku."
+      organizationName={organizationName}
+      sidebarDescription={`Ankieta "${sessionName}" poprowadzi Cie krok po kroku. Najpierw wybierz urzadzenie, z ktorego chcesz odczytac czas przed ekranem.`}
+      step={hasAgeStep ? 2 : 1}
+      stepItems={buildPublicSurveyStepItems(hasAgeStep, hasAgeStep ? 2 : 1)}
+      title="Wybierz swoj system"
+      topbarLeading={leadingAction}
+      totalSteps={totalSteps}
+    >
+      {view === "select" ? (
+        <div className="wf-survey-os-grid">
+          {allowedOperatingSystems.map((candidate) => {
+            const Icon = getOperatingSystemIcon(candidate);
+            const config = getOperatingSystemConfig(candidate);
 
-          <div className="wf-step-note" style={{ marginBottom: 0 }}>
-            <div className="wf-inline-meta" style={{ color: "var(--text)", fontWeight: 700 }}>
-              <span>{config.label}</span>
+            return (
+              <button
+                className="wf-survey-os-card"
+                key={candidate}
+                onClick={() => {
+                  setSelectedOperatingSystem(candidate);
+                  setView("instructions");
+                }}
+                type="button"
+              >
+                <span className="wf-survey-os-card-icon">
+                  <Icon size={26} />
+                </span>
+                <span className="wf-survey-os-card-title">{config.label}</span>
+                <span className="wf-survey-os-card-description">{getOperatingSystemHint(candidate)}</span>
+              </button>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="wf-survey-instruction-panel">
+          <div className="wf-survey-instruction-header">
+            <div className="wf-survey-instruction-icon">
+              {(() => {
+                const Icon = getOperatingSystemIcon(selectedOperatingSystem);
+
+                return <Icon size={24} />;
+              })()}
             </div>
-            <p className="wf-table-muted" style={{ margin: "10px 0 0" }}>
-              {config.description}
-            </p>
+            <div>
+              <h2>{selectedConfig.label}</h2>
+              <p>{selectedConfig.description}</p>
+            </div>
           </div>
 
-          <div className="wf-step-list">
-            {config.steps.map((step, index) => (
-              <div key={step}>
-                <div className="wf-step-list-item">
-                  <div className="wf-step-index">{index + 1}</div>
-                  <div>{step}</div>
-                </div>
-                {index < config.steps.length - 1 ? <div className="wf-step-divider" /> : null}
+          <div className="wf-survey-instruction-note">
+            <strong>Instrukcja dla {selectedConfig.label}</strong>
+            <span>{selectedConfig.headline}</span>
+          </div>
+
+          <div className="wf-survey-instruction-steps">
+            {selectedConfig.steps.map((step, index) => (
+              <div className="wf-survey-instruction-step" key={`${selectedConfig.key}-${index}`}>
+                <span className="wf-survey-instruction-step-index">{index + 1}</span>
+                <p>{step}</p>
               </div>
             ))}
           </div>
-        </CardContent>
-      </Card>
 
-      <div className="wf-step-actions">
-        {showBackLink ? (
-          <Button asChild variant="secondary">
-            <Link href={`/ankieta/${sessionId}?age=${age}`}>Wróć do wieku</Link>
-          </Button>
-        ) : (
-          <span />
-        )}
-        <Button asChild>
-          <Link href={nextHref}>
-            Dalej
-            <ArrowRight size={18} />
-          </Link>
-        </Button>
-      </div>
-    </section>
+          {selectedConfig.settingsHint ? (
+            <div className="wf-survey-instruction-tip">
+              <Check size={16} />
+              <span>{selectedConfig.settingsHint}</span>
+            </div>
+          ) : null}
+        </div>
+      )}
+    </PublicSurveyShell>
   );
 };

@@ -1,13 +1,20 @@
 import { cookies, headers } from "next/headers";
-import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Leaf } from "lucide-react";
 
 import { PublicOperatingSystemStep } from "@/components/user/public-operating-system-step";
 import { SessionEntryState } from "@/components/user/session-entry-state";
 import { getPublicSessionExperienceData } from "@/lib/data";
 import { publicEnv } from "@/lib/env/public";
 import { detectOperatingSystem, isOperatingSystem } from "@/lib/os";
+import type { OperatingSystem } from "@/lib/types";
+
+const getAvailableOperatingSystems = (detectedOperatingSystem: OperatingSystem) => {
+  if (detectedOperatingSystem === "ios" || detectedOperatingSystem === "android") {
+    return ["ios", "android"] as OperatingSystem[];
+  }
+
+  return ["windows", "macos", "linux"] as OperatingSystem[];
+};
 
 export default async function PublicSessionInstructionsPage({
   params,
@@ -34,58 +41,26 @@ export default async function PublicSessionInstructionsPage({
     redirect(`/ankieta/${sessionId}/age`);
   }
 
+  const availableOperatingSystems = getAvailableOperatingSystems(detectedOperatingSystem);
   const selectedOperatingSystem =
-    typeof query.os === "string" && isOperatingSystem(query.os)
+    typeof query.os === "string" &&
+    isOperatingSystem(query.os) &&
+    availableOperatingSystems.includes(query.os)
       ? query.os
-      : data.detectedOperatingSystem;
-  const totalSteps = data.session.age_mode === "variable" ? 4 : 3;
-  const currentStep = data.session.age_mode === "variable" ? 2 : 1;
-  const progress = `${Math.round((currentStep / totalSteps) * 100)}%`;
+      : "unknown";
 
   return (
     <>
-      <main className="wf-step-shell">
-        <SessionEntryState sessionId={sessionId} />
-        <div className="wf-step-container wf-step-container-animated">
-          <div className="wf-step-topbar">
-            <Link className="wf-brand" href="/">
-              <div className="wf-brand-mark">
-                <Leaf size={16} />
-              </div>
-              <span>{data.organization.name}</span>
-            </Link>
-            <div className="wf-inline-meta">
-              <span>powered by Wojticore Flowa</span>
-              <Link className="wf-link-button" href="/guides">
-                Pomoc
-              </Link>
-            </div>
-          </div>
-
-          <div className="wf-step-progress">
-            <div className="wf-inline-meta" style={{ justifyContent: "space-between" }}>
-              <span>Krok {currentStep} z {totalSteps}</span>
-              <span>Instrukcja</span>
-            </div>
-            <div className="wf-step-progress-bar">
-              <div className="wf-step-progress-fill" style={{ width: progress }} />
-            </div>
-          </div>
-
-          <PublicOperatingSystemStep
-            age={age}
-            initialOperatingSystem={selectedOperatingSystem}
-            organizationName={data.organization.name}
-            sessionId={sessionId}
-            showBackLink={data.session.age_mode === "variable"}
-          />
-        </div>
-      </main>
-      <footer className="wf-footer">
-        <div className="wf-footer-inner">
-          <Link href="/">Made with Wojticore Flowa</Link>
-        </div>
-      </footer>
+      <SessionEntryState sessionId={sessionId} />
+      <PublicOperatingSystemStep
+        age={age}
+        ageMode={data.session.age_mode}
+        availableOperatingSystems={availableOperatingSystems}
+        initialOperatingSystem={selectedOperatingSystem}
+        organizationName={data.organization.name}
+        sessionId={sessionId}
+        sessionName={data.session.name}
+      />
     </>
   );
 }

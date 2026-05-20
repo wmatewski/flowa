@@ -1,13 +1,15 @@
 import { cookies, headers } from "next/headers";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Leaf } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 
 import { submitSessionEntryAction } from "@/app/actions";
+import {
+  PublicSurveyShell,
+  buildPublicSurveyStepItems,
+} from "@/components/user/public-survey-shell";
 import { ScreenTimeStepForm } from "@/components/user/screen-time-step-form";
 import { SessionEntryState } from "@/components/user/session-entry-state";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getPublicSessionExperienceData } from "@/lib/data";
 import { publicEnv } from "@/lib/env/public";
 import { detectOperatingSystem, isOperatingSystem } from "@/lib/os";
@@ -19,7 +21,7 @@ const getFlashMessage = (params: Record<string, string | string[] | undefined>):
   }
 
   if (params.error === "save-failed") {
-    return { type: "error", message: "Nie udało się zapisać wyniku. Spróbuj ponownie za chwilę." };
+    return { type: "error", message: "Nie udalo sie zapisac wyniku. Sprobuj ponownie za chwile." };
   }
 
   return null;
@@ -56,70 +58,63 @@ export default async function PublicSessionTimePage({
       ? query.os
       : data.detectedOperatingSystem;
   const flash = getFlashMessage(query);
-  const totalSteps = data.session.age_mode === "variable" ? 4 : 3;
-  const currentStep = data.session.age_mode === "variable" ? 3 : 2;
-  const progress = `${Math.round((currentStep / totalSteps) * 100)}%`;
+  const hasAgeStep = data.session.age_mode === "variable";
+  const totalSteps = hasAgeStep ? 4 : 3;
+  const currentStep = hasAgeStep ? 3 : 2;
 
   return (
     <>
-      <main className="wf-step-shell">
-        <SessionEntryState sessionId={sessionId} />
-        <div className="wf-step-container wf-step-container-animated">
-          <div className="wf-step-topbar">
-            <Link className="wf-brand" href="/">
-              <div className="wf-brand-mark">
-                <Leaf size={16} />
-              </div>
-              <span>{data.organization.name}</span>
+      <SessionEntryState sessionId={sessionId} />
+      <PublicSurveyShell
+        actions={
+          <div className="wf-survey-action-bar">
+            <Link
+              className="wf-survey-action wf-survey-action-secondary"
+              href={`/ankieta/${sessionId}?age=${age}&os=${selectedOperatingSystem}`}
+            >
+              <ArrowLeft size={18} />
+              <span>Wstecz</span>
             </Link>
-            <div className="wf-inline-meta">
-              <span>powered by Wojticore Flowa</span>
-              <Link className="wf-link-button" href="/guides">
-                Pomoc
-              </Link>
-            </div>
+            <button
+              className="wf-survey-action wf-survey-action-primary"
+              form="wf-time-form"
+              type="submit"
+            >
+              <span>Dalej</span>
+              <ArrowRight size={18} />
+            </button>
           </div>
+        }
+        description="Wpisz dzisiejszy czas przed ekranem w godzinach i minutach. Ten krok ma ten sam uklad na telefonie i komputerze."
+        organizationName={data.organization.name}
+        sidebarDescription={`Wybrany system jest juz ustawiony. Teraz wpisz wynik dla ankiety "${data.session.name}".`}
+        step={currentStep}
+        stepItems={buildPublicSurveyStepItems(hasAgeStep, currentStep)}
+        title="Wpisz swoj czas przed ekranem"
+        topbarLeading={
+          <Link
+            aria-label="Wstecz"
+            className="wf-survey-icon-button"
+            href={`/ankieta/${sessionId}?age=${age}&os=${selectedOperatingSystem}`}
+          >
+            <ArrowLeft size={18} />
+          </Link>
+        }
+        totalSteps={totalSteps}
+      >
+        <div className="wf-survey-form-stack">
+          {flash ? <div className={`wf-flash ${flash.type}`}>{flash.message}</div> : null}
 
-          <div className="wf-step-progress">
-            <div className="wf-inline-meta" style={{ justifyContent: "space-between" }}>
-              <span>Krok {currentStep} z {totalSteps}</span>
-              <span>{data.session.name}</span>
-            </div>
-            <div className="wf-step-progress-bar">
-              <div className="wf-step-progress-fill" style={{ width: progress }} />
-            </div>
-          </div>
-
-          <Card className="wf-step-card wf-step-panel-animated">
-            <CardHeader>
-              <CardTitle style={{ margin: 0 }}>Wpisz czas przed ekranem</CardTitle>
-              <CardDescription>Podaj dzisiejszy wynik w godzinach i minutach.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-5">
-              {flash ? <div className={`wf-flash ${flash.type}`}>{flash.message}</div> : null}
-
-              <ScreenTimeStepForm
-                age={age}
-                initialMinutes={initialMinutes}
-                operatingSystem={selectedOperatingSystem as OperatingSystem}
-                sessionId={data.session.id}
-                submitAction={submitSessionEntryAction}
-              />
-
-              <div className="wf-step-actions">
-                <Button asChild variant="secondary">
-                  <Link href={`/ankieta/${sessionId}?age=${age}&os=${selectedOperatingSystem}`}>Wróć do instrukcji</Link>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          <ScreenTimeStepForm
+            age={age}
+            formId="wf-time-form"
+            initialMinutes={initialMinutes}
+            operatingSystem={selectedOperatingSystem as OperatingSystem}
+            sessionId={data.session.id}
+            submitAction={submitSessionEntryAction}
+          />
         </div>
-      </main>
-      <footer className="wf-footer">
-        <div className="wf-footer-inner">
-          <Link href="/">Made with Wojticore Flowa</Link>
-        </div>
-      </footer>
+      </PublicSurveyShell>
     </>
   );
 }

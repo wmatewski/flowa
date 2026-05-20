@@ -1,13 +1,13 @@
 import { cookies, headers } from "next/headers";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Leaf } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 
 import { SessionEntryState } from "@/components/user/session-entry-state";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import {
+  PublicSurveyShell,
+  buildPublicSurveyStepItems,
+} from "@/components/user/public-survey-shell";
 import { getPublicSessionExperienceData } from "@/lib/data";
 import { publicEnv } from "@/lib/env/public";
 import { detectOperatingSystem } from "@/lib/os";
@@ -51,70 +51,58 @@ export default async function PublicSessionAgePage({
   const flash = getFlashMessage(query.error ? String(query.error) : undefined);
 
   return (
-    <>
-      <main className="wf-step-shell">
-        <SessionEntryState sessionId={sessionId} />
-        <div className="wf-step-container wf-step-container-animated">
-          <div className="wf-step-topbar">
-            <Link className="wf-brand" href="/">
-              <div className="wf-brand-mark">
-                <Leaf size={16} />
-              </div>
-              <span>{data.organization.name}</span>
+    <main>
+      <SessionEntryState sessionId={sessionId} />
+      <PublicSurveyShell
+        actions={
+          <div className="wf-survey-action-bar">
+            <Link className="wf-survey-action wf-survey-action-secondary" href="/">
+              <ArrowLeft size={18} />
+              <span>Wstecz</span>
             </Link>
-            <div className="wf-inline-meta">
-              <span>powered by Wojticore Flowa</span>
-              <Link className="wf-link-button" href="/guides">
-                Pomoc
-              </Link>
-            </div>
+            <button
+              className="wf-survey-action wf-survey-action-primary"
+              form="wf-age-form"
+              type="submit"
+            >
+              <span>Dalej</span>
+              <ArrowRight size={18} />
+            </button>
           </div>
+        }
+        description="Wprowadzenie wieku pomaga dopasowac wynik do odpowiedniej grupy i pokazac bardziej trafny komunikat koncowy."
+        organizationName={data.organization.name}
+        sidebarDescription={`Ankieta "${data.session.name}" zajmie chwile. Zaczynamy od wieku, aby dalsza analiza byla lepiej dopasowana.`}
+        step={1}
+        stepItems={buildPublicSurveyStepItems(true, 1)}
+        title="Podaj swoj wiek"
+        topbarLeading={
+          <Link aria-label="Wstecz" className="wf-survey-icon-button" href="/">
+            <ArrowLeft size={18} />
+          </Link>
+        }
+        totalSteps={4}
+      >
+        <div className="wf-survey-form-stack">
+          {flash ? <div className={`wf-flash ${flash.type}`}>{flash.message}</div> : null}
 
-          <div className="wf-step-progress">
-            <div className="wf-inline-meta" style={{ justifyContent: "space-between" }}>
-              <span>Krok 1 z 4</span>
-              <span>Wiek</span>
-            </div>
-            <div className="wf-step-progress-bar">
-              <div className="wf-step-progress-fill" style={{ width: "25%" }} />
-            </div>
-          </div>
-
-          <Card className="wf-step-card wf-step-panel-animated">
-            <CardHeader>
-              <CardTitle style={{ margin: 0 }}>Podaj swój wiek</CardTitle>
-              <CardDescription>Dzięki temu dopasujemy późniejszy wynik do odpowiedniej grupy wiekowej.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-5">
-              {flash ? <div className={`wf-flash ${flash.type}`}>{flash.message}</div> : null}
-
-              <form action={`/ankieta/${sessionId}`} className="space-y-5" method="get">
-                <div className="space-y-2">
-                  <Label htmlFor="age">Wiek uczestnika</Label>
-                  <Input
-                    id="age"
-                    inputMode="numeric"
-                    max={120}
-                    min={1}
-                    name="age"
-                    placeholder="25"
-                    type="number"
-                  />
-                </div>
-
-                <Button className="w-full" type="submit">
-                  Dalej
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
+          <form action={`/ankieta/${sessionId}`} className="wf-survey-age-form" id="wf-age-form" method="get">
+            <label className="wf-survey-age-input-shell" htmlFor="age">
+              <span className="wf-survey-age-input-label">Wiek uczestnika</span>
+              <input
+                className="wf-survey-age-input"
+                id="age"
+                inputMode="numeric"
+                max={120}
+                min={1}
+                name="age"
+                placeholder="Np. 30"
+                type="number"
+              />
+            </label>
+          </form>
         </div>
-      </main>
-      <footer className="wf-footer">
-        <div className="wf-footer-inner">
-          <Link href="/">Made with Wojticore Flowa</Link>
-        </div>
-      </footer>
-    </>
+      </PublicSurveyShell>
+    </main>
   );
 }

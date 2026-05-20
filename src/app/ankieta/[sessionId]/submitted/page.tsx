@@ -1,15 +1,15 @@
 import { cookies, headers } from "next/headers";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { CheckCircle2, Leaf } from "lucide-react";
+import { ArrowRight, CheckCircle2 } from "lucide-react";
 
 import { SessionEntryState } from "@/components/user/session-entry-state";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import {
+  PublicSurveyShell,
+  buildPublicSurveyStepItems,
+} from "@/components/user/public-survey-shell";
 import { getPublicSessionExperienceData } from "@/lib/data";
 import { publicEnv } from "@/lib/env/public";
-import { formatMinutes } from "@/lib/format";
 import { detectOperatingSystem, isOperatingSystem } from "@/lib/os";
 
 export default async function PublicSessionSubmittedPage({
@@ -35,75 +35,44 @@ export default async function PublicSessionSubmittedPage({
     redirect(`/ankieta/${sessionId}`);
   }
 
-  const totalSteps = data.session.age_mode === "variable" ? 4 : 3;
-  const currentStep = totalSteps;
-  const progress = "100%";
+  const hasAgeStep = data.session.age_mode === "variable";
+  const totalSteps = hasAgeStep ? 4 : 3;
+  const participantMessage =
+    data.participantInsight?.description ??
+    "Dziekujemy za przeslanie odpowiedzi. Twoj wynik zostal zapisany w tej prezentacji.";
+  const participantLabel = data.participantInsight?.label ?? "Odpowiedz zapisana";
 
   return (
     <>
-      <main className="wf-step-shell">
-        <SessionEntryState mode="reset" sessionId={sessionId} />
-        <div className="wf-step-container wf-step-container-animated">
-          <div className="wf-step-topbar">
-            <Link className="wf-brand" href="/">
-              <div className="wf-brand-mark">
-                <Leaf size={16} />
-              </div>
-              <span>{data.organization.name}</span>
+      <SessionEntryState mode="reset" sessionId={sessionId} />
+      <PublicSurveyShell
+        actions={
+          <div className="wf-survey-success-actions">
+            <Link className="wf-survey-action wf-survey-action-primary" href="/">
+              <span>Zakoncz</span>
+              <ArrowRight size={18} />
             </Link>
-            <div className="wf-inline-meta">
-              <span>powered by Wojticore Flowa</span>
-              <Link className="wf-link-button" href="/guides">
-                Pomoc
-              </Link>
-            </div>
+          </div>
+        }
+        description="Ostatni krok pokazuje tylko potwierdzenie i komunikat z ustawien sesji lub organizacji."
+        organizationName={data.organization.name}
+        sidebarDescription={`Ankieta "${data.session.name}" zostala zakonczona. Wynik jest juz zapisany i gotowy do analizy.`}
+        step={totalSteps}
+        stepItems={buildPublicSurveyStepItems(hasAgeStep, totalSteps)}
+        title="Dziekujemy za przeslanie odpowiedzi!"
+        totalSteps={totalSteps}
+      >
+        <div className="wf-survey-success-card">
+          <div className="wf-survey-success-icon">
+            <CheckCircle2 size={40} />
           </div>
 
-          <div className="wf-step-progress">
-            <div className="wf-inline-meta" style={{ justifyContent: "space-between" }}>
-              <span>Krok {currentStep} z {totalSteps}</span>
-              <span>Podsumowanie</span>
-            </div>
-            <div className="wf-step-progress-bar">
-              <div className="wf-step-progress-fill" style={{ width: progress }} />
-            </div>
+          <div className="wf-survey-success-copy">
+            <p className="wf-survey-success-label">{participantLabel}</p>
+            <p className="wf-survey-success-message">{participantMessage}</p>
           </div>
-
-          <Card className="wf-step-card wf-step-success-card wf-step-panel-animated">
-            <CardHeader>
-              <div className="wf-step-success-icon">
-                <CheckCircle2 size={40} />
-              </div>
-              <Badge variant="secondary">Zakończono</Badge>
-              <CardTitle style={{ margin: 0 }}>Wynik zapisany</CardTitle>
-              <CardDescription>Twoja odpowiedź została dodana do sesji {data.session.name}.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-5">
-              <div className="wf-step-note">
-                <strong>Twój wynik</strong>
-                <p style={{ margin: "8px 0 0" }}>
-                  Zapisano {formatMinutes(data.latestSubmission?.screen_time_minutes)}. Średnia sesji wynosi {formatMinutes(data.sessionAverageMinutes)}.
-                </p>
-              </div>
-
-              {data.participantInsight ? (
-                <div className={`wf-flash ${data.participantInsight.tone === "optimal" ? "success" : data.participantInsight.tone === "warning" ? "info" : "error"}`}>
-                  {data.participantInsight.description}
-                </div>
-              ) : null}
-
-              <Button asChild className="w-full" variant="secondary">
-                <Link href="/">Wróć na stronę główną</Link>
-              </Button>
-            </CardContent>
-          </Card>
         </div>
-      </main>
-      <footer className="wf-footer">
-        <div className="wf-footer-inner">
-          <Link href="/">Made with Wojticore Flowa</Link>
-        </div>
-      </footer>
+      </PublicSurveyShell>
     </>
   );
 }
