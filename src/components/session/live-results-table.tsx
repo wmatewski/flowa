@@ -1,19 +1,8 @@
 "use client";
 
-import { Maximize2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { formatDateTime, formatMinutes } from "@/lib/format";
+import { formatLiveTimestamp, formatMinutes } from "@/lib/format";
 import type { LiveSessionEntry } from "@/lib/types";
 
 interface LiveResultsTableProps {
@@ -25,21 +14,22 @@ interface LiveResultsState {
   entries: LiveSessionEntry[];
 }
 
-export const LiveResultsTable = ({
-  refreshUrl,
-  initialEntries,
-}: LiveResultsTableProps) => {
-  const [state, setState] = useState<LiveResultsState>({
-    entries: initialEntries,
-  });
+const dedupeEntries = (entries: LiveSessionEntry[]) => {
+  const unique = new Map<string, LiveSessionEntry>();
 
-  const handleFullscreen = () => {
-    if (document.fullscreenElement) {
-      document.exitFullscreen();
-    } else {
-      document.documentElement.requestFullscreen();
-    }
-  };
+  for (const entry of entries) {
+    unique.set(entry.id, entry);
+  }
+
+  return Array.from(unique.values()).sort(
+    (left, right) => new Date(right.submittedAt).getTime() - new Date(left.submittedAt).getTime(),
+  );
+};
+
+export const LiveResultsTable = ({ refreshUrl, initialEntries }: LiveResultsTableProps) => {
+  const [state, setState] = useState<LiveResultsState>({
+    entries: dedupeEntries(initialEntries),
+  });
 
   useEffect(() => {
     let cancelled = false;
@@ -55,7 +45,9 @@ export const LiveResultsTable = ({
         const nextState = (await response.json()) as LiveResultsState;
 
         if (!cancelled) {
-          setState(nextState);
+          setState({
+            entries: dedupeEntries(nextState.entries ?? []),
+          });
         }
       } catch {
         return;
@@ -72,55 +64,41 @@ export const LiveResultsTable = ({
   }, [refreshUrl]);
 
   return (
-    <section className="wf-live-table-shell">
-      <Card>
-        <CardHeader className="items-start justify-between gap-4 md:flex-row md:items-center">
-          <div>
-            <CardTitle>Ostatnie odpowiedzi</CardTitle>
-            <CardDescription>Widok odświeża się automatycznie co kilka sekund.</CardDescription>
-          </div>
-          <span className="wf-pill wf-pill-soft">Na żywo</span>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-            <TableHead>Czas wpisu</TableHead>
-            <TableHead>Czas przed ekranem</TableHead>
-            <TableHead>Wiek</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {state.entries.length ? (
-                state.entries.map((entry) => (
-                  <TableRow key={entry.id}>
-                    <TableCell>{formatDateTime(entry.submittedAt)}</TableCell>
-                    <TableCell>{formatMinutes(entry.screenTimeMinutes)}</TableCell>
-                    <TableCell>{entry.age}</TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={3}>
-                    <p className="wf-empty">Brak odpowiedzi do wyświetlenia.</p>
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+    <section className="wf-live-results-table-card">
+      <div className="wf-live-results-table-header">
+        <h2 className="wf-live-results-table-title">Ostatnie odpowiedzi</h2>
+      </div>
 
-      <Button
-        className="wf-fullscreen-btn"
-        size="icon"
-        variant="secondary"
-        onClick={handleFullscreen}
-        title="Pełny ekran"
-        type="button"
-      >
-        <Maximize2 size={20} />
-      </Button>
+      <div className="wf-live-results-table-scroll">
+        <table className="wf-live-results-table">
+          <thead>
+            <tr>
+              <th>Czas wpisu</th>
+              <th>Czas przed ekranem</th>
+              <th>Wiek</th>
+            </tr>
+          </thead>
+          <tbody>
+            {state.entries.length ? (
+              state.entries.map((entry) => (
+                <tr key={entry.id}>
+                  <td>{formatLiveTimestamp(entry.submittedAt)}</td>
+                  <td className="wf-live-results-table-emphasis">
+                    {formatMinutes(entry.screenTimeMinutes)}
+                  </td>
+                  <td>{entry.age}</td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td className="wf-live-results-table-empty" colSpan={3}>
+                  Brak odpowiedzi do wyświetlenia.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
     </section>
   );
 };

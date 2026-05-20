@@ -24,6 +24,48 @@ export const formatDateTime = (value: string) =>
     timeStyle: "short",
   }).format(new Date(value));
 
+const LIVE_TIME_ZONE = "Europe/Warsaw";
+
+const buildDateKey = (value: string) =>
+  new Intl.DateTimeFormat("en-CA", {
+    timeZone: LIVE_TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date(value));
+
+const formatLiveClock = (value: string) =>
+  new Intl.DateTimeFormat("pl-PL", {
+    timeZone: LIVE_TIME_ZONE,
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).format(new Date(value));
+
+const formatLiveDate = (value: string) =>
+  new Intl.DateTimeFormat("pl-PL", {
+    timeZone: LIVE_TIME_ZONE,
+    dateStyle: "medium",
+  }).format(new Date(value));
+
+export const formatLiveTimestamp = (value: string) => {
+  const submittedAt = new Date(value);
+
+  if (Number.isNaN(submittedAt.getTime())) {
+    return "Brak danych";
+  }
+
+  const currentKey = buildDateKey(new Date().toISOString());
+  const submittedKey = buildDateKey(value);
+  const time = formatLiveClock(value);
+
+  if (currentKey === submittedKey) {
+    return `${time}, Dzisiaj`;
+  }
+
+  return `${time}, ${formatLiveDate(value)}`;
+};
+
 export const formatDateTimeWithSeconds = (value: string | null | undefined) => {
   if (!value) {
     return "Brak danych";

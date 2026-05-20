@@ -2863,6 +2863,278 @@ h6,
   line-height: 1.5;
 }
 
+.wf-live-results-page {
+  min-height: 100vh;
+  background: #f7f9fb;
+  color: #15191f;
+}
+
+.wf-live-results-shell {
+  width: min(1528px, calc(100% - 48px));
+  margin: 0 auto;
+  padding: 48px 0 16px;
+  display: grid;
+  gap: 40px;
+}
+
+.wf-live-results-header {
+  display: grid;
+  gap: 12px;
+}
+
+.wf-live-results-eyebrow {
+  margin: 0;
+  color: #373f56;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.wf-live-results-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(3.2rem, 5.4vw, 5.85rem);
+  line-height: 0.98;
+  letter-spacing: -0.055em;
+  font-weight: 700;
+}
+
+.wf-live-results-subtitle {
+  margin: 10px 0 0;
+  max-width: 760px;
+  color: #4f5569;
+  font-size: clamp(1.05rem, 1.65vw, 1.45rem);
+  line-height: 1.65;
+}
+
+.wf-live-results-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.33fr) minmax(0, 0.67fr);
+  gap: 24px;
+}
+
+.wf-live-results-card,
+.wf-live-results-table-card {
+  border: 1px solid rgba(196, 193, 220, 0.9);
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow: 0 10px 30px rgba(18, 20, 35, 0.04);
+}
+
+.wf-live-results-join-card {
+  min-height: 484px;
+  padding: 40px 36px 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  text-align: center;
+}
+
+.wf-live-results-card-title {
+  margin: 0;
+  color: #15191f;
+  font-size: 28px;
+  line-height: 1.15;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.wf-live-results-join-card .wf-live-results-card-title {
+  margin-bottom: 28px;
+}
+
+.wf-live-results-join-frame {
+  width: 100%;
+  max-width: 286px;
+  padding: 18px;
+  border-radius: 12px;
+  border: 1px solid rgba(196, 193, 220, 0.9);
+  background: #ffffff;
+}
+
+.wf-live-results-join-frame-inner {
+  padding: 16px;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #ffffff 0%, #f7f8ff 100%);
+  box-shadow: inset 0 0 0 1px rgba(240, 241, 247, 0.95);
+}
+
+.wf-live-results-join-qr {
+  display: block;
+  width: min(100%, 248px);
+  height: auto;
+  margin: 0 auto;
+}
+
+.wf-live-results-join-caption {
+  margin: 28px 0 0;
+  color: #4f5569;
+  font-size: 16px;
+  line-height: 1.55;
+}
+
+.wf-live-results-average-card {
+  min-height: 484px;
+  padding: 42px 40px 40px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+.wf-live-results-average-card .wf-live-results-card-title {
+  margin-bottom: 30px;
+}
+
+.wf-live-results-average-body {
+  min-height: 320px;
+  display: flex;
+  align-items: center;
+  gap: 36px;
+  padding-left: 2px;
+}
+
+.wf-live-results-average-ring {
+  position: relative;
+  width: 160px;
+  height: 160px;
+  flex: 0 0 auto;
+}
+
+.wf-live-results-average-ring-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.wf-live-results-average-ring-track,
+.wf-live-results-average-ring-progress {
+  fill: none;
+  stroke-width: 10;
+}
+
+.wf-live-results-average-ring-track {
+  stroke: #e0e3e8;
+}
+
+.wf-live-results-average-ring-progress {
+  stroke: #2e24d8;
+  stroke-linecap: round;
+  stroke-dasharray: 307.8760800517997;
+  transition: stroke-dashoffset 240ms ease;
+}
+
+.wf-live-results-average-icon {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  color: #2e24d8;
+  transform: translate(-50%, -50%);
+}
+
+.wf-live-results-average-value {
+  color: #15191f;
+  font-family: var(--font-display);
+  font-size: clamp(3.6rem, 5vw, 5.2rem);
+  line-height: 0.98;
+  letter-spacing: -0.055em;
+  font-weight: 700;
+}
+
+.wf-live-results-table-card {
+  overflow: hidden;
+}
+
+.wf-live-results-table-header {
+  padding: 26px 28px;
+  border-bottom: 1px solid rgba(196, 193, 220, 0.9);
+  background: #ffffff;
+}
+
+.wf-live-results-table-title {
+  margin: 0;
+  color: #15191f;
+  font-size: 24px;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.wf-live-results-table-scroll {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.wf-live-results-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.wf-live-results-table thead th {
+  padding: 22px 28px;
+  color: #2f3447;
+  font-size: 14px;
+  font-weight: 500;
+  text-align: left;
+  border-bottom: 1px solid rgba(196, 193, 220, 0.8);
+}
+
+.wf-live-results-table tbody td {
+  padding: 24px 28px;
+  color: #15191f;
+  font-size: 16px;
+  line-height: 1.4;
+  border-bottom: 1px solid rgba(196, 193, 220, 0.85);
+}
+
+.wf-live-results-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.wf-live-results-table-emphasis {
+  color: #2e24d8;
+  font-weight: 500;
+}
+
+.wf-live-results-table-empty {
+  padding: 36px 28px;
+  color: #4f5569;
+  text-align: center;
+}
+
+.wf-live-results-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 18px 2px 0;
+  color: #2f3447;
+  font-size: 15px;
+}
+
+.wf-live-results-footer-brand {
+  color: inherit;
+  text-decoration: none;
+}
+
+.wf-live-results-footer-links {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+
+.wf-live-results-footer-links a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.wf-live-results-footer-brand:hover,
+.wf-live-results-footer-links a:hover {
+  text-decoration: underline;
+}
+
 @media (max-width: 1024px) {
   .wf-live-feature-grid,
   .wf-live-links-grid {
@@ -2872,6 +3144,71 @@ h6,
   .wf-live-footer {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .wf-live-results-shell {
+    width: min(100%, calc(100% - 32px));
+    padding-top: 32px;
+  }
+
+  .wf-live-results-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .wf-live-results-join-card,
+  .wf-live-results-average-card {
+    min-height: auto;
+  }
+
+  .wf-live-results-average-body {
+    min-height: auto;
+  }
+
+  .wf-live-results-footer {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 760px) {
+  .wf-live-results-shell {
+    width: min(100%, calc(100% - 24px));
+    gap: 28px;
+  }
+
+  .wf-live-results-join-card,
+  .wf-live-results-average-card {
+    padding: 28px 22px 24px;
+  }
+
+  .wf-live-results-card-title,
+  .wf-live-results-table-title {
+    font-size: 22px;
+  }
+
+  .wf-live-results-average-body {
+    gap: 24px;
+  }
+
+  .wf-live-results-average-ring {
+    width: 132px;
+    height: 132px;
+  }
+
+  .wf-live-results-average-value {
+    font-size: clamp(2.8rem, 12vw, 4rem);
+  }
+
+  .wf-live-results-table-header,
+  .wf-live-results-table thead th,
+  .wf-live-results-table tbody td {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  .wf-live-results-footer-links {
+    gap: 20px;
+    flex-wrap: wrap;
   }
 }
 
