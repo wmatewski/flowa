@@ -1,14 +1,10 @@
-import {
-  ArrowRight,
-  ChartColumn,
-  Code2,
-  Leaf,
-  Presentation,
-  Radio,
-} from "lucide-react";
+import { ArrowRight, ChartColumn, Leaf, Presentation, QrCode, Radio } from "lucide-react";
 import Link from "next/link";
 import { auth } from "@clerk/nextjs/server";
+
 import { Button } from "@/components/ui/button";
+
+const githubUrl = "https://github.com/wmatewski/wojticore-flowa";
 
 export default async function HomePage() {
   const { userId } = await auth();
@@ -17,7 +13,7 @@ export default async function HomePage() {
   return (
     <>
       <header className="wf-topbar">
-        <div className="wf-topbar-inner">
+        <div className="wf-topbar-inner wf-landing-topbar">
           <Link className="wf-brand" href="/">
             <div className="wf-brand-mark">
               <Leaf size={16} />
@@ -25,42 +21,33 @@ export default async function HomePage() {
             <span>Wojticore Flowa</span>
           </Link>
 
-          <nav className="wf-nav">
+          <nav className="wf-nav wf-landing-nav">
             <Link className="wf-nav-link" href="#funkcje">
               Funkcje
             </Link>
-            <Link className="wf-nav-link" href="/guides">
-              Poradniki
+            <Link className="wf-nav-link" href="#jak-to-dziala">
+              Jak to działa
             </Link>
-            {isSignedIn ? (
-              <Link className="wf-nav-link" href="/admin">
-                Dashboard
-              </Link>
-            ) : null}
+            <Link className="wf-nav-link" href="/guides">
+              Dokumentacja
+            </Link>
+            <a className="wf-nav-link" href={githubUrl} rel="noreferrer" target="_blank">
+              GitHub
+            </a>
           </nav>
 
-          <div className="wf-card-actions">
-            {isSignedIn ? (
-              <Link className="wf-btn wf-btn-primary" href="/admin">
-                Dashboard
-              </Link>
-            ) : (
-              <>
-                <Link className="wf-btn wf-btn-secondary" href="/auth?mode=login">
-                  Zaloguj się
-                </Link>
-                <Link className="wf-btn wf-btn-primary" href="/auth?mode=register">
-                  Zarejestruj
-                </Link>
-              </>
-            )}
-          </div>
+          <Button asChild className="wf-landing-topbar-cta">
+            <Link href={isSignedIn ? "/admin" : "/auth?mode=register"}>
+              {isSignedIn ? "Panel" : "Rozpocznij"}
+              <ArrowRight size={18} />
+            </Link>
+          </Button>
         </div>
       </header>
 
-      <main className="wf-public-page">
-        <section className="wf-shell wf-hero">
-          <div className="wf-hero-copy">
+      <main className="wf-public-page wf-landing-page">
+        <section className="wf-shell wf-landing-hero">
+          <div className="wf-hero-copy wf-landing-copy">
             <div className="wf-badge">NASZA ORGANIZACJA</div>
             <h1>Wojticore Flowa</h1>
             <p>
@@ -69,46 +56,45 @@ export default async function HomePage() {
             <div className="wf-hero-actions">
               <Button asChild className="wf-hero-primary-link">
                 <Link href={isSignedIn ? "/admin" : "/auth?mode=register"}>
-                  {isSignedIn ? "Dashboard" : "Zacznij"}
+                  {isSignedIn ? "Przejdź do panelu" : "Rozpocznij"}
                   <ArrowRight size={18} />
                 </Link>
               </Button>
-              <a className="wf-btn wf-btn-secondary" href="https://github.com" rel="noreferrer" target="_blank">
+              <a className="wf-btn wf-btn-secondary" href={githubUrl} rel="noreferrer" target="_blank">
                 Zobacz na GitHubie
+                <ArrowRight size={18} />
               </a>
             </div>
           </div>
 
-          <div className="wf-hero-visual">
-            <div className="wf-hero-visual-card">
+          <div className="wf-landing-visual">
+            <div className="wf-hero-visual-card wf-landing-visual-card">
               <div className="wf-hero-visual-accent wf-hero-visual-accent-top" />
               <div className="wf-hero-visual-accent wf-hero-visual-accent-bottom" />
-              <div className="wf-hero-visual-monitor">
-                <div className="wf-hero-visual-monitor-topbar">
+              <div className="wf-landing-visual-window">
+                <div className="wf-landing-visual-window-topbar">
                   <span />
                   <span />
                   <span />
                 </div>
-                <div className="wf-hero-visual-monitor-screen">
-                  <div className="wf-hero-visual-chart">
-                    <div className="wf-hero-visual-bars">
-                      <span style={{ height: "38%" }} />
-                      <span style={{ height: "54%" }} />
-                      <span style={{ height: "76%" }} />
-                      <span style={{ height: "63%" }} />
-                      <span style={{ height: "88%" }} />
+                <div className="wf-landing-visual-window-body">
+                  <div className="wf-landing-visual-monitor">
+                    <div className="wf-landing-visual-monitor-screen">
+                      <div className="wf-landing-visual-bars">
+                        <span style={{ height: "42%" }} />
+                        <span style={{ height: "58%" }} />
+                        <span style={{ height: "74%" }} />
+                        <span style={{ height: "61%" }} />
+                        <span style={{ height: "88%" }} />
+                      </div>
+                      <div className="wf-landing-visual-rings">
+                        <span />
+                        <span />
+                        <span />
+                      </div>
                     </div>
-                    <div className="wf-hero-visual-rings">
-                      <div className="wf-hero-visual-ring" />
-                      <div className="wf-hero-visual-ring" />
-                      <div className="wf-hero-visual-ring" />
-                    </div>
+                    <div className="wf-landing-visual-monitor-base" />
                   </div>
-                </div>
-                <div className="wf-hero-visual-dock">
-                  <span />
-                  <span />
-                  <span />
                 </div>
               </div>
               <div className="wf-hero-visual-floating wf-hero-visual-floating-left">
@@ -123,47 +109,93 @@ export default async function HomePage() {
 
         <section className="wf-feature-section" id="funkcje">
           <div className="wf-shell">
-            <header style={{ textAlign: "center", marginBottom: 36 }}>
-              <h2 style={{ margin: 0, fontSize: 40, letterSpacing: "-0.04em" }}>Dlaczego Wojticore Flowa?</h2>
-              <p className="wf-page-subtitle" style={{ maxWidth: 720, margin: "12px auto 0" }}>
-                Zaprojektowane dla spokojnej prezentacji, szybkiego startu i czytelnych wyników.
-              </p>
+            <header className="wf-landing-section-header">
+              <h2>Dlaczego Wojticore Flowa?</h2>
+              <p>Zaplanowane pod szybkie wdrożenie, czytelne wyniki i spokojną prezentację.</p>
             </header>
 
-            <div className="wf-feature-grid">
-              <article className="wf-feature-card">
+            <div className="wf-landing-feature-grid">
+              <article className="wf-feature-card wf-landing-feature-card">
                 <div className="wf-feature-icon">
                   <Presentation size={24} />
                 </div>
                 <h3>Open Source i darmowe</h3>
-                <p>
-                  Masz pełną kontrolę nad kodem, danymi i sposobem wdrożenia bez zamkniętego lock-in.
-                </p>
+                <p>Masz pełną kontrolę nad kodem, danymi i sposobem wdrożenia bez zamkniętego lock-in.</p>
+                <div className="wf-landing-feature-art wf-landing-feature-art-lock">
+                  <div className="wf-landing-feature-art-block wf-landing-feature-art-block-a" />
+                  <div className="wf-landing-feature-art-block wf-landing-feature-art-block-b" />
+                  <div className="wf-landing-feature-art-block wf-landing-feature-art-block-c" />
+                </div>
               </article>
-              <article className="wf-feature-card">
+
+              <article className="wf-feature-card wf-landing-feature-card">
                 <div className="wf-feature-icon">
                   <Radio size={24} />
                 </div>
                 <h3>Wyniki na żywo</h3>
-                <p>
-                  Oglądaj odpowiedzi aktualizowane w czasie rzeczywistym i wyświetlaj je na ekranie prezentacji.
-                </p>
-              </article>
-              <article className="wf-feature-card">
-                <div className="wf-feature-icon">
-                  <Code2 size={24} />
+                <p>Oglądaj odpowiedzi aktualizowane w czasie rzeczywistym i wyświetlaj je na ekranie prezentacji.</p>
+                <div className="wf-landing-feature-art wf-landing-feature-art-bars">
+                  <span />
+                  <span />
+                  <span />
                 </div>
-                <h3>Łatwe udostępnianie</h3>
-                <p>
-                  QR i link uczestnika umożliwiają szybkie wdrożenie bez dodatkowej konfiguracji po stronie uczestnika.
-                </p>
+              </article>
+
+              <article className="wf-feature-card wf-landing-feature-card wf-landing-feature-card-wide">
+                <div className="wf-landing-feature-wide-copy">
+                  <div className="wf-feature-icon">
+                    <QrCode size={24} />
+                  </div>
+                  <h3>Łatwa integracja</h3>
+                  <p>QR i link uczestnika pozwalają uruchomić ankietę bez dodatkowych kroków po stronie uczestnika.</p>
+                </div>
+                <div className="wf-landing-qr-card">
+                  <div className="wf-landing-qr-grid">
+                    {Array.from({ length: 25 }).map((_, index) => (
+                      <span className={index % 3 === 0 ? "is-dark" : index % 5 === 0 ? "is-light" : ""} key={index} />
+                    ))}
+                  </div>
+                </div>
               </article>
             </div>
           </div>
         </section>
 
-        <section className="wf-shell" style={{ paddingBottom: 48 }}>
-          <div className="wf-cta-card">
+        <section className="wf-landing-how" id="jak-to-dziala">
+          <div className="wf-shell">
+            <header className="wf-landing-section-header">
+              <h2>Jak to działa?</h2>
+              <p>Trzy proste kroki do zaangażowania publiczności.</p>
+            </header>
+
+            <div className="wf-landing-steps">
+              <article className="wf-landing-step">
+                <div className="wf-landing-step-icon">
+                  <span>1</span>
+                </div>
+                <h3>Stwórz ankietę</h3>
+                <p>Zdefiniuj pytania o czas przed ekranem w intuicyjnym panelu.</p>
+              </article>
+              <article className="wf-landing-step">
+                <div className="wf-landing-step-icon">
+                  <span>2</span>
+                </div>
+                <h3>Udostępnij QR</h3>
+                <p>Wyświetl kod na ekranie. Uczestnicy dołączają bez instalacji aplikacji.</p>
+              </article>
+              <article className="wf-landing-step">
+                <div className="wf-landing-step-icon">
+                  <span>3</span>
+                </div>
+                <h3>Wyniki na żywo</h3>
+                <p>Obserwuj jak wykresy aktualizują się z każdą nową odpowiedzią.</p>
+              </article>
+            </div>
+          </div>
+        </section>
+
+        <section className="wf-shell wf-landing-cta-section">
+          <div className="wf-cta-card wf-landing-cta-card">
             <div className="wf-feature-icon" style={{ margin: "0 auto" }}>
               <Leaf size={22} />
             </div>
@@ -174,7 +206,7 @@ export default async function HomePage() {
             <div className="wf-hero-actions" style={{ justifyContent: "center" }}>
               {isSignedIn ? (
                 <Link className="wf-btn wf-btn-primary" href="/admin">
-                  Dashboard
+                  Panel
                 </Link>
               ) : (
                 <>
@@ -182,7 +214,7 @@ export default async function HomePage() {
                     Uruchom projekt
                   </Link>
                   <Link className="wf-btn wf-btn-secondary" href="/guides">
-                    Jak to działa
+                    Dokumentacja
                   </Link>
                 </>
               )}
@@ -192,27 +224,29 @@ export default async function HomePage() {
       </main>
 
       <footer className="wf-footer">
-        <div className="wf-footer-inner">
-          <div className="wf-brand">
-            <div className="wf-brand-mark">
-              <Leaf size={16} />
-            </div>
-            <span>Wojticore Flowa</span>
-          </div>
+        <div className="wf-footer-inner wf-landing-footer-inner">
           <div>
-            © 2026{" "}
-            <Link href="/">
-              Made with Wojticore Flowa
-            </Link>
+            <div className="wf-brand">
+              <div className="wf-brand-mark">
+                <Leaf size={16} />
+              </div>
+              <span>Wojticore Flowa</span>
+            </div>
+            <div className="wf-footer-muted" style={{ marginTop: 8 }}>
+              © 2026 Wojticore Flowa. Open-source under MIT License.
+            </div>
           </div>
           <nav className="wf-footer-nav">
+            <Link href="#funkcje">Funkcje</Link>
+            <Link href="#jak-to-dziala">Jak to działa</Link>
             <Link href="/guides">Dokumentacja</Link>
-            <Link href="/auth?mode=register">Rejestracja</Link>
-            {isSignedIn ? <Link href="/admin">Dashboard</Link> : null}
+            <a href={githubUrl} rel="noreferrer" target="_blank">
+              GitHub
+            </a>
+            {isSignedIn ? <Link href="/admin">Panel</Link> : <Link href="/auth?mode=register">Rejestracja</Link>}
           </nav>
         </div>
       </footer>
     </>
   );
 }
-
