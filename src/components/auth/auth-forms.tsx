@@ -8,6 +8,7 @@ import { startTransition, useState } from "react";
 import { useClerk, useSignIn, useSignUp } from "@clerk/nextjs";
 
 import { LogoutButton } from "@/components/auth/logout-button";
+import { sanitizeInternalRedirectUrl } from "@/lib/redirect-url";
 import type { FlashMessage } from "@/lib/types";
 
 type AuthMode = "login" | "register";
@@ -17,6 +18,7 @@ interface AuthFormsProps {
   mode: AuthMode;
   initialFlash: FlashMessage | null;
   requiresOrganizationSetup: boolean;
+  redirectUrl: string;
 }
 
 const getClerkErrorMessage = (error: unknown, fallback: string) => {
@@ -30,15 +32,22 @@ const getClerkErrorMessage = (error: unknown, fallback: string) => {
   return message ? String(message) : fallback;
 };
 
-const getVerifyRedirectUrl = () => {
+const getVerifyRedirectUrl = (redirectUrl: string) => {
   if (typeof window === "undefined") {
-    return "/auth/verify";
+    return `/auth/verify?redirect_url=${encodeURIComponent(redirectUrl)}`;
   }
 
-  return new URL("/auth/verify", window.location.origin).toString();
+  const url = new URL("/auth/verify", window.location.origin);
+  url.searchParams.set("redirect_url", redirectUrl);
+  return url.toString();
 };
 
-export const AuthForms = ({ mode, initialFlash, requiresOrganizationSetup }: AuthFormsProps) => {
+export const AuthForms = ({
+  mode,
+  initialFlash,
+  requiresOrganizationSetup,
+  redirectUrl,
+}: AuthFormsProps) => {
   const router = useRouter();
   const clerk = useClerk();
   const { isLoaded: signInLoaded, signIn, setActive: setSignInActive } = useSignIn();
@@ -81,7 +90,7 @@ export const AuthForms = ({ mode, initialFlash, requiresOrganizationSetup }: Aut
 
   const completeOrganizerSignIn = async (sessionId: string) => {
     await setSignInActive?.({ session: sessionId });
-    router.replace("/auth");
+    router.replace(sanitizeInternalRedirectUrl(redirectUrl, "/admin"));
     router.refresh();
   };
 
@@ -92,14 +101,14 @@ export const AuthForms = ({ mode, initialFlash, requiresOrganizationSetup }: Aut
 
     await signUp.prepareEmailAddressVerification({
       strategy: "email_link",
-      redirectUrl: getVerifyRedirectUrl(),
+      redirectUrl: getVerifyRedirectUrl(redirectUrl),
     });
   };
 
   const completeOrganizerSignUp = async (sessionId: string) => {
     await setSignUpActive?.({ session: sessionId });
     await sendSignUpVerificationLink().catch(() => undefined);
-    router.push("/auth?registered=1");
+    router.push(`/auth?registered=1&redirect_url=${encodeURIComponent(redirectUrl)}`);
     router.refresh();
   };
 
@@ -188,7 +197,7 @@ export const AuthForms = ({ mode, initialFlash, requiresOrganizationSetup }: Aut
       const attempt = await signIn.create({
         strategy: "email_link",
         identifier: loginEmail,
-        redirectUrl: getVerifyRedirectUrl(),
+        redirectUrl: getVerifyRedirectUrl(redirectUrl),
       });
 
       if (attempt.status === "complete" && attempt.createdSessionId) {

@@ -32,16 +32,17 @@ const clerkAppearance = {
 
 interface ClerkAuthFormsProps {
   requiresOrganizationSetup: boolean;
+  redirectUrl: string;
 }
 
-export function ClerkAuthForms({ requiresOrganizationSetup }: ClerkAuthFormsProps) {
+export function ClerkAuthForms({ requiresOrganizationSetup, redirectUrl }: ClerkAuthFormsProps) {
   const searchParams = useSearchParams();
   const mode = searchParams.get("mode") === "register" ? "register" : "login";
 
   if (requiresOrganizationSetup) {
     return (
       <CreateOrganization
-        afterCreateOrganizationUrl="/admin"
+        afterCreateOrganizationUrl={redirectUrl}
         appearance={clerkAppearance}
       />
     );
@@ -50,8 +51,8 @@ export function ClerkAuthForms({ requiresOrganizationSetup }: ClerkAuthFormsProp
   if (mode === "register") {
     return (
       <SignUp
-        fallbackRedirectUrl="/admin"
-        signInUrl="/auth"
+        fallbackRedirectUrl={redirectUrl}
+        signInUrl={`/auth?redirect_url=${encodeURIComponent(redirectUrl)}`}
         appearance={clerkAppearance}
       />
     );
@@ -59,8 +60,8 @@ export function ClerkAuthForms({ requiresOrganizationSetup }: ClerkAuthFormsProp
 
   return (
     <SignIn
-      fallbackRedirectUrl="/admin"
-      signUpUrl="/auth?mode=register"
+      fallbackRedirectUrl={redirectUrl}
+      signUpUrl={`/auth?mode=register&redirect_url=${encodeURIComponent(redirectUrl)}`}
       appearance={clerkAppearance}
     />
   );

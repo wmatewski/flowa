@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { getAuthenticatedAdmin } from "@/lib/admin-auth";
 import { getSessionWorkspaceSummary } from "@/lib/data";
 import { publicEnv } from "@/lib/env/public";
+import { createLiveDisplayToken, buildLiveDisplayUrl } from "@/lib/live-display-session";
 import { formatMinutes, formatNumber } from "@/lib/format";
 import { buildSessionPublicUrl } from "@/lib/public-session";
 import { escapeHtmlAttribute } from "@/lib/html";
@@ -27,9 +28,15 @@ export default async function SessionLivePage({
   );
   const baseUrl = publicEnv.appUrl.replace(/\/$/, "");
   const liveUrl = `${baseUrl}/live/${sessionId}`;
-  const embedUrl = new URL(liveUrl);
-  embedUrl.searchParams.set("embed", "1");
-  const embedUrlString = embedUrl.toString();
+  const displayToken = createLiveDisplayToken({
+    sessionId: session.id,
+    organizationId: session.organization_id,
+    userId: user.id,
+    deviceLabel: "Panel organizatora",
+    ipAddress: null,
+    userAgent: null,
+  });
+  const embedUrlString = buildLiveDisplayUrl(baseUrl, sessionId, displayToken);
   const publicUrl = buildSessionPublicUrl(baseUrl, session.id);
   const iframeCode = `<iframe src="${escapeHtmlAttribute(embedUrlString)}" title="${escapeHtmlAttribute(`${session.name} - widok na żywo`)}" width="1280" height="720" style="border:0;width:100%;height:100%"></iframe>`;
 
@@ -48,7 +55,7 @@ export default async function SessionLivePage({
               Otwórz podgląd
             </Link>
           </Button>
-          <CopyButton className="wf-btn wf-btn-primary" label="Kopiuj link podglądu" value={embedUrlString} />
+          <CopyButton className="wf-btn wf-btn-primary" label="Kopiuj link osadzenia" value={embedUrlString} />
         </div>
       </div>
 
@@ -62,7 +69,7 @@ export default async function SessionLivePage({
           </div>
 
             <div className="wf-live-frame-shell">
-              <iframe className="wf-live-frame" src={`/live/${sessionId}?embed=1`} title={`${session.name} - widok na żywo`} />
+              <iframe className="wf-live-frame" src={embedUrlString} title={`${session.name} - widok na żywo`} />
             </div>
         </article>
 

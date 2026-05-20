@@ -17,3 +17,9 @@ export const getNeonDatabaseUrl = () =>
 export const getClerkSecretKey = () =>
   required("CLERK_SECRET_KEY", process.env.CLERK_SECRET_KEY);
 
+export const getLiveSessionSecret = () =>
+  required(
+    "FLOWA_LIVE_SESSION_SECRET",
+    process.env.FLOWA_LIVE_SESSION_SECRET ?? process.env.CLERK_SECRET_KEY,
+  );
+

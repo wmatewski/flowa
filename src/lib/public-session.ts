@@ -25,6 +25,9 @@ export const findSessionIdByPrefix = async (prefix: string) => {
   return rows[0]?.id ?? null;
 };
 
+export const findSessionIdByShortCode = async (shortCode: string) =>
+  findSessionIdByPrefix(shortCode);
+
 export const findSessionIdBySlug = async (slug: string) => {
   const value = slug.trim();
 

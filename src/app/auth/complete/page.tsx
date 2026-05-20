@@ -1,13 +1,14 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef } from "react";
-
-const oauthCompletionRedirectUrl = "/auth?mode=register&oauth=google";
+import { sanitizeInternalRedirectUrl } from "@/lib/redirect-url";
 
 export default function AuthCompletePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const didRunRef = useRef(false);
+  const redirectUrl = sanitizeInternalRedirectUrl(searchParams.get("redirect_url"), "/admin");
 
   useEffect(() => {
     if (didRunRef.current) {
@@ -28,11 +29,11 @@ export default function AuthCompletePage() {
         }
 
         if (!cancelled) {
-          router.replace(oauthCompletionRedirectUrl);
+          router.replace(`/auth?mode=register&oauth=google&redirect_url=${encodeURIComponent(redirectUrl)}`);
         }
       } catch {
         if (!cancelled) {
-          router.replace("/auth?mode=login&error=oauth-failed");
+          router.replace(`/auth?mode=login&error=oauth-failed&redirect_url=${encodeURIComponent(redirectUrl)}`);
         }
       }
     };
@@ -42,7 +43,7 @@ export default function AuthCompletePage() {
     return () => {
       cancelled = true;
     };
-  }, [router]);
+  }, [redirectUrl, router]);
 
   return (
     <main className="wf-auth-layout">

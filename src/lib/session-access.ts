@@ -15,6 +15,20 @@ export interface SessionAccessContext {
   userId: string;
 }
 
+export const normalizeMembershipRole = (role: string | null | undefined): MembershipRole => {
+  const normalized = String(role ?? "").toLowerCase();
+
+  if (normalized.includes("owner")) {
+    return "owner";
+  }
+
+  if (normalized.includes("admin")) {
+    return "admin";
+  }
+
+  return "moderator";
+};
+
 export const canManageAllSessions = (role: MembershipRole) =>
   role === "owner" || role === "admin";
 

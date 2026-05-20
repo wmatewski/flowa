@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth, useClerk } from "@clerk/nextjs";
+import { sanitizeInternalRedirectUrl } from "@/lib/redirect-url";
 
 const getErrorMessage = (error: unknown) => {
   if (typeof error !== "object" || error == null || !("errors" in error)) {
@@ -19,17 +20,19 @@ const getErrorMessage = (error: unknown) => {
 
 export default function AuthVerifyPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const clerk = useClerk();
   const { userId, isLoaded } = useAuth();
   const handledRef = useRef(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [verifiedOnOtherDevice, setVerifiedOnOtherDevice] = useState(false);
+  const redirectUrl = sanitizeInternalRedirectUrl(searchParams.get("redirect_url"), "/admin");
 
   useEffect(() => {
     if (isLoaded && userId) {
-      router.replace("/admin");
+      router.replace(redirectUrl);
     }
-  }, [isLoaded, userId, router]);
+  }, [isLoaded, userId, redirectUrl, router]);
 
   useEffect(() => {
     if (!clerk.loaded || handledRef.current) {
@@ -41,7 +44,7 @@ export default function AuthVerifyPage() {
     void clerk
       .handleEmailLinkVerification({
         redirectUrl: "/auth",
-        redirectUrlComplete: "/admin",
+        redirectUrlComplete: redirectUrl,
         onVerifiedOnOtherDevice: () => {
           setVerifiedOnOtherDevice(true);
         },
@@ -49,7 +52,7 @@ export default function AuthVerifyPage() {
       .catch((error) => {
         setErrorMessage(getErrorMessage(error));
       });
-  }, [clerk]);
+  }, [clerk, redirectUrl]);
 
   return (
     <main className="wf-auth-layout">

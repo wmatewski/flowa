@@ -1,4 +1,4 @@
-export const getClientIp = (headerStore: Headers) => {
+export const getClientIp = (headerStore: Pick<Headers, "get">) => {
   const candidates = [
     "x-forwarded-for",
     "x-real-ip",
