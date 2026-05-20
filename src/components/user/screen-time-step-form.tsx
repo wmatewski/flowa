@@ -3,6 +3,7 @@
 import { ArrowRight } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
+import { Button } from "@/components/ui/button";
 import { getSessionEntryStorageKey } from "@/lib/session-entry";
 import type { OperatingSystem } from "@/lib/types";
 import { TimeInputMask } from "@/components/user/time-input-mask";
@@ -249,10 +250,10 @@ export const ScreenTimeStepForm = ({
         />
       </label>
 
-      <button className="wf-btn wf-btn-primary wf-btn-block wf-btn-large" type="submit">
+      <Button className="wf-btn-block wf-btn-large" type="submit">
         Wyślij wynik
         <ArrowRight size={18} />
-      </button>
+      </Button>
     </form>
   );
 };

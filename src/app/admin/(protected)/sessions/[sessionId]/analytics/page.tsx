@@ -4,6 +4,7 @@ import Link from "next/link";
 
 import { deleteSessionSubmissionAction } from "@/app/admin/actions";
 import { DeleteParticipantButton } from "@/components/admin/delete-participant-button";
+import { Button } from "@/components/ui/button";
 import { getAuthenticatedAdmin } from "@/lib/admin-auth";
 import { getSessionStatisticsData } from "@/lib/data";
 import { formatDateTime, formatDateTimeWithSeconds, formatMinutes, formatNumber } from "@/lib/format";
@@ -107,16 +108,16 @@ export default async function SessionAnalyticsPage({
         <div>
           <div className="wf-badge">Analityka ankiety</div>
           <h1 className="wf-page-title" style={{ marginTop: 16 }}>{data.session.name}</h1>
-          <p className="wf-page-subtitle">Szczegółowa analiza czasu przed ekranem, wieku i poziomu skupienia respondentów.</p>
+          <p className="wf-page-subtitle">Szczegółowa analiza czasu przed ekranem, wieku i poziomu skupienia uczestników.</p>
         </div>
 
         <div className="wf-card-actions">
-          <Link className="wf-btn wf-btn-secondary" href={`/admin/sessions/${sessionId}/live`}>
-            Otwórz live
-          </Link>
-          <Link className="wf-btn wf-btn-primary" href={`/admin/sessions/${sessionId}/settings`}>
-            Edytuj sesję
-          </Link>
+          <Button asChild variant="secondary">
+            <Link href={`/admin/sessions/${sessionId}/live`}>Widok na żywo</Link>
+          </Button>
+          <Button asChild>
+            <Link href={`/admin/sessions/${sessionId}/settings`}>Ustawienia</Link>
+          </Button>
         </div>
       </div>
 
@@ -236,7 +237,7 @@ export default async function SessionAnalyticsPage({
 
         <aside className="wf-panel-grid" style={{ gridTemplateColumns: "1fr" }}>
           <article className="wf-panel-card">
-            <h3>Link sesji</h3>
+            <h3>Link uczestnika</h3>
             <p>Udostępnij uczestnikom publiczny adres do rejestracji czasu przed ekranem.</p>
             <div className="wf-field" style={{ marginTop: 16 }}>
               <input className="wf-input" readOnly type="text" value={publicUrl} />
@@ -282,10 +283,6 @@ export default async function SessionAnalyticsPage({
                 <div className="wf-member-row">
                   <span>Data zatwierdzenia wyniku</span>
                   <strong>{formatDateTimeWithSeconds(selectedParticipant.submittedAt)}</strong>
-                </div>
-                <div className="wf-member-row">
-                  <span>IP</span>
-                  <strong>{formatDetailValue(selectedParticipant.ipAddress)}</strong>
                 </div>
                 <div className="wf-member-row">
                   <span>System</span>

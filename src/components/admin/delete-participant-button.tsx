@@ -2,6 +2,8 @@
 
 import { Trash2 } from "lucide-react";
 
+import { Button } from "@/components/ui/button";
+
 interface DeleteParticipantButtonProps {
   sessionName: string;
 }
@@ -18,9 +20,9 @@ export const DeleteParticipantButton = ({ sessionName }: DeleteParticipantButton
   };
 
   return (
-    <button className="wf-btn wf-btn-secondary danger" onClick={handleClick} type="submit">
+    <Button onClick={handleClick} type="submit" variant="destructive">
       <Trash2 size={18} />
       Usuń odpowiedź
-    </button>
+    </Button>
   );
 };

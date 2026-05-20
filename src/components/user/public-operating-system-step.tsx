@@ -4,6 +4,8 @@ import { ArrowRight, ChevronDown, Smartphone } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { getOperatingSystemConfig, operatingSystemOrder } from "@/lib/os";
 import type { OperatingSystem } from "@/lib/types";
 
@@ -29,7 +31,7 @@ export const PublicOperatingSystemStep = ({
   return (
     <section className="wf-step-card wf-step-panel-animated">
       <div className="wf-step-header-copy">
-        <div className="wf-badge" style={{ marginBottom: 12 }}>Instrukcja dla uczestnika</div>
+        <Badge style={{ marginBottom: 12 }}>Instrukcja dla uczestnika</Badge>
         <h1 className="wf-step-title">Jak sprawdzić czas przed ekranem?</h1>
         <p className="wf-step-description">
           {organizationName}. Wybierz system, a poniżej pojawi się dopasowana instrukcja.
@@ -75,16 +77,20 @@ export const PublicOperatingSystemStep = ({
 
       <div className="wf-step-actions">
         {showBackLink ? (
-          <Link className="wf-btn wf-btn-secondary" href={`/ankieta/${sessionId}?age=${age}`}>
+          <Button asChild variant="secondary">
+            <Link href={`/ankieta/${sessionId}?age=${age}`}>
             Wróć do wieku
-          </Link>
+            </Link>
+          </Button>
         ) : (
           <span />
         )}
-        <Link className="wf-btn wf-btn-primary" href={nextHref}>
+        <Button asChild>
+          <Link href={nextHref}>
           Dalej
           <ArrowRight size={18} />
-        </Link>
+          </Link>
+        </Button>
       </div>
 
       <details className="wf-accordion" style={{ marginTop: 12 }}>

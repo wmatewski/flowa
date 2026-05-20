@@ -4,6 +4,9 @@ import { redirect } from "next/navigation";
 
 import { saveOrganizationSettingsAction } from "@/app/admin/actions";
 import { TimeThresholdRulesEditor } from "@/components/admin/time-threshold-rules-editor";
+import { Button } from "@/components/ui/button";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
 import { normalizeTimeThresholdRules } from "@/lib/time-thresholds";
 import type { FlashMessage } from "@/lib/types";
 
@@ -54,25 +57,23 @@ export default async function OrganizationSettingsPage({
 
       <div className="wf-settings-layout">
         <form action={saveOrganizationSettingsAction} className="wf-settings-form" id="org-settings-form">
-          <section className="wf-settings-card">
-            <div className="wf-settings-card-header">
+          <Card>
+            <CardHeader>
               <div className="wf-settings-card-icon">
                 <Settings size={22} />
               </div>
               <div>
-                <h2>Domyślne komunikaty wyników</h2>
-                <p>
+                <CardTitle>Domyślne komunikaty wyników</CardTitle>
+                <CardDescription>
                   Komunikaty widoczne dla uczestnika na stronie potwierdzenia. Możesz nadpisać je w ustawieniach konkretnej ankiety.
-                  Jeśli zostawisz puste, zostaną użyte komunikaty systemowe.
-                </p>
+                </CardDescription>
               </div>
-            </div>
+            </CardHeader>
 
             <div className="wf-settings-grid">
               <label className="wf-field wf-settings-field-full">
-                <span className="wf-field-label">Komunikat dla dobrego wyniku (mieszczącego się w limicie)</span>
-                <textarea
-                  className="wf-textarea"
+                <span className="wf-field-label">Komunikat dla dobrego wyniku</span>
+                <Textarea
                   defaultValue={meta.defaultGoodTimeMessage ?? ""}
                   name="defaultGoodTimeMessage"
                   placeholder="np. Świetnie! Twój wynik mieści się w zalecanym limicie."
@@ -81,9 +82,8 @@ export default async function OrganizationSettingsPage({
               </label>
 
               <label className="wf-field wf-settings-field-full">
-                <span className="wf-field-label">Komunikat dla przekroczonego wyniku (powyżej limitu)</span>
-                <textarea
-                  className="wf-textarea"
+                <span className="wf-field-label">Komunikat dla przekroczonego wyniku</span>
+                <Textarea
                   defaultValue={meta.defaultExceededTimeMessage ?? ""}
                   name="defaultExceededTimeMessage"
                   placeholder="np. Twój wynik przekracza zalecany limit. Warto zaplanować przerwę."
@@ -95,21 +95,22 @@ export default async function OrganizationSettingsPage({
             <TimeThresholdRulesEditor initialRules={defaultTimeThresholdRules} name="defaultTimeThresholdRules" />
 
             <div className="wf-card-actions">
-              <button className="wf-btn wf-btn-primary" type="submit">
+              <Button type="submit">
                 Zapisz ustawienia
-              </button>
+              </Button>
             </div>
-          </section>
+          </Card>
         </form>
 
         <aside className="wf-settings-sidebar">
-          <article className="wf-settings-card">
-            <h3>Jak działają komunikaty?</h3>
-            <p className="wf-table-muted" style={{ marginTop: 8, lineHeight: 1.6 }}>
-              Komunikaty są wyświetlane uczestnikom po wysłaniu ankiety na stronie potwierdzenia.
-              W ustawieniach każdej ankiety możesz wybrać domyślne komunikaty z tego miejsca lub ustawić własne dla konkretnej sesji.
-            </p>
-          </article>
+          <Card>
+            <CardHeader>
+              <CardTitle>Jak działają komunikaty?</CardTitle>
+              <CardDescription>
+                Komunikaty są wyświetlane uczestnikom po wysłaniu ankiety na stronie potwierdzenia.
+              </CardDescription>
+            </CardHeader>
+          </Card>
         </aside>
       </div>
     </div>

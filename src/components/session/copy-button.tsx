@@ -3,6 +3,8 @@
 import { Check, Copy } from "lucide-react";
 import { useState } from "react";
 
+import { Button } from "@/components/ui/button";
+
 interface CopyButtonProps {
   value: string;
   label: string;
@@ -29,9 +31,9 @@ export const CopyButton = ({
   };
 
   return (
-    <button className={className ?? "wf-btn wf-btn-secondary"} onClick={handleCopy} type="button">
+    <Button className={className} onClick={handleCopy} type="button" variant="secondary">
       {copied ? <Check size={18} /> : <Copy size={18} />}
       {copied ? copiedLabel : label}
-    </button>
+    </Button>
   );
 };

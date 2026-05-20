@@ -3,6 +3,7 @@
 import { ChevronDown, CheckCircle2, MonitorSmartphone, Smartphone } from "lucide-react";
 import { useState } from "react";
 
+import { Button } from "@/components/ui/button";
 import { getOperatingSystemConfig, operatingSystemOrder } from "@/lib/os";
 import type { OperatingSystem, Session } from "@/lib/types";
 import { TimeInputMask } from "@/components/user/time-input-mask";
@@ -101,10 +102,10 @@ export const SessionEntryForm = ({
           </span>
         </label>
 
-        <button className="wf-btn wf-btn-primary wf-btn-block wf-btn-large" type="submit">
+        <Button className="wf-btn-block wf-btn-large" type="submit">
           <CheckCircle2 size={20} />
           Wyślij
-        </button>
+        </Button>
 
         <details className="wf-accordion">
           <summary>

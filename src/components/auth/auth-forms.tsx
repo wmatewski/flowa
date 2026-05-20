@@ -301,7 +301,7 @@ export const AuthForms = ({ mode, initialFlash, requiresOrganizationSetup }: Aut
     ? {
         eyebrow: "Konfiguracja konta",
         title: "Utwórz organizację",
-        description: "Na tym etapie podajesz wyłącznie nazwę organizacji w Clerk.",
+        description: "Na tym etapie podajesz wyłącznie nazwę organizacji.",
       }
     : activeMode === "login" && loginStage === "options"
       ? {

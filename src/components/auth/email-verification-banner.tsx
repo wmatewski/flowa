@@ -72,7 +72,7 @@ export const EmailVerificationBanner = ({ daysRemaining, email, expired = false 
               : `Konto nie jest jeszcze zweryfikowane. Możesz korzystać z niego jeszcze przez ${daysRemaining} dni.`}
           </strong>
           <span>
-            Zweryfikuj adres {email}, aby potwierdzić konto w Clerk i nie stracić dostępu.
+            Zweryfikuj adres {email}, aby potwierdzić konto i nie stracić dostępu.
           </span>
         </div>
 

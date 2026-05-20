@@ -2,6 +2,9 @@
 
 import { useMemo, useState } from "react";
 
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+
 type SessionAgeMode = "fixed" | "variable";
 
 interface AgeRecommendationRow {
@@ -21,7 +24,8 @@ const AGE_GROUP_OPTIONS = [
   "18-19", "19-20", "20-25", "25-30", "30-35", "35-40", "40-50", "50-60", "60+",
 ];
 
-const MAX_GROUPS = 15;const createEmptyRow = (): AgeRecommendationRow => ({
+const MAX_GROUPS = 15;
+const createEmptyRow = (): AgeRecommendationRow => ({
   label: "",
   recommendedMinutes: "",
 });
@@ -101,7 +105,7 @@ export const SessionAgeControls = ({
       <div className="wf-settings-grid">
         <label className="wf-field">
           <span className="wf-field-label">Zalecany czas sesji (minuty)</span>
-          <input className="wf-input" min="1" name="limitMinutes" onChange={(event) => setLimitMinutes(event.target.value)} type="number" value={limitMinutes} />
+          <Input min="1" name="limitMinutes" onChange={(event) => setLimitMinutes(event.target.value)} type="number" value={limitMinutes} />
           <span className="wf-table-muted">
             To jest zalecenie, nie twardy limit. W tabeli można doprecyzować wartości dla grup wiekowych.
           </span>
@@ -110,18 +114,18 @@ export const SessionAgeControls = ({
         {ageMode === "fixed" ? (
           <label className="wf-field">
             <span className="wf-field-label">Wiek dla całej sesji</span>
-            <input className="wf-input" min="1" name="fixedAge" onChange={(event) => setFixedAge(event.target.value)} type="number" value={fixedAge} />
+            <Input min="1" name="fixedAge" onChange={(event) => setFixedAge(event.target.value)} type="number" value={fixedAge} />
             <span className="wf-table-muted">Wpisz konkretny wiek dla wszystkich uczestników.</span>
           </label>
         ) : null}
       </div>
 
       {ageMode === "variable" ? (
-        <section className="wf-panel-card" style={{ padding: 20 }}>
-          <div className="wf-page-header" style={{ alignItems: "center", marginBottom: 16 }}>
+        <Card style={{ padding: 20 }}>
+          <CardHeader style={{ alignItems: "center", marginBottom: 16 }}>
             <div>
-              <h3 style={{ margin: 0 }}>Zalecenia dla grup wiekowych</h3>
-              <p className="wf-table-muted">Wpisuj kolejne grupy. Pojawi się zawsze jeden pusty wiersz więcej, aż do 15 grup.</p>
+              <CardTitle style={{ margin: 0 }}>Zalecenia dla grup wiekowych</CardTitle>
+              <CardDescription>Wpisuj kolejne grupy. Pojawi się zawsze jeden pusty wiersz więcej, aż do 15 grup.</CardDescription>
             </div>
 
             <label className="wf-inline-meta" style={{ color: "var(--text)" }}>
@@ -134,7 +138,7 @@ export const SessionAgeControls = ({
               />
               Włącz zalecenia
             </label>
-          </div>
+          </CardHeader>
 
           {recommendationsEnabled ? (
             <div className="wf-table-card" style={{ padding: 0, border: 0, boxShadow: "none" }}>
@@ -152,22 +156,22 @@ export const SessionAgeControls = ({
                   >
                     <input
                       autoComplete="off"
-                      className="wf-input"
                       list="wf-age-group-list"
                       name={`ageGroup-${index}`}
                       onChange={(event) => updateRow(index, "label", event.target.value)}
                       placeholder="np. 13-14"
                       type="text"
                       value={row.label}
+                      className="wf-input"
                     />
                     <input
-                      className="wf-input"
                       min="1"
                       name={`ageGroupMinutes-${index}`}
                       onChange={(event) => updateRow(index, "recommendedMinutes", event.target.value)}
                       placeholder="np. 120"
                       type="number"
                       value={row.recommendedMinutes}
+                      className="wf-input"
                     />
                   </div>
                 ))}
@@ -183,7 +187,7 @@ export const SessionAgeControls = ({
               Zalecenia są wyłączone. Sesja zostanie zapisana bez tabeli grup wiekowych.
             </p>
           )}
-        </section>
+        </Card>
       ) : null}
     </>
   );

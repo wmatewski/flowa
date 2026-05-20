@@ -2,6 +2,8 @@
 
 import { Trash2 } from "lucide-react";
 
+import { Button } from "@/components/ui/button";
+
 interface DeleteSessionButtonProps {
   sessionId: string;
   sessionName: string;
@@ -32,9 +34,9 @@ export const DeleteSessionButton = ({ sessionId, sessionName }: DeleteSessionBut
   return (
     <>
       <input name="confirmDelete" type="hidden" value="" />
-      <button aria-label={`Usun ${sessionName}`} className="wf-icon-button danger" onClick={handleClick} type="submit">
+      <Button aria-label={`Usun ${sessionName}`} onClick={handleClick} size="icon" type="submit" variant="destructive">
         <Trash2 size={18} />
-      </button>
+      </Button>
     </>
   );
 };

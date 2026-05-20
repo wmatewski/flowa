@@ -2,6 +2,10 @@ import Link from "next/link";
 
 import { saveSessionSettingsAction } from "@/app/admin/actions";
 import { SessionAgeControls } from "@/components/admin/session-age-controls";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import type { FlashMessage } from "@/lib/types";
 
 const getFlashMessage = (params: Record<string, string | string[] | undefined>): FlashMessage | null => {
@@ -33,41 +37,39 @@ export default async function NewSessionPage({
       {flash ? <div className={`wf-flash ${flash.type}`}>{flash.message}</div> : null}
 
       <div className="wf-stats-grid">
-        <form action={saveSessionSettingsAction} className="wf-panel-card wf-form-stack">
-          <label className="wf-field">
-            <span className="wf-field-label">Nazwa sesji</span>
-            <input className="wf-input" defaultValue="Nowa sesja" name="name" type="text" />
-          </label>
+        <Card className="wf-form-stack">
+          <form action={saveSessionSettingsAction}>
+            <CardContent className="wf-form-stack">
+              <label className="wf-field">
+                <span className="wf-field-label">Nazwa sesji</span>
+                <Input defaultValue="Nowa sesja" name="name" type="text" />
+              </label>
 
-          <label className="wf-field">
-            <span className="wf-field-label">Slug techniczny ankiety</span>
-            <input className="wf-input" name="slug" placeholder="np. klasa-6a-maj" type="text" />
-            <span className="wf-table-muted">Link uczestnika zostanie nadany automatycznie po zapisaniu sesji.</span>
-          </label>
+              <label className="wf-field">
+                <span className="wf-field-label">Opis</span>
+                <Textarea defaultValue="Sesja przygotowana w panelu Wojticore Flowa." name="description" />
+              </label>
 
-          <label className="wf-field">
-            <span className="wf-field-label">Opis</span>
-            <textarea className="wf-textarea" defaultValue="Sesja przygotowana w panelu Wojticore Flowa." name="description" />
-          </label>
+              <SessionAgeControls defaultAgeMode="variable" defaultFixedAge={18} defaultLimitMinutes={60} />
 
-          <SessionAgeControls defaultAgeMode="variable" defaultFixedAge={18} defaultLimitMinutes={60} />
+              <div className="wf-card-actions">
+                <Button type="submit">Zapisz sesję</Button>
+                <Button asChild variant="secondary">
+                  <Link href="/admin/sessions">Anuluj</Link>
+                </Button>
+              </div>
+            </CardContent>
+          </form>
+        </Card>
 
-          <div className="wf-card-actions">
-            <button className="wf-btn wf-btn-primary" type="submit">
-              Zapisz sesję
-            </button>
-            <Link className="wf-btn wf-btn-secondary" href="/admin/sessions">
-              Anuluj
-            </Link>
-          </div>
-        </form>
-
-        <aside className="wf-panel-card">
-          <h3>Co stanie się po zapisaniu?</h3>
-          <p>
-            Po utworzeniu sesji otrzymasz publiczny link dla uczestników i osobny widok statystyk do monitorowania zgłoszeń.
-          </p>
-        </aside>
+        <Card>
+          <CardHeader>
+            <CardTitle>Co stanie się po zapisaniu?</CardTitle>
+            <CardDescription>
+              Po utworzeniu sesji otrzymasz publiczny link dla uczestników i osobny widok statystyk do monitorowania zgłoszeń.
+            </CardDescription>
+          </CardHeader>
+        </Card>
       </div>
     </div>
   );

@@ -3,6 +3,9 @@
 import { Plus, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 
+import { Button } from "@/components/ui/button";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { MAX_TIME_THRESHOLD_RULES, serializeTimeThresholdRules } from "@/lib/time-thresholds";
 import type { TimeThresholdRule } from "@/lib/types";
 
@@ -97,17 +100,17 @@ export const TimeThresholdRulesEditor = ({ initialRules, name }: TimeThresholdRu
   };
 
   return (
-    <div className="wf-panel-card" style={{ padding: 20 }}>
+    <Card style={{ padding: 20 }}>
       <input name={name} type="hidden" value={serializeTimeThresholdRules(serializableRules)} />
 
-      <div className="wf-page-header" style={{ alignItems: "center", marginBottom: 16 }}>
+      <CardHeader style={{ alignItems: "center", marginBottom: 16 }}>
         <div>
-          <h3 style={{ margin: 0 }}>Progi przekroczenia czasu</h3>
-          <p className="wf-table-muted">
+          <CardTitle style={{ margin: 0 }}>Progi przekroczenia czasu</CardTitle>
+          <CardDescription>
             Maksymalnie {MAX_TIME_THRESHOLD_RULES} pozycje. Zdefiniuj zakres procentowy ponad limit i wiadomość dla uczestnika.
-          </p>
+          </CardDescription>
         </div>
-      </div>
+      </CardHeader>
 
       <div className="wf-table-card" style={{ padding: 0, border: 0, boxShadow: "none" }}>
         <div className="wf-table-head" style={{ gridTemplateColumns: "0.55fr 0.55fr 1.5fr 0.25fr" }}>
@@ -124,38 +127,36 @@ export const TimeThresholdRulesEditor = ({ initialRules, name }: TimeThresholdRu
               key={`threshold-row-${index}`}
               style={{ display: "grid", gridTemplateColumns: "0.55fr 0.55fr 1.5fr 0.25fr", gap: 12 }}
             >
-              <input
-                className="wf-input"
+              <Input
                 min="0"
                 onChange={(event) => updateRow(index, "minPercent", event.target.value)}
                 placeholder="0"
                 type="number"
                 value={row.minPercent}
               />
-              <input
-                className="wf-input"
+              <Input
                 min="0"
                 onChange={(event) => updateRow(index, "maxPercent", event.target.value)}
                 placeholder="25"
                 type="number"
                 value={row.maxPercent}
               />
-              <input
-                className="wf-input"
+              <Input
                 onChange={(event) => updateRow(index, "message", event.target.value)}
                 placeholder="np. Przekroczyłeś limit o niewiele - zrób krótką przerwę."
                 type="text"
                 value={row.message}
               />
-              <button
+              <Button
                 aria-label={`Usuń próg ${index + 1}`}
-                className="wf-icon-button danger"
                 disabled={rows.length === 1}
                 onClick={() => removeRow(index)}
                 type="button"
+                variant="destructive"
+                size="icon"
               >
                 <Trash2 size={18} />
-              </button>
+              </Button>
             </div>
           ))}
         </div>
@@ -163,12 +164,12 @@ export const TimeThresholdRulesEditor = ({ initialRules, name }: TimeThresholdRu
 
       {rows.length < MAX_TIME_THRESHOLD_RULES ? (
         <div className="wf-card-actions" style={{ marginTop: 12 }}>
-          <button className="wf-btn wf-btn-secondary" onClick={() => setRows((current) => [...current, createEmptyRow()])} type="button">
+          <Button onClick={() => setRows((current) => [...current, createEmptyRow()])} type="button" variant="secondary">
             <Plus size={18} />
             Dodaj wiersz
-          </button>
+          </Button>
         </div>
       ) : null}
-    </div>
+    </Card>
   );
 };

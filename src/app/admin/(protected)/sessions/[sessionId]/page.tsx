@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { CopyButton } from "@/components/session/copy-button";
+import { Button } from "@/components/ui/button";
 import { getAuthenticatedAdmin } from "@/lib/admin-auth";
 import { getSessionStatisticsData } from "@/lib/data";
 import { publicEnv } from "@/lib/env/public";
@@ -49,19 +50,23 @@ export default async function SessionOverviewPage({
           <div className="wf-badge">Przegląd ankiety</div>
           <h1 className="wf-page-title" style={{ marginTop: 16 }}>{data.session.name}</h1>
           <p className="wf-page-subtitle">
-            Szybki podgląd linków, QR kodu i najnowszych odpowiedzi bez opuszczania workspace ankiety.
+            Szybki podgląd linków, QR kodu i najnowszych odpowiedzi bez opuszczania panelu ankiety.
           </p>
         </div>
 
         <div className="wf-card-actions">
-          <Link className="wf-btn wf-btn-secondary" href={`/admin/sessions/${sessionId}/analytics`}>
-            <BarChart3 size={18} />
-            Otwórz analitykę
-          </Link>
-          <Link className="wf-btn wf-btn-primary" href={`/admin/sessions/${sessionId}/live`}>
-            <Radio size={18} />
-            Tryb live
-          </Link>
+          <Button asChild variant="secondary">
+            <Link href={`/admin/sessions/${sessionId}/analytics`}>
+              <BarChart3 size={18} />
+              Otwórz analitykę
+            </Link>
+          </Button>
+          <Button asChild>
+            <Link href={`/admin/sessions/${sessionId}/live`}>
+              <Radio size={18} />
+              Widok na żywo
+            </Link>
+          </Button>
         </div>
       </div>
 
@@ -86,18 +91,18 @@ export default async function SessionOverviewPage({
           <article className="wf-panel-card wf-live-overview-card">
             <div className="wf-page-header" style={{ marginBottom: 16 }}>
               <div>
-                <h3 style={{ margin: 0 }}>Prezentacja i live</h3>
-                <p className="wf-table-muted">Przełącz się do trybu wyników na żywo lub osadź widok w prezentacji.</p>
+                <h3 style={{ margin: 0 }}>Prezentacja wyników</h3>
+                <p className="wf-table-muted">Przełącz się do widoku na żywo lub osadź go w prezentacji.</p>
               </div>
               <div className="wf-pill wf-pill-soft">Embed ready</div>
             </div>
 
             <div className="wf-card-actions">
-              <Link className="wf-btn wf-btn-primary" href={`/admin/sessions/${sessionId}/live`}>
-                Otwórz panel live
-              </Link>
+              <Button asChild>
+                <Link href={`/admin/sessions/${sessionId}/live`}>Otwórz widok na żywo</Link>
+              </Button>
               <CopyButton className="wf-btn wf-btn-secondary" label="Kopiuj link embed" value={embedUrl} />
-              <CopyButton className="wf-btn wf-btn-secondary" label="Kopiuj krótki link" value={publicUrl} />
+              <CopyButton className="wf-btn wf-btn-secondary" label="Kopiuj link uczestnika" value={publicUrl} />
             </div>
           </article>
 
@@ -105,7 +110,7 @@ export default async function SessionOverviewPage({
             <div className="wf-page-header" style={{ marginBottom: 16 }}>
               <div>
                 <h3 style={{ margin: 0 }}>Ostatnie odpowiedzi</h3>
-                <p className="wf-table-muted">Najnowsze wpisy respondentów w tej ankiecie.</p>
+                <p className="wf-table-muted">Najnowsze wpisy uczestników w tej ankiecie.</p>
               </div>
             </div>
 
@@ -181,10 +186,8 @@ export default async function SessionOverviewPage({
           </article>
 
           <article className="wf-panel-card">
-            <h3>Dostęp organizacji</h3>
-            <p>
-              Dostęp do tej ankiety wynika z członkostwa w organizacji Clerk, a nie z lokalnej listy przypisań.
-            </p>
+            <h3>Dostęp zespołu</h3>
+            <p>Dostęp do tej ankiety wynika z członkostwa w zespole, a nie z lokalnej listy przypisań.</p>
           </article>
         </aside>
       </section>

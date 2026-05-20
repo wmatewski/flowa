@@ -4,8 +4,10 @@ import { auth, clerkClient } from "@clerk/nextjs/server";
 
 import { saveSessionMessagesAction, saveSessionSettingsAction } from "@/app/admin/actions";
 import { CopyButton } from "@/components/session/copy-button";
-import { SlugEditor } from "@/components/admin/slug-editor";
 import { TimeThresholdRulesEditor } from "@/components/admin/time-threshold-rules-editor";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { getAuthenticatedAdmin } from "@/lib/admin-auth";
 import { getSessionSettingsData } from "@/lib/data";
 import { publicEnv } from "@/lib/env/public";
@@ -100,13 +102,13 @@ export default async function SessionSettingsPage({
         <div>
           <div className="wf-badge">Ustawienia sesji</div>
           <h1 className="wf-page-title" style={{ marginTop: 16 }}>{data.session.name}</h1>
-          <p className="wf-page-subtitle">Skonfiguruj parametry ankiety, limity odpowiedzi i zachowaj aktualny dostęp współtwórców.</p>
+          <p className="wf-page-subtitle">Skonfiguruj parametry ankiety, limity odpowiedzi i zachowaj aktualny dostęp zespołu.</p>
         </div>
 
         <div className="wf-card-actions">
-          <button className="wf-btn wf-btn-primary" form="session-settings-form" type="submit">
+          <Button form="session-settings-form" type="submit">
             Zapisz ustawienia
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -116,7 +118,7 @@ export default async function SessionSettingsPage({
         <article className="wf-hero-preview-card">
           <span className="wf-table-muted">Status</span>
           <div className={`wf-status-chip ${getStatusTone(data.session.status)}`}>{formatSessionStatus(data.session.status)}</div>
-          <span className="wf-table-muted">Krótki link: {buildSessionPublicUrl(baseUrl, data.session.id)}</span>
+          <span className="wf-table-muted">Link uczestnika: {buildSessionPublicUrl(baseUrl, data.session.id)}</span>
         </article>
         <article className="wf-hero-preview-card">
           <span className="wf-table-muted">Uczestnicy</span>
@@ -145,13 +147,13 @@ export default async function SessionSettingsPage({
             <div className="wf-settings-grid">
               <label className="wf-field wf-settings-field-full">
                 <span className="wf-field-label">Nazwa sesji</span>
-                <input className="wf-input" defaultValue={data.session.name} name="name" type="text" />
-                <SlugEditor currentSlug={data.session.slug} sessionName={data.session.name} />
+                <Input defaultValue={data.session.name} name="name" type="text" />
+                <span className="wf-table-muted">Publiczny adres jest nadawany automatycznie po zapisaniu zmian.</span>
               </label>
 
               <label className="wf-field wf-settings-field-full">
                 <span className="wf-field-label">Opis dla zespołu</span>
-                <textarea className="wf-textarea" defaultValue={data.session.description ?? ""} name="description" />
+                <Textarea defaultValue={data.session.description ?? ""} name="description" />
               </label>
             </div>
           </section>
@@ -170,18 +172,12 @@ export default async function SessionSettingsPage({
             <div className="wf-settings-grid">
               <label className="wf-field">
                 <span className="wf-field-label">Limit czasu przed ekranem (minuty)</span>
-                <input
-                  className="wf-input"
-                  defaultValue={String(data.session.screen_time_limit_minutes)}
-                  min="1"
-                  name="limitMinutes"
-                  type="number"
-                />
+                <Input defaultValue={String(data.session.screen_time_limit_minutes)} min="1" name="limitMinutes" type="number" />
               </label>
 
               <label className="wf-field">
                 <span className="wf-field-label">Stały wiek</span>
-                <input className="wf-input" defaultValue={String(data.session.fixed_age ?? 18)} min="1" name="fixedAge" type="number" />
+                <Input defaultValue={String(data.session.fixed_age ?? 18)} min="1" name="fixedAge" type="number" />
                 <span className="wf-table-muted">Wartość jest używana tylko wtedy, gdy wybierzesz stały wiek dla całej sesji.</span>
               </label>
             </div>
@@ -209,9 +205,9 @@ export default async function SessionSettingsPage({
             </div>
 
             <div className="wf-card-actions">
-              <button className="wf-btn wf-btn-primary" type="submit">
+              <Button type="submit">
                 Zapisz zmiany
-              </button>
+              </Button>
               <Link className="wf-btn wf-btn-secondary" href="/admin/sessions">
                 Wróć do listy
               </Link>
@@ -258,8 +254,7 @@ export default async function SessionSettingsPage({
                 <div className="wf-settings-grid" style={{ marginTop: 16 }}>
                   <label className="wf-field wf-settings-field-full">
                     <span className="wf-field-label">Komunikat dla dobrego wyniku</span>
-                    <textarea
-                      className="wf-textarea"
+                    <Textarea
                       defaultValue={sessionMessagesMeta?.goodTimeMessage ?? ""}
                       name="goodTimeMessage"
                       placeholder="np. Świetnie! Twój wynik mieści się w zalecanym limicie."
@@ -268,8 +263,7 @@ export default async function SessionSettingsPage({
                   </label>
                   <label className="wf-field wf-settings-field-full">
                     <span className="wf-field-label">Komunikat dla przekroczonego wyniku</span>
-                    <textarea
-                      className="wf-textarea"
+                    <Textarea
                       defaultValue={sessionMessagesMeta?.exceededTimeMessage ?? ""}
                       name="exceededTimeMessage"
                       placeholder="np. Twój wynik przekracza zalecany limit."
@@ -328,8 +322,8 @@ export default async function SessionSettingsPage({
                 <strong>{formatSessionStatus(data.session.status)}</strong>
               </div>
               <div className="wf-settings-list-row">
-                <span className="wf-table-muted">Dostęp organizacji</span>
-                <strong>Clerk</strong>
+                <span className="wf-table-muted">Dostęp zespołu</span>
+                <strong>Współdzielony</strong>
               </div>
               <div className="wf-settings-list-row">
                 <span className="wf-table-muted">Uczestnicy</span>
@@ -343,12 +337,12 @@ export default async function SessionSettingsPage({
 
             <label className="wf-field">
               <span className="wf-field-label">Link do ankiety</span>
-              <input className="wf-input" readOnly type="text" value={publicUrl} />
+              <Input readOnly type="text" value={publicUrl} />
             </label>
 
             <label className="wf-field">
               <span className="wf-field-label">Widok live</span>
-              <input className="wf-input" readOnly type="text" value={liveUrl} />
+              <Input readOnly type="text" value={liveUrl} />
             </label>
 
             <div className="wf-card-actions">
@@ -363,19 +357,19 @@ export default async function SessionSettingsPage({
                 <Users size={22} />
               </div>
               <div>
-                <h2>Dostęp organizacji</h2>
-                <p>Dostęp do ankiet i zaproszenia są zarządzane przez Clerk na poziomie organizacji.</p>
+                <h2>Dostęp zespołu</h2>
+                <p>Dostęp do ankiet i zaproszenia są zarządzane wspólnie dla całego zespołu.</p>
               </div>
             </div>
 
             <p className="wf-empty">
-              Ta ankieta korzysta z członków aktywnej organizacji w Clerk, bez lokalnej listy przypisań.
+              Ta ankieta korzysta z członków aktywnego zespołu, bez lokalnej listy przypisań.
             </p>
 
             <div className="wf-card-actions">
-              <Link className="wf-btn wf-btn-secondary wf-btn-block" href="/admin/organization">
-                Zarządzaj organizacją
-              </Link>
+              <Button asChild className="wf-btn-block" variant="secondary">
+                <Link href="/admin/organization">Zarządzaj organizacją</Link>
+              </Button>
             </div>
           </article>
         </aside>

@@ -88,7 +88,7 @@ export const SessionWorkspaceShell = ({
         </nav>
 
         <div className="wf-session-sidebar-meta">
-          <div className="wf-small-label">Krótki link uczestnika</div>
+          <div className="wf-small-label">Link uczestnika</div>
           <Link className="wf-btn wf-btn-secondary wf-btn-block" href={buildSessionShortPath(sessionId)}>
             Otwórz ankietę
           </Link>
@@ -98,7 +98,7 @@ export const SessionWorkspaceShell = ({
             target="_blank"
             rel="noopener noreferrer"
           >
-            Tryb live
+            Widok na żywo
           </Link>
         </div>
       </aside>

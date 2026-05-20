@@ -1,11 +1,13 @@
 import Link from "next/link";
 
 import { CopyButton } from "@/components/session/copy-button";
+import { Button } from "@/components/ui/button";
 import { getAuthenticatedAdmin } from "@/lib/admin-auth";
 import { getSessionWorkspaceSummary } from "@/lib/data";
 import { publicEnv } from "@/lib/env/public";
 import { formatMinutes, formatNumber } from "@/lib/format";
 import { buildSessionPublicUrl } from "@/lib/public-session";
+import { escapeHtmlAttribute } from "@/lib/html";
 
 export default async function SessionLivePage({
   params,
@@ -25,9 +27,11 @@ export default async function SessionLivePage({
   );
   const baseUrl = publicEnv.appUrl.replace(/\/$/, "");
   const liveUrl = `${baseUrl}/live/${sessionId}`;
-  const embedUrl = `${liveUrl}?embed=1`;
+  const embedUrl = new URL(liveUrl);
+  embedUrl.searchParams.set("embed", "1");
+  const embedUrlString = embedUrl.toString();
   const publicUrl = buildSessionPublicUrl(baseUrl, session.id);
-  const iframeCode = `<iframe src="${embedUrl}" title="${session.name} - wyniki na żywo" width="1280" height="720" style="border:0;width:100%;height:100%"></iframe>`;
+  const iframeCode = `<iframe src="${escapeHtmlAttribute(embedUrlString)}" title="${escapeHtmlAttribute(`${session.name} - widok na żywo`)}" width="1280" height="720" style="border:0;width:100%;height:100%"></iframe>`;
 
   return (
     <div className="wf-page">
@@ -39,10 +43,12 @@ export default async function SessionLivePage({
         </div>
 
         <div className="wf-card-actions">
-          <Link className="wf-btn wf-btn-secondary" href={`/live/${sessionId}`} target="_blank" rel="noopener noreferrer">
-            Otwórz widok live
-          </Link>
-          <CopyButton className="wf-btn wf-btn-primary" label="Kopiuj URL embed" value={embedUrl} />
+          <Button asChild variant="secondary">
+            <Link href={`/live/${sessionId}`} target="_blank" rel="noopener noreferrer">
+              Otwórz widok na żywo
+            </Link>
+          </Button>
+          <CopyButton className="wf-btn wf-btn-primary" label="Kopiuj URL embed" value={embedUrlString} />
         </div>
       </div>
 
@@ -56,20 +62,20 @@ export default async function SessionLivePage({
           </div>
 
             <div className="wf-live-frame-shell">
-              <iframe className="wf-live-frame" src={`/live/${sessionId}?embed=1`} title={`${session.name} live embed`} />
+              <iframe className="wf-live-frame" src={`/live/${sessionId}?embed=1`} title={`${session.name} - widok na żywo`} />
             </div>
         </article>
 
         <aside className="wf-panel-grid" style={{ gridTemplateColumns: "1fr" }}>
           <article className="wf-panel-card">
-            <h3>Linki i embed</h3>
+            <h3>Linki i kod embed</h3>
             <div className="wf-form-stack" style={{ marginTop: 16 }}>
               <label className="wf-field">
-                <span className="wf-field-label">Publiczny widok live</span>
+                <span className="wf-field-label">Publiczny link live</span>
                 <input className="wf-input" readOnly type="text" value={liveUrl} />
               </label>
               <label className="wf-field">
-                <span className="wf-field-label">Kod iframe</span>
+                <span className="wf-field-label">Kod do osadzenia</span>
                 <textarea className="wf-textarea wf-code-block" readOnly rows={7} style={{ minHeight: 180 }} value={iframeCode} />
               </label>
             </div>
@@ -81,7 +87,7 @@ export default async function SessionLivePage({
           </article>
 
           <article className="wf-panel-card">
-            <h3>Stan sesji</h3>
+            <h3>Stan widoku</h3>
             <div className="wf-member-list">
               <div className="wf-member-row">
                 <span>Odpowiedzi</span>
@@ -92,7 +98,7 @@ export default async function SessionLivePage({
                 <strong>{formatMinutes(overview?.average_minutes)}</strong>
               </div>
               <div className="wf-member-row">
-                <span>Publiczna ankieta</span>
+                <span>Link uczestnika</span>
                 <strong style={{ wordBreak: "break-all", textAlign: "right" }}>{publicUrl}</strong>
               </div>
             </div>

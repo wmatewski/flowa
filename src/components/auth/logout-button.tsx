@@ -3,18 +3,15 @@
 import { LogOut } from "lucide-react";
 
 import { useClerk } from "@clerk/nextjs";
+import { Button } from "@/components/ui/button";
 
 export const LogoutButton = () => {
   const clerk = useClerk();
 
   return (
-    <button
-      className="wf-btn wf-btn-secondary wf-btn-block"
-      onClick={() => clerk.signOut({ redirectUrl: "/auth" })}
-      type="button"
-    >
+    <Button className="wf-btn-block" onClick={() => clerk.signOut({ redirectUrl: "/auth" })} type="button" variant="secondary">
       <LogOut size={18} />
       Wyloguj
-    </button>
+    </Button>
   );
 };
