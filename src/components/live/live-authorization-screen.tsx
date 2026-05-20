@@ -33,6 +33,21 @@ export const LiveAuthorizationScreen = ({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!request?.requestId) {
+      return;
+    }
+
+    const url = new URL(window.location.href);
+
+    if (url.searchParams.get("request") === request.requestId) {
+      return;
+    }
+
+    url.searchParams.set("request", request.requestId);
+    window.history.replaceState(null, "", url);
+  }, [request?.requestId]);
+
+  useEffect(() => {
     let cancelled = false;
 
     const bootstrap = async () => {
@@ -84,7 +99,7 @@ export const LiveAuthorizationScreen = ({
 
     const refreshStatus = async () => {
       try {
-        const response = await fetch(`/api/live-display/${sessionId}/status`, {
+        const response = await fetch(`/api/live-display/requests/${request.requestId}/status`, {
           cache: "no-store",
         });
 

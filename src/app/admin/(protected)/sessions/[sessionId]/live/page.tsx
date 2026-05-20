@@ -33,10 +33,10 @@ export default async function SessionLivePage({
   return (
     <div className="wf-page">
       <div className="wf-page-header">
-        <div>
+          <div>
           <div className="wf-badge">Wyniki na żywo</div>
           <h1 className="wf-page-title" style={{ marginTop: 16 }}>{session.name}</h1>
-          <p className="wf-page-subtitle">Podgląd live uruchamia kod autoryzacji, a po potwierdzeniu pokazuje wyniki.</p>
+          <p className="wf-page-subtitle">Ten adres wklejasz do Canvy lub na ekran prezentacji. Najpierw pokaże kod, potem sam przełączy się na wyniki.</p>
         </div>
 
         <div className="wf-card-actions">
@@ -45,7 +45,7 @@ export default async function SessionLivePage({
               Otwórz podgląd
             </Link>
           </Button>
-          <CopyButton className="wf-btn wf-btn-primary" label="Kopiuj link podgladu" value={liveUrl} />
+              <CopyButton className="wf-btn wf-btn-primary" label="Kopiuj link do Canvy" value={liveUrl} />
         </div>
       </div>
 
@@ -70,7 +70,7 @@ export default async function SessionLivePage({
               <label className="wf-field">
                 <span className="wf-field-label">Link do podglądu</span>
                 <input className="wf-input" readOnly type="text" value={liveUrl} />
-                <span className="wf-table-muted">To ten adres otwierasz w Canvie lub na ekranie prezentacji.</span>
+                <span className="wf-table-muted">Użyj dokładnie tego adresu publicznego, nie adresu z panelu `/admin`.</span>
               </label>
               <label className="wf-field">
                 <span className="wf-field-label">Gotowy fragment strony</span>

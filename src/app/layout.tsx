@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
 import { Inter, Manrope } from "next/font/google";
 
-import { ClerkProvider } from "@clerk/nextjs";
-
 import "@/app/globals.css";
+import { AppProviders } from "@/components/providers/app-providers";
 
 const manrope = Manrope({
   subsets: ["latin", "latin-ext"],
@@ -33,7 +32,7 @@ export default function RootLayout({
   return (
     <html lang="pl">
       <body className={`${inter.className} ${manrope.variable} ${inter.variable}`}>
-        <ClerkProvider>{children}</ClerkProvider>
+        <AppProviders>{children}</AppProviders>
       </body>
     </html>
   );

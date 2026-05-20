@@ -1,8 +1,9 @@
 import { auth } from "@clerk/nextjs/server";
-import { cookies } from "next/headers";
+import { headers } from "next/headers";
 import Image from "next/image";
 import Link from "next/link";
 import QRCode from "qrcode";
+import { notFound } from "next/navigation";
 
 import { LiveAuthorizationScreen } from "@/components/live/live-authorization-screen";
 import { LiveAverageCard } from "@/components/session/live-average-card";
@@ -13,11 +14,15 @@ import { getClerkOrganizationSummary } from "@/lib/clerk-organizations";
 import { getLiveSessionDataById, getLiveSessionDataForAccess } from "@/lib/data";
 import { publicEnv } from "@/lib/env/public";
 import {
-  getActiveLiveDisplayRequestForViewer,
-  getAuthorizedLiveDisplayRequestForViewer,
+  createLiveDisplayRequest,
+  expireStaleLiveDisplayRequests,
+  getLiveDisplayRequestById,
 } from "@/lib/live-display-request";
-import { buildSessionPublicUrl } from "@/lib/public-session";
+import { buildSessionPublicUrl, getSessionById } from "@/lib/public-session";
+import { getApproximateLocation, getClientIp } from "@/lib/request";
 import { getAccessibleSession, normalizeMembershipRole } from "@/lib/session-access";
+import { createSessionId } from "@/lib/session";
+import { detectOperatingSystem, getOperatingSystemConfig } from "@/lib/os";
 
 const QR_CODE_SIZE_DEFAULT = 352;
 
@@ -92,13 +97,14 @@ const renderLiveResults = async (input: {
 
 export default async function LiveSessionPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ sessionId: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { sessionId } = await params;
+  const query = await searchParams;
   const baseUrl = publicEnv.appUrl.replace(/\/$/, "");
-  const cookieStore = await cookies();
-  const viewerKey = cookieStore.get(publicEnv.sessionCookieName)?.value ?? null;
   const { userId, orgId, orgRole } = await auth();
 
   if (userId && orgId) {
@@ -135,11 +141,18 @@ export default async function LiveSessionPage({
     }
   }
 
-  const authorizedRequest = viewerKey
-    ? await getAuthorizedLiveDisplayRequestForViewer(sessionId, viewerKey)
-    : null;
+  const session = await getSessionById(sessionId);
 
-  if (authorizedRequest) {
+  if (!session) {
+    notFound();
+  }
+
+  await expireStaleLiveDisplayRequests();
+
+  const requestId = typeof query.request === "string" ? query.request.trim() : "";
+  const existingRequest = requestId ? await getLiveDisplayRequestById(requestId) : null;
+
+  if (existingRequest && existingRequest.session_id === sessionId && existingRequest.status === "authorized") {
     const data = await getLiveSessionDataById(sessionId);
     const organization = await getClerkOrganizationSummary(data.session.organization_id);
 
@@ -154,9 +167,28 @@ export default async function LiveSessionPage({
     });
   }
 
-  const pendingRequest = viewerKey
-    ? await getActiveLiveDisplayRequestForViewer(sessionId, viewerKey)
-    : null;
+  let pendingRequest =
+    existingRequest &&
+    existingRequest.session_id === sessionId &&
+    existingRequest.status !== "expired" &&
+    existingRequest.status !== "revoked"
+      ? existingRequest
+      : null;
+
+  if (!pendingRequest) {
+    const headerStore = await headers();
+    const userAgent = headerStore.get("user-agent");
+    const detectedOperatingSystem = detectOperatingSystem(userAgent);
+
+    pendingRequest = await createLiveDisplayRequest({
+      sessionId,
+      viewerKey: createSessionId(),
+      deviceLabel: getOperatingSystemConfig(detectedOperatingSystem).shortLabel,
+      requestedIp: getClientIp(headerStore),
+      approximateLocation: getApproximateLocation(headerStore),
+      requestUserAgent: userAgent,
+    });
+  }
 
   return (
     <LiveAuthorizationScreen
