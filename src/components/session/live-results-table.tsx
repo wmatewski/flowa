@@ -14,7 +14,7 @@ interface LiveResultsState {
   entries: LiveSessionEntry[];
 }
 
-const dedupeEntries = (entries: LiveSessionEntry[]) => {
+export const dedupeLiveEntries = (entries: LiveSessionEntry[]) => {
   const unique = new Map<string, LiveSessionEntry>();
 
   for (const entry of entries) {
@@ -28,7 +28,7 @@ const dedupeEntries = (entries: LiveSessionEntry[]) => {
 
 export const LiveResultsTable = ({ refreshUrl, initialEntries }: LiveResultsTableProps) => {
   const [state, setState] = useState<LiveResultsState>({
-    entries: dedupeEntries(initialEntries),
+    entries: dedupeLiveEntries(initialEntries),
   });
 
   useEffect(() => {
@@ -46,7 +46,7 @@ export const LiveResultsTable = ({ refreshUrl, initialEntries }: LiveResultsTabl
 
         if (!cancelled) {
           setState({
-            entries: dedupeEntries(nextState.entries ?? []),
+            entries: dedupeLiveEntries(nextState.entries ?? []),
           });
         }
       } catch {

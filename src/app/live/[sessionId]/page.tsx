@@ -1,19 +1,16 @@
-import { Smartphone } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import QRCode from "qrcode";
 
+import { LiveAverageCard } from "@/components/session/live-average-card";
 import { FullscreenButton } from "@/components/session/fullscreen-button";
 import { LiveResultsTable } from "@/components/session/live-results-table";
 import { getAuthenticatedAdmin } from "@/lib/admin-auth";
 import { getLiveSessionDataForAccess } from "@/lib/data";
 import { publicEnv } from "@/lib/env/public";
-import { formatMinutes } from "@/lib/format";
 import { buildSessionPublicUrl } from "@/lib/public-session";
 
 const QR_CODE_SIZE_DEFAULT = 352;
-const AVG_RING_RADIUS = 49;
-const AVG_RING_CIRCUMFERENCE = 2 * Math.PI * AVG_RING_RADIUS;
 
 export default async function LiveSessionPage({
   params,
@@ -43,16 +40,6 @@ export default async function LiveSessionPage({
       light: "#ffffff",
     },
   });
-  const averageMinutes = data.overview?.average_minutes ?? null;
-  const averagePercent = Math.max(
-    0,
-    Math.min(
-      100,
-      Math.round(((averageMinutes ?? 0) / Math.max(data.session.screen_time_limit_minutes, 1)) * 100),
-    ),
-  );
-  const averageRingOffset = AVG_RING_CIRCUMFERENCE - (averagePercent / 100) * AVG_RING_CIRCUMFERENCE;
-
   return (
     <main className="wf-live-results-page">
       <FullscreenButton />
@@ -80,30 +67,11 @@ export default async function LiveSessionPage({
             <p className="wf-live-results-join-caption">Zeskanuj kod, aby wziąć udział z telefonu</p>
           </article>
 
-          <article className="wf-live-results-card wf-live-results-average-card">
-            <h2 className="wf-live-results-card-title">Średni czas przed ekranem</h2>
-            <div className="wf-live-results-average-body">
-              <div className="wf-live-results-average-ring" aria-hidden="true">
-                <svg className="wf-live-results-average-ring-svg" viewBox="0 0 132 132">
-                  <circle
-                    className="wf-live-results-average-ring-track"
-                    cx="66"
-                    cy="66"
-                    r="49"
-                  />
-                  <circle
-                    className="wf-live-results-average-ring-progress"
-                    cx="66"
-                    cy="66"
-                    r="49"
-                    style={{ strokeDashoffset: averageRingOffset }}
-                  />
-                </svg>
-                <Smartphone className="wf-live-results-average-icon" size={36} />
-              </div>
-              <div className="wf-live-results-average-value">{formatMinutes(averageMinutes)}</div>
-            </div>
-          </article>
+          <LiveAverageCard
+            initialAverageMinutes={data.overview?.average_minutes ?? null}
+            refreshUrl={`/api/live/${sessionId}`}
+            screenTimeLimitMinutes={data.session.screen_time_limit_minutes}
+          />
         </section>
 
         <LiveResultsTable refreshUrl={`/api/live/${sessionId}`} initialEntries={data.entries} />
