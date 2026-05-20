@@ -4,13 +4,7 @@ import { Maximize2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -19,33 +13,23 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { formatDateTime, formatMinutes, formatNumber } from "@/lib/format";
+import { formatDateTime, formatMinutes } from "@/lib/format";
 import type { LiveSessionEntry } from "@/lib/types";
 
 interface LiveResultsTableProps {
   refreshUrl: string;
   initialEntries: LiveSessionEntry[];
-  initialParticipantCount: number;
-  initialAverageMinutes: number | null;
-  embed?: boolean;
 }
 
 interface LiveResultsState {
-  participantCount: number;
-  averageMinutes: number | null;
   entries: LiveSessionEntry[];
 }
 
 export const LiveResultsTable = ({
   refreshUrl,
   initialEntries,
-  initialParticipantCount,
-  initialAverageMinutes,
-  embed = false,
 }: LiveResultsTableProps) => {
   const [state, setState] = useState<LiveResultsState>({
-    participantCount: initialParticipantCount,
-    averageMinutes: initialAverageMinutes,
     entries: initialEntries,
   });
 
@@ -89,33 +73,10 @@ export const LiveResultsTable = ({
 
   return (
     <section className="wf-live-table-shell">
-      {!embed ? (
-        <div className="wf-metric-grid" style={{ marginBottom: 24 }}>
-          <Card>
-            <CardHeader>
-              <CardTitle>Odpowiedzi na żywo</CardTitle>
-              <CardDescription>Aktualna liczba zapisanych odpowiedzi.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="wf-metric-value">{formatNumber(state.participantCount)}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle>Średni czas</CardTitle>
-              <CardDescription>Średnia z całej sesji, odświeżana automatycznie.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="wf-metric-value">{formatMinutes(state.averageMinutes)}</div>
-            </CardContent>
-          </Card>
-        </div>
-      ) : null}
-
       <Card>
         <CardHeader className="items-start justify-between gap-4 md:flex-row md:items-center">
           <div>
-            <CardTitle>Najnowsze odpowiedzi</CardTitle>
+            <CardTitle>Ostatnie odpowiedzi</CardTitle>
             <CardDescription>Widok odświeża się automatycznie co kilka sekund.</CardDescription>
           </div>
           <span className="wf-pill wf-pill-soft">Na żywo</span>
@@ -124,9 +85,9 @@ export const LiveResultsTable = ({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Czas wpisu</TableHead>
-                <TableHead>Czas przed ekranem</TableHead>
-                <TableHead>Wiek</TableHead>
+            <TableHead>Czas wpisu</TableHead>
+            <TableHead>Czas przed ekranem</TableHead>
+            <TableHead>Wiek</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

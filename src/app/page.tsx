@@ -62,11 +62,10 @@ export default async function HomePage() {
       <main className="wf-public-page">
         <section className="wf-shell wf-hero">
           <div className="wf-hero-copy">
-            <div className="wf-badge">Wersja Open-Source dostępna</div>
-            <h1>Twoje zdrowie cyfrowe pod kontrolą.</h1>
+            <div className="wf-badge">NASZA ORGANIZACJA</div>
+            <h1>Wojticore Flowa</h1>
             <p>
-              Darmowe narzędzie do prowadzenia ankiet o czasie przed ekranem, z panelem organizatora,
-              wynikami na żywo i bezpiecznym dostępem do panelu organizatora.
+              Interaktywne ankiety o czasie przed ekranem na żywo w Twojej prezentacji.
             </p>
             <div className="wf-hero-actions">
               {isSignedIn ? (
@@ -75,12 +74,12 @@ export default async function HomePage() {
                 </Link>
               ) : (
                 <Link className="wf-btn wf-btn-primary" href="/auth?mode=register">
-                  Rozpocznij ankietę
+                  Zaczynamy
                   <ArrowRight size={18} />
                 </Link>
               )}
               <Link className="wf-btn wf-btn-secondary" href="/guides">
-                Zobacz poradniki
+                Dokumentacja
               </Link>
             </div>
           </div>
@@ -88,7 +87,7 @@ export default async function HomePage() {
           <div className="wf-hero-preview">
             <div className="wf-hero-preview-header">
               <div>
-                <div className="wf-small-label">Podgląd dashboardu</div>
+                <div className="wf-small-label">Wyniki na żywo</div>
                 <div className="wf-admin-org-name">Jedno miejsce do pracy z ankietami</div>
               </div>
               <div className="wf-pill wf-pill-soft">Live</div>
@@ -145,9 +144,9 @@ export default async function HomePage() {
         <section className="wf-feature-section" id="funkcje">
           <div className="wf-shell">
             <header style={{ textAlign: "center", marginBottom: 36 }}>
-              <h2 style={{ margin: 0, fontSize: 40, letterSpacing: "-0.04em" }}>Kluczowe funkcje</h2>
+              <h2 style={{ margin: 0, fontSize: 40, letterSpacing: "-0.04em" }}>Dlaczego Wojticore Flowa?</h2>
               <p className="wf-page-subtitle" style={{ maxWidth: 720, margin: "12px auto 0" }}>
-                Zaprojektowane pod jasny przepływ pracy: zbieranie odpowiedzi, prezentację wyników i spokojną analizę danych.
+                Zaprojektowane dla spokojnej prezentacji, szybkiego startu i czytelnych wyników.
               </p>
             </header>
 
@@ -156,9 +155,9 @@ export default async function HomePage() {
                 <div className="wf-feature-icon">
                   <Presentation size={24} />
                 </div>
-                <h3>Interaktywne ankiety</h3>
+                <h3>Open Source i darmowe</h3>
                 <p>
-                  Prowadź ankiety podczas warsztatów, lekcji i prezentacji, bez przeładowanego interfejsu po stronie uczestnika.
+                  Masz pełną kontrolę nad kodem, danymi i sposobem wdrożenia bez zamkniętego lock-in.
                 </p>
               </article>
               <article className="wf-feature-card">
@@ -167,16 +166,16 @@ export default async function HomePage() {
                 </div>
                 <h3>Wyniki na żywo</h3>
                 <p>
-                  Oglądaj spływające odpowiedzi w czasie rzeczywistym i osadzaj widok wyników bezpośrednio w materiale prezentacyjnym.
+                  Oglądaj odpowiedzi aktualizowane w czasie rzeczywistym i wyświetlaj je na ekranie prezentacji.
                 </p>
               </article>
               <article className="wf-feature-card">
                 <div className="wf-feature-icon">
                   <Code2 size={24} />
                 </div>
-                <h3>Darmowe i open-source</h3>
+                <h3>Łatwa integracja</h3>
                 <p>
-                  Otwarte repozytorium, jawny model danych i brak zamkniętego lock-in. Możesz rozwijać platformę razem z zespołem.
+                  QR, embed i publiczny link umożliwiają szybkie wdrożenie bez dodatkowej konfiguracji po stronie uczestnika.
                 </p>
               </article>
             </div>
@@ -188,9 +187,9 @@ export default async function HomePage() {
             <div className="wf-feature-icon" style={{ margin: "0 auto" }}>
               <Leaf size={22} />
             </div>
-            <h2 style={{ margin: 0, fontSize: 36, letterSpacing: "-0.04em" }}>Gotowy do analizy?</h2>
+            <h2 style={{ margin: 0, fontSize: 36, letterSpacing: "-0.04em" }}>Zacznij zbierać dane już dziś</h2>
             <p className="wf-page-subtitle" style={{ maxWidth: 680, margin: "0 auto" }}>
-              Załóż konto organizatora, utwórz pierwszą ankietę i uruchom publiczny link albo widok na żywo w prezentacji.
+              Utwórz ankietę, pokaż kod QR uczestnikom i obserwuj odpowiedzi na żywo bez zbędnych kroków.
             </p>
             <div className="wf-hero-actions" style={{ justifyContent: "center" }}>
               {isSignedIn ? (
@@ -200,10 +199,10 @@ export default async function HomePage() {
               ) : (
                 <>
                   <Link className="wf-btn wf-btn-primary" href="/auth?mode=register">
-                    Załóż konto
+                    Uruchom projekt
                   </Link>
-                  <Link className="wf-btn wf-btn-secondary" href="/admin">
-                    Przejdź do dashboardu
+                  <Link className="wf-btn wf-btn-secondary" href="/guides">
+                    Jak to działa
                   </Link>
                 </>
               )}
