@@ -4,12 +4,11 @@ import {
   Code2,
   Leaf,
   Presentation,
-  QrCode,
   Radio,
-  ShieldCheck,
 } from "lucide-react";
 import Link from "next/link";
 import { auth } from "@clerk/nextjs/server";
+import { Button } from "@/components/ui/button";
 
 export default async function HomePage() {
   const { userId } = await auth();
@@ -68,74 +67,55 @@ export default async function HomePage() {
               Interaktywne ankiety o czasie przed ekranem na żywo w Twojej prezentacji.
             </p>
             <div className="wf-hero-actions">
-              {isSignedIn ? (
-                <Link className="wf-btn wf-btn-primary" href="/admin">
-                  Dashboard
-                </Link>
-              ) : (
-                <Link className="wf-btn wf-btn-primary" href="/auth?mode=register">
-                  Zaczynamy
+              <Button asChild className="wf-hero-primary-link">
+                <Link href={isSignedIn ? "/admin" : "/auth?mode=register"}>
+                  {isSignedIn ? "Dashboard" : "Zacznij"}
                   <ArrowRight size={18} />
                 </Link>
-              )}
-              <Link className="wf-btn wf-btn-secondary" href="/guides">
-                Dokumentacja
-              </Link>
+              </Button>
+              <a className="wf-btn wf-btn-secondary" href="https://github.com" rel="noreferrer" target="_blank">
+                Zobacz na GitHubie
+              </a>
             </div>
           </div>
 
-          <div className="wf-hero-preview">
-            <div className="wf-hero-preview-header">
-              <div>
-                <div className="wf-small-label">Wyniki na żywo</div>
-                <div className="wf-admin-org-name">Jedno miejsce do pracy z ankietami</div>
+          <div className="wf-hero-visual">
+            <div className="wf-hero-visual-card">
+              <div className="wf-hero-visual-accent wf-hero-visual-accent-top" />
+              <div className="wf-hero-visual-accent wf-hero-visual-accent-bottom" />
+              <div className="wf-hero-visual-monitor">
+                <div className="wf-hero-visual-monitor-topbar">
+                  <span />
+                  <span />
+                  <span />
+                </div>
+                <div className="wf-hero-visual-monitor-screen">
+                  <div className="wf-hero-visual-chart">
+                    <div className="wf-hero-visual-bars">
+                      <span style={{ height: "38%" }} />
+                      <span style={{ height: "54%" }} />
+                      <span style={{ height: "76%" }} />
+                      <span style={{ height: "63%" }} />
+                      <span style={{ height: "88%" }} />
+                    </div>
+                    <div className="wf-hero-visual-rings">
+                      <div className="wf-hero-visual-ring" />
+                      <div className="wf-hero-visual-ring" />
+                      <div className="wf-hero-visual-ring" />
+                    </div>
+                  </div>
+                </div>
+                <div className="wf-hero-visual-dock">
+                  <span />
+                  <span />
+                  <span />
+                </div>
               </div>
-              <div className="wf-pill wf-pill-soft">Live</div>
-            </div>
-
-            <div className="wf-hero-preview-grid">
-              <article className="wf-hero-preview-card">
-                <div className="wf-feature-icon">
-                  <ChartColumn size={20} />
-                </div>
-                <div className="wf-small-label">Średni wynik</div>
-                <div className="wf-hero-preview-value">4h 12m</div>
-              </article>
-              <article className="wf-hero-preview-card">
-                <div className="wf-feature-icon">
-                  <Radio size={20} />
-                </div>
-                <div className="wf-small-label">Aktywne sesje</div>
-                <div className="wf-hero-preview-value">12</div>
-              </article>
-              <article className="wf-hero-preview-card">
-                <div className="wf-feature-icon">
-                  <QrCode size={20} />
-                </div>
-                <div className="wf-small-label">QR i embed</div>
-                <div className="wf-table-muted">Udostępnianie na prezentacji i na żywo.</div>
-              </article>
-              <article className="wf-hero-preview-card">
-                <div className="wf-feature-icon">
-                  <ShieldCheck size={20} />
-                </div>
-                <div className="wf-small-label">Bezpieczny dostęp</div>
-                <div className="wf-table-muted">Widoczność ankiet ograniczona per użytkownik.</div>
-              </article>
-            </div>
-
-            <div className="wf-hero-preview-list">
-              <div className="wf-hero-preview-row">
-                <span>Panel organizatora</span>
-                <span>Jednolity header i sidebar</span>
+              <div className="wf-hero-visual-floating wf-hero-visual-floating-left">
+                <ChartColumn size={18} />
               </div>
-              <div className="wf-hero-preview-row">
-                <span>Wyniki na żywo</span>
-                <span>Tryb prezentacyjny i embed</span>
-              </div>
-              <div className="wf-hero-preview-row">
-                <span>Przepływ ankiety</span>
-                <span>4 kroki bez przeciążenia</span>
+              <div className="wf-hero-visual-floating wf-hero-visual-floating-right">
+                <Radio size={18} />
               </div>
             </div>
           </div>

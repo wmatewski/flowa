@@ -13,6 +13,7 @@ import { getAuthenticatedAdmin } from "@/lib/admin-auth";
 import { getLiveSessionDataForAccess } from "@/lib/data";
 import { publicEnv } from "@/lib/env/public";
 import { formatMinutes } from "@/lib/format";
+import { escapeHtmlAttribute } from "@/lib/html";
 import { buildSessionPublicUrl, buildSessionShortPath } from "@/lib/public-session";
 
 const QR_CODE_SIZE_DEFAULT = 352;
@@ -60,7 +61,9 @@ export default async function LiveSessionPage({
     ),
   );
   const participantCount = data.overview?.participant_count ?? data.entries.length;
-  const iframeCode = `<iframe src="${liveUrl}?embed=1" title="${data.session.name} - widok na żywo" width="1280" height="720" style="border:0;width:100%;height:100%"></iframe>`;
+  const embedUrl = new URL(liveUrl);
+  embedUrl.searchParams.set("embed", "1");
+  const iframeCode = `<iframe src="${escapeHtmlAttribute(embedUrl.toString())}" title="${escapeHtmlAttribute(`${data.session.name} - widok na żywo`)}" width="1280" height="720" style="border:0;width:100%;height:100%"></iframe>`;
 
   return (
     <main className={`wf-live-page${embed ? " is-embed" : ""}`}>
