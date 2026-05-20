@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 interface LiveAuthorizationRequestState {
@@ -24,11 +23,14 @@ const formatAuthorizationCode = (value: string) => {
   return `${normalized.slice(0, 3)}-${normalized.slice(3)}`;
 };
 
+const goToAuthorizedLive = (sessionId: string, requestId: string) => {
+  window.location.replace(`/live/${sessionId}?request=${encodeURIComponent(requestId)}`);
+};
+
 export const LiveAuthorizationScreen = ({
   sessionId,
   initialRequest,
 }: LiveAuthorizationScreenProps) => {
-  const router = useRouter();
   const [request, setRequest] = useState<LiveAuthorizationRequestState | null>(initialRequest);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -68,7 +70,7 @@ export const LiveAuthorizationScreen = ({
         }
 
         if (nextState.status === "authorized") {
-          router.refresh();
+          goToAuthorizedLive(sessionId, nextState.requestId);
           return;
         }
 
@@ -88,7 +90,7 @@ export const LiveAuthorizationScreen = ({
     return () => {
       cancelled = true;
     };
-  }, [request, router, sessionId]);
+  }, [request, sessionId]);
 
   useEffect(() => {
     if (!request?.requestId) {
@@ -114,7 +116,7 @@ export const LiveAuthorizationScreen = ({
         }
 
         if (nextState.status === "authorized") {
-          router.refresh();
+          goToAuthorizedLive(sessionId, nextState.requestId);
           return;
         }
 
@@ -131,7 +133,7 @@ export const LiveAuthorizationScreen = ({
       cancelled = true;
       window.clearInterval(intervalId);
     };
-  }, [request?.requestId, router, sessionId]);
+  }, [request?.requestId, sessionId]);
 
   return (
     <main className="wf-link-presentation-shell">
