@@ -5,15 +5,17 @@ import { NextResponse } from "next/server";
 import { getAuthenticatedAdmin } from "@/lib/admin-auth";
 import { getLiveSessionDataById, getLiveSessionDataForAccess } from "@/lib/data";
 import { publicEnv } from "@/lib/env/public";
-import { getAuthorizedLiveDisplayRequestForViewer } from "@/lib/live-display-request";
+import { getAuthorizedLiveDisplayRequestForViewer, getLiveDisplayRequestById } from "@/lib/live-display-request";
 import { getAccessibleSession, normalizeMembershipRole } from "@/lib/session-access";
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ sessionId: string }> },
 ) {
   try {
     const { sessionId } = await params;
+    const url = new URL(request.url);
+    const requestId = url.searchParams.get("request");
     const { userId, orgId, orgRole } = await auth();
 
     if (userId && orgId) {
@@ -44,6 +46,22 @@ export async function GET(
           entries: data.entries,
         });
       }
+    }
+
+    if (requestId) {
+      const liveRequest = await getLiveDisplayRequestById(requestId);
+
+      if (!liveRequest || liveRequest.session_id !== sessionId || liveRequest.status !== "authorized") {
+        return NextResponse.json({ error: "not-found" }, { status: 404 });
+      }
+
+      const data = await getLiveSessionDataById(sessionId);
+
+      return NextResponse.json({
+        participantCount: data.overview?.participant_count ?? data.entries.length,
+        averageMinutes: data.overview?.average_minutes ?? null,
+        entries: data.entries,
+      });
     }
 
     const cookieStore = await cookies();

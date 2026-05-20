@@ -1,6 +1,5 @@
 import { auth } from "@clerk/nextjs/server";
 import {
-  ArrowRight,
   CheckCircle2,
   Clock3,
   Globe2,
@@ -94,11 +93,11 @@ export default async function LiveLinkPage({
     redirect("/auth?redirect_url=/link");
   }
 
-  const flash = getFlashMessage(query);
   const requestId = typeof query.request === "string" ? query.request : null;
   const authorizedId = typeof query.authorized === "string" ? query.authorized : null;
   const currentRequestId = authorizedId ?? requestId;
   const liveRequest = currentRequestId ? await getLiveDisplayRequestById(currentRequestId) : null;
+  const flash = getFlashMessage(query);
 
   if (currentRequestId && !liveRequest) {
     redirect("/link?error=invalid-request");
@@ -119,27 +118,8 @@ export default async function LiveLinkPage({
     }
   }
 
-  if (authorizedId && liveRequest && liveRequest.status === "authorized") {
-    const session = await getSessionById(liveRequest.session_id);
-
-    return (
-      <LinkPageShell>
-        <section className="wf-link-state-shell wf-link-state-shell-success">
-          <div className="wf-link-success-orb">
-            <CheckCircle2 size={82} strokeWidth={1.8} />
-          </div>
-
-          <h1 className="wf-link-success-title">Urzadzenie autoryzowane pomyslnie</h1>
-
-          <div className="wf-link-success-actions">
-            <Link className="wf-link-primary-button wf-link-primary-link" href={session ? `/admin/sessions/${session.id}/live` : "/admin"}>
-              Przejdz do panelu sterowania
-              <ArrowRight size={18} />
-            </Link>
-          </div>
-        </section>
-      </LinkPageShell>
-    );
+  if (currentRequestId && liveRequest && liveRequest.status === "authorized") {
+    redirect(`/live/${liveRequest.session_id}?request=${liveRequest.id}`);
   }
 
   if (requestId && liveRequest && liveRequest.status === "pending") {

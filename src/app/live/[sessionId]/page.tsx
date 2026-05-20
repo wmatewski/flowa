@@ -32,10 +32,14 @@ const renderLiveResults = async (input: {
   organizationName: string;
   sessionName: string;
   publicUrl: string;
+  requestId: string | null;
   averageMinutes: number | null;
   screenTimeLimitMinutes: number;
   entries: Awaited<ReturnType<typeof getLiveSessionDataById>>["entries"];
 }) => {
+  const refreshUrl = input.requestId
+    ? `/api/live/${input.sessionId}?request=${encodeURIComponent(input.requestId)}`
+    : `/api/live/${input.sessionId}`;
   const qrCodeDataUrl = await QRCode.toDataURL(input.publicUrl, {
     margin: 1,
     width: QR_CODE_SIZE_DEFAULT,
@@ -75,12 +79,12 @@ const renderLiveResults = async (input: {
 
           <LiveAverageCard
             initialAverageMinutes={input.averageMinutes}
-            refreshUrl={`/api/live/${input.sessionId}`}
+            refreshUrl={refreshUrl}
             screenTimeLimitMinutes={input.screenTimeLimitMinutes}
           />
         </section>
 
-        <LiveResultsTable refreshUrl={`/api/live/${input.sessionId}`} initialEntries={input.entries} />
+        <LiveResultsTable refreshUrl={refreshUrl} initialEntries={input.entries} />
 
         <footer className="wf-live-results-footer">
           <Link className="wf-live-results-footer-brand" href="/">
@@ -96,6 +100,9 @@ const renderLiveResults = async (input: {
     </main>
   );
 };
+
+const getRequestId = (value: string | string[] | undefined) =>
+  typeof value === "string" ? value : null;
 
 export default async function LiveSessionPage({
   params,
@@ -136,6 +143,7 @@ export default async function LiveSessionPage({
         organizationName: organization.name,
         sessionName: data.session.name,
         publicUrl: buildSessionPublicUrl(baseUrl, data.session.id),
+        requestId: getRequestId(query.request),
         averageMinutes: data.overview?.average_minutes ?? null,
         screenTimeLimitMinutes: data.session.screen_time_limit_minutes,
         entries: data.entries,
@@ -163,6 +171,7 @@ export default async function LiveSessionPage({
       organizationName: organization.name,
       sessionName: data.session.name,
       publicUrl: buildSessionPublicUrl(baseUrl, data.session.id),
+      requestId: getRequestId(query.request),
       averageMinutes: data.overview?.average_minutes ?? null,
       screenTimeLimitMinutes: data.session.screen_time_limit_minutes,
       entries: data.entries,
