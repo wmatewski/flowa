@@ -1,8 +1,8 @@
 "use client";
 
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Check } from "lucide-react";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -25,9 +25,14 @@ export const PublicOperatingSystemStep = ({
   sessionId,
   showBackLink = true,
 }: PublicOperatingSystemStepProps) => {
-  const [operatingSystem, setOperatingSystem] = useState(initialOperatingSystem);
-  const config = useMemo(() => getOperatingSystemConfig(operatingSystem), [operatingSystem]);
-  const isMobileSystem = config.key === "android" || config.key === "ios";
+  const isMobileSession = initialOperatingSystem === "android" || initialOperatingSystem === "ios";
+  const availableSystems = isMobileSession
+    ? (["ios", "android"] as const)
+    : operatingSystemOrder;
+  const initialSelection: OperatingSystem =
+    isMobileSession && initialOperatingSystem !== "android" ? "ios" : initialOperatingSystem;
+  const [operatingSystem, setOperatingSystem] = useState<OperatingSystem>(initialSelection);
+  const config = getOperatingSystemConfig(operatingSystem);
   const nextHref = `/ankieta/${sessionId}/time?age=${age}&os=${operatingSystem}`;
 
   return (
@@ -42,38 +47,42 @@ export const PublicOperatingSystemStep = ({
 
       <Card>
         <CardHeader>
-          <CardTitle style={{ margin: 0 }}>{config.label}</CardTitle>
-          <CardDescription>{config.headline}</CardDescription>
+          <CardTitle style={{ margin: 0 }}>Wybierz z listy</CardTitle>
+          <CardDescription>Wybór zmienia instrukcję poniżej bez przeładowania strony.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-5">
-          <div className="wf-chip-row" style={{ marginBottom: 4 }}>
-            {operatingSystemOrder.map((candidate) => (
-              <Button
-                key={candidate}
-                onClick={() => setOperatingSystem(candidate)}
-                type="button"
-                variant={candidate === operatingSystem ? "default" : "outline"}
-              >
-                {getOperatingSystemConfig(candidate).label}
-              </Button>
-            ))}
+          <div className="wf-os-list" role="radiogroup" aria-label="Wybór systemu urządzenia">
+            {availableSystems.map((candidate) => {
+              const candidateConfig = getOperatingSystemConfig(candidate);
+              const isActive = candidate === operatingSystem;
+
+              return (
+                <button
+                  aria-checked={isActive}
+                  className={`wf-os-list-item${isActive ? " is-active" : ""}`}
+                  key={candidate}
+                  onClick={() => setOperatingSystem(candidate)}
+                  role="radio"
+                  type="button"
+                >
+                  <span className="wf-os-list-item-copy">
+                    <strong>{candidateConfig.label}</strong>
+                    <span>{candidateConfig.shortLabel}</span>
+                  </span>
+                  {isActive ? <Check size={18} /> : null}
+                </button>
+              );
+            })}
           </div>
 
           <div className="wf-step-note" style={{ marginBottom: 0 }}>
             <div className="wf-inline-meta" style={{ color: "var(--text)", fontWeight: 700 }}>
-              <Badge variant="secondary">Wybrany system</Badge>
-              <span>{config.shortLabel}</span>
+              <span>{config.label}</span>
             </div>
             <p className="wf-table-muted" style={{ margin: "10px 0 0" }}>
               {config.description}
             </p>
           </div>
-
-          {isMobileSystem && config.settingsLink ? (
-            <Button asChild className="wf-btn-block" variant="secondary">
-              <a href={config.settingsLink}>{config.settingsButtonLabel}</a>
-            </Button>
-          ) : null}
 
           <div className="wf-step-list">
             {config.steps.map((step, index) => (

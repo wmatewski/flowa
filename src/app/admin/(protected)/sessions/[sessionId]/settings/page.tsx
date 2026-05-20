@@ -11,10 +11,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { getAuthenticatedAdmin } from "@/lib/admin-auth";
 import { getSessionSettingsData } from "@/lib/data";
 import { publicEnv } from "@/lib/env/public";
-import { formatMinutes, formatNumber, formatSessionStatus } from "@/lib/format";
+import { formatMinutes, formatNumber } from "@/lib/format";
 import { buildSessionPublicUrl } from "@/lib/public-session";
 import { normalizeTimeThresholdRules } from "@/lib/time-thresholds";
-import type { FlashMessage, SessionStatus } from "@/lib/types";
+import type { FlashMessage } from "@/lib/types";
 
 const getFlashMessage = (params: Record<string, string | string[] | undefined>): FlashMessage | null => {
   if (params.saved === "1") {
@@ -30,18 +30,6 @@ const getFlashMessage = (params: Record<string, string | string[] | undefined>):
   }
 
   return null;
-};
-
-const getStatusTone = (status: SessionStatus) => {
-  if (status === "completed") {
-    return "optimal";
-  }
-
-  if (status === "draft") {
-    return "warning";
-  }
-
-  return "critical";
 };
 
 export default async function SessionSettingsPage({
@@ -114,18 +102,65 @@ export default async function SessionSettingsPage({
 
       {flash ? <div className={`wf-flash ${flash.type}`}>{flash.message}</div> : null}
 
-      <div className="wf-hero-preview-grid" style={{ marginBottom: 24 }}>
-        <article className="wf-hero-preview-card">
-          <span className="wf-table-muted">Status</span>
-          <div className={`wf-status-chip ${getStatusTone(data.session.status)}`}>{formatSessionStatus(data.session.status)}</div>
-          <span className="wf-table-muted">Link uczestnika: {buildSessionPublicUrl(baseUrl, data.session.id)}</span>
+      <div className="wf-settings-top-grid">
+        <article className="wf-settings-card">
+          <div className="wf-settings-card-header">
+            <div className="wf-settings-card-icon">
+              <Users size={22} />
+            </div>
+            <div>
+              <h2>Podsumowanie</h2>
+              <p>Najważniejsze informacje o ankiecie i szybkie skróty do udostępniania.</p>
+            </div>
+          </div>
+
+          <div className="wf-settings-list">
+            <div className="wf-settings-list-row">
+              <span className="wf-table-muted">Uczestnicy</span>
+              <strong>{formatNumber(data.overview?.participant_count)}</strong>
+            </div>
+            <div className="wf-settings-list-row">
+              <span className="wf-table-muted">Średni wynik</span>
+              <strong>{formatMinutes(data.overview?.average_minutes)}</strong>
+            </div>
+          </div>
+
+          <label className="wf-field">
+            <span className="wf-field-label">Link do ankiety</span>
+            <Input readOnly type="text" value={publicUrl} />
+          </label>
+
+          <label className="wf-field">
+            <span className="wf-field-label">Widok live</span>
+            <Input readOnly type="text" value={liveUrl} />
+          </label>
+
+          <div className="wf-card-actions">
+            <CopyButton className="wf-btn wf-btn-secondary" label="Kopiuj krótki link" value={publicUrl} />
+            <CopyButton className="wf-btn wf-btn-secondary" label="Kopiuj live" value={liveUrl} />
+          </div>
         </article>
-        <article className="wf-hero-preview-card">
-          <span className="wf-table-muted">Uczestnicy</span>
-          <strong className="wf-metric-value" style={{ fontSize: "2.25rem" }}>
-            {formatNumber(data.overview?.participant_count)}
-          </strong>
-          <span className="wf-table-muted">Średni wynik: {formatMinutes(data.overview?.average_minutes)}</span>
+
+        <article className="wf-settings-card">
+          <div className="wf-settings-card-header">
+            <div className="wf-settings-card-icon">
+              <Users size={22} />
+            </div>
+            <div>
+              <h2>Dostęp zespołu</h2>
+              <p>Dostęp do ankiet i zaproszenia są zarządzane wspólnie dla całego zespołu.</p>
+            </div>
+          </div>
+
+          <p className="wf-empty">
+            Ta ankieta korzysta z członków aktywnego zespołu, bez lokalnej listy przypisań.
+          </p>
+
+          <div className="wf-card-actions">
+            <Button asChild className="wf-btn-block" variant="secondary">
+              <Link href="/admin/organization">Zarządzaj organizacją</Link>
+            </Button>
+          </div>
         </article>
       </div>
 
@@ -303,76 +338,6 @@ export default async function SessionSettingsPage({
             </div>
           </section>
         </form>
-
-        <aside className="wf-settings-sidebar">
-          <article className="wf-settings-card">
-            <div className="wf-settings-card-header">
-              <div className="wf-settings-card-icon">
-                <Users size={22} />
-              </div>
-              <div>
-                <h2>Podsumowanie</h2>
-                <p>Najważniejsze informacje o ankiecie i szybkie skróty do udostępniania.</p>
-              </div>
-            </div>
-
-            <div className="wf-settings-list">
-              <div className="wf-settings-list-row">
-                <span className="wf-table-muted">Status</span>
-                <strong>{formatSessionStatus(data.session.status)}</strong>
-              </div>
-              <div className="wf-settings-list-row">
-                <span className="wf-table-muted">Dostęp zespołu</span>
-                <strong>Współdzielony</strong>
-              </div>
-              <div className="wf-settings-list-row">
-                <span className="wf-table-muted">Uczestnicy</span>
-                <strong>{formatNumber(data.overview?.participant_count)}</strong>
-              </div>
-              <div className="wf-settings-list-row">
-                <span className="wf-table-muted">Średni wynik</span>
-                <strong>{formatMinutes(data.overview?.average_minutes)}</strong>
-              </div>
-            </div>
-
-            <label className="wf-field">
-              <span className="wf-field-label">Link do ankiety</span>
-              <Input readOnly type="text" value={publicUrl} />
-            </label>
-
-            <label className="wf-field">
-              <span className="wf-field-label">Widok live</span>
-              <Input readOnly type="text" value={liveUrl} />
-            </label>
-
-            <div className="wf-card-actions">
-              <CopyButton className="wf-btn wf-btn-secondary" label="Kopiuj krótki link" value={publicUrl} />
-              <CopyButton className="wf-btn wf-btn-secondary" label="Kopiuj live" value={liveUrl} />
-            </div>
-          </article>
-
-          <article className="wf-settings-card">
-            <div className="wf-settings-card-header">
-              <div className="wf-settings-card-icon">
-                <Users size={22} />
-              </div>
-              <div>
-                <h2>Dostęp zespołu</h2>
-                <p>Dostęp do ankiet i zaproszenia są zarządzane wspólnie dla całego zespołu.</p>
-              </div>
-            </div>
-
-            <p className="wf-empty">
-              Ta ankieta korzysta z członków aktywnego zespołu, bez lokalnej listy przypisań.
-            </p>
-
-            <div className="wf-card-actions">
-              <Button asChild className="wf-btn-block" variant="secondary">
-                <Link href="/admin/organization">Zarządzaj organizacją</Link>
-              </Button>
-            </div>
-          </article>
-        </aside>
       </div>
     </div>
   );

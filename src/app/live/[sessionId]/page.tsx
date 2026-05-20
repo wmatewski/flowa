@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import QRCode from "qrcode";
 
+import { FullscreenButton } from "@/components/session/fullscreen-button";
 import { LiveResultsTable } from "@/components/session/live-results-table";
 import { getAuthenticatedAdmin } from "@/lib/admin-auth";
 import { getLiveSessionDataForAccess } from "@/lib/data";
@@ -54,6 +55,7 @@ export default async function LiveSessionPage({
 
   return (
     <main className="wf-live-results-page">
+      <FullscreenButton />
       <div className="wf-live-results-shell">
         <header className="wf-live-results-header">
           <p className="wf-live-results-eyebrow">{organization.name}</p>

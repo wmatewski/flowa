@@ -2870,16 +2870,16 @@ h6,
 }
 
 .wf-live-results-shell {
-  width: min(1528px, calc(100% - 48px));
+  width: min(1440px, calc(100% - 40px));
   margin: 0 auto;
-  padding: 48px 0 16px;
+  padding: 36px 0 12px;
   display: grid;
-  gap: 40px;
+  gap: 28px;
 }
 
 .wf-live-results-header {
   display: grid;
-  gap: 12px;
+  gap: 8px;
 }
 
 .wf-live-results-eyebrow {
@@ -2894,24 +2894,24 @@ h6,
 .wf-live-results-title {
   margin: 0;
   font-family: var(--font-display);
-  font-size: clamp(3.2rem, 5.4vw, 5.85rem);
+  font-size: clamp(2.9rem, 4.8vw, 5.2rem);
   line-height: 0.98;
   letter-spacing: -0.055em;
   font-weight: 700;
 }
 
 .wf-live-results-subtitle {
-  margin: 10px 0 0;
+  margin: 6px 0 0;
   max-width: 760px;
   color: #4f5569;
-  font-size: clamp(1.05rem, 1.65vw, 1.45rem);
+  font-size: clamp(1rem, 1.2vw, 1.2rem);
   line-height: 1.65;
 }
 
 .wf-live-results-grid {
   display: grid;
   grid-template-columns: minmax(0, 0.33fr) minmax(0, 0.67fr);
-  gap: 24px;
+  gap: 20px;
 }
 
 .wf-live-results-card,
@@ -2923,8 +2923,8 @@ h6,
 }
 
 .wf-live-results-join-card {
-  min-height: 484px;
-  padding: 40px 36px 32px;
+  min-height: 420px;
+  padding: 32px 30px 26px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -2935,27 +2935,27 @@ h6,
 .wf-live-results-card-title {
   margin: 0;
   color: #15191f;
-  font-size: 28px;
+  font-size: 25px;
   line-height: 1.15;
   font-weight: 700;
   letter-spacing: -0.03em;
 }
 
 .wf-live-results-join-card .wf-live-results-card-title {
-  margin-bottom: 28px;
+  margin-bottom: 24px;
 }
 
 .wf-live-results-join-frame {
   width: 100%;
-  max-width: 286px;
-  padding: 18px;
+  max-width: 270px;
+  padding: 16px;
   border-radius: 12px;
   border: 1px solid rgba(196, 193, 220, 0.9);
   background: #ffffff;
 }
 
 .wf-live-results-join-frame-inner {
-  padding: 16px;
+  padding: 14px;
   border-radius: 8px;
   background: linear-gradient(180deg, #ffffff 0%, #f7f8ff 100%);
   box-shadow: inset 0 0 0 1px rgba(240, 241, 247, 0.95);
@@ -2963,42 +2963,42 @@ h6,
 
 .wf-live-results-join-qr {
   display: block;
-  width: min(100%, 248px);
+  width: min(100%, 232px);
   height: auto;
   margin: 0 auto;
 }
 
 .wf-live-results-join-caption {
-  margin: 28px 0 0;
+  margin: 22px 0 0;
   color: #4f5569;
-  font-size: 16px;
+  font-size: 15px;
   line-height: 1.55;
 }
 
 .wf-live-results-average-card {
-  min-height: 484px;
-  padding: 42px 40px 40px;
+  min-height: 420px;
+  padding: 32px 32px 28px;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
 }
 
 .wf-live-results-average-card .wf-live-results-card-title {
-  margin-bottom: 30px;
+  margin-bottom: 24px;
 }
 
 .wf-live-results-average-body {
-  min-height: 320px;
+  min-height: 280px;
   display: flex;
   align-items: center;
-  gap: 36px;
+  gap: 30px;
   padding-left: 2px;
 }
 
 .wf-live-results-average-ring {
   position: relative;
-  width: 160px;
-  height: 160px;
+  width: 148px;
+  height: 148px;
   flex: 0 0 auto;
 }
 
@@ -3036,7 +3036,7 @@ h6,
 .wf-live-results-average-value {
   color: #15191f;
   font-family: var(--font-display);
-  font-size: clamp(3.6rem, 5vw, 5.2rem);
+  font-size: clamp(3.1rem, 4.4vw, 4.8rem);
   line-height: 0.98;
   letter-spacing: -0.055em;
   font-weight: 700;
@@ -3047,7 +3047,7 @@ h6,
 }
 
 .wf-live-results-table-header {
-  padding: 26px 28px;
+  padding: 22px 24px;
   border-bottom: 1px solid rgba(196, 193, 220, 0.9);
   background: #ffffff;
 }
@@ -3055,7 +3055,7 @@ h6,
 .wf-live-results-table-title {
   margin: 0;
   color: #15191f;
-  font-size: 24px;
+  font-size: 22px;
   line-height: 1.2;
   font-weight: 700;
   letter-spacing: -0.03em;
@@ -3073,7 +3073,7 @@ h6,
 }
 
 .wf-live-results-table thead th {
-  padding: 22px 28px;
+  padding: 20px 24px;
   color: #2f3447;
   font-size: 14px;
   font-weight: 500;
@@ -3082,7 +3082,7 @@ h6,
 }
 
 .wf-live-results-table tbody td {
-  padding: 24px 28px;
+  padding: 20px 24px;
   color: #15191f;
   font-size: 16px;
   line-height: 1.4;
@@ -3099,7 +3099,7 @@ h6,
 }
 
 .wf-live-results-table-empty {
-  padding: 36px 28px;
+  padding: 28px 24px;
   color: #4f5569;
   text-align: center;
 }
@@ -3109,7 +3109,7 @@ h6,
   align-items: center;
   justify-content: space-between;
   gap: 24px;
-  padding: 18px 2px 0;
+  padding: 14px 2px 0;
   color: #2f3447;
   font-size: 15px;
 }
@@ -3135,6 +3135,14 @@ h6,
   text-decoration: underline;
 }
 
+.wf-live-fullscreen-btn {
+  position: fixed;
+  top: 18px;
+  right: 18px;
+  z-index: 50;
+  box-shadow: 0 8px 24px rgba(18, 20, 35, 0.12);
+}
+
 @media (max-width: 1024px) {
   .wf-live-feature-grid,
   .wf-live-links-grid {
@@ -3147,8 +3155,8 @@ h6,
   }
 
   .wf-live-results-shell {
-    width: min(100%, calc(100% - 32px));
-    padding-top: 32px;
+    width: min(100%, calc(100% - 24px));
+    padding-top: 24px;
   }
 
   .wf-live-results-grid {
@@ -3172,38 +3180,38 @@ h6,
 
 @media (max-width: 760px) {
   .wf-live-results-shell {
-    width: min(100%, calc(100% - 24px));
-    gap: 28px;
+    width: min(100%, calc(100% - 20px));
+    gap: 22px;
   }
 
   .wf-live-results-join-card,
   .wf-live-results-average-card {
-    padding: 28px 22px 24px;
+    padding: 24px 18px 20px;
   }
 
   .wf-live-results-card-title,
   .wf-live-results-table-title {
-    font-size: 22px;
+    font-size: 20px;
   }
 
   .wf-live-results-average-body {
-    gap: 24px;
+    gap: 20px;
   }
 
   .wf-live-results-average-ring {
-    width: 132px;
-    height: 132px;
+    width: 120px;
+    height: 120px;
   }
 
   .wf-live-results-average-value {
-    font-size: clamp(2.8rem, 12vw, 4rem);
+    font-size: clamp(2.45rem, 11vw, 3.6rem);
   }
 
   .wf-live-results-table-header,
   .wf-live-results-table thead th,
   .wf-live-results-table tbody td {
-    padding-left: 20px;
-    padding-right: 20px;
+    padding-left: 18px;
+    padding-right: 18px;
   }
 
   .wf-live-results-footer-links {
@@ -3317,6 +3325,50 @@ h6,
   gap: 12px;
 }
 
+.wf-os-list {
+  display: grid;
+  gap: 12px;
+}
+
+.wf-os-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  padding: 16px 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-soft);
+  color: var(--text);
+  text-align: left;
+  transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
+}
+
+.wf-os-list-item:hover {
+  transform: translateY(-1px);
+}
+
+.wf-os-list-item.is-active {
+  border-color: rgba(0, 95, 110, 0.18);
+  background: var(--primary-soft);
+}
+
+.wf-os-list-item-copy {
+  display: grid;
+  gap: 4px;
+  text-align: left;
+}
+
+.wf-os-list-item-copy strong {
+  font-size: 16px;
+}
+
+.wf-os-list-item-copy span {
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
 .wf-step-list-item {
   display: grid;
   grid-template-columns: 32px minmax(0, 1fr);
@@ -3373,9 +3425,16 @@ h6,
 
 .wf-settings-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1.3fr) minmax(320px, 0.7fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: 24px;
   align-items: start;
+}
+
+.wf-settings-top-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+  margin-bottom: 24px;
 }
 
 .wf-settings-form,
@@ -3661,6 +3720,10 @@ h6,
 
   .wf-settings-layout,
   .wf-settings-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .wf-settings-top-grid {
     grid-template-columns: minmax(0, 1fr);
   }
 

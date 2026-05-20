@@ -1,10 +1,9 @@
 "use client";
 
-import { ChevronDown, CheckCircle2, MonitorSmartphone } from "lucide-react";
+import { CheckCircle2, MonitorSmartphone } from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getOperatingSystemConfig, operatingSystemOrder } from "@/lib/os";
 import type { OperatingSystem, Session } from "@/lib/types";
@@ -37,7 +36,6 @@ export const SessionEntryForm = ({
   submitAction,
 }: SessionEntryFormProps) => {
   const [operatingSystem, setOperatingSystem] = useState(initialOperatingSystem);
-  const [showPicker, setShowPicker] = useState(false);
   const [screenTimeValue, setScreenTimeValue] = useState(formatMinutesToInput(initialMinutes));
   const operatingSystemConfig = getOperatingSystemConfig(operatingSystem);
 
@@ -47,41 +45,32 @@ export const SessionEntryForm = ({
         <div className="wf-flow-icon">
           <MonitorSmartphone size={30} />
         </div>
-        <Badge variant="secondary">Dopasowany system</Badge>
         <CardTitle>Cyfrowe Zdrowie</CardTitle>
         <CardDescription>Podziel się informacją o swoim dzisiejszym czasie przed ekranem.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-5">
-        <div className="wf-os-badge-row">
-          <div className="wf-os-badge">
-            <span className="wf-os-badge-copy">Wybrany system: {operatingSystemConfig.label}</span>
-            <button
-              className="wf-link-button"
-              onClick={() => setShowPicker((current) => !current)}
-              type="button"
-            >
-              Zmień
-            </button>
-          </div>
-        </div>
+        <div className="wf-os-list" role="radiogroup" aria-label="Wybór systemu urządzenia">
+          {operatingSystemOrder.map((candidate) => {
+            const candidateConfig = getOperatingSystemConfig(candidate);
+            const isActive = candidate === operatingSystem;
 
-        {showPicker ? (
-          <div className="wf-chip-row" style={{ marginBottom: 24 }}>
-            {operatingSystemOrder.map((candidate) => (
+            return (
               <button
-                className={`wf-chip-button${candidate === operatingSystem ? " is-active" : ""}`}
+                aria-checked={isActive}
+                className={`wf-os-list-item${isActive ? " is-active" : ""}`}
                 key={candidate}
-                onClick={() => {
-                  setOperatingSystem(candidate);
-                  setShowPicker(false);
-                }}
+                onClick={() => setOperatingSystem(candidate)}
+                role="radio"
                 type="button"
               >
-                {getOperatingSystemConfig(candidate).label}
+                <span className="wf-os-list-item-copy">
+                  <strong>{candidateConfig.label}</strong>
+                  <span>{candidateConfig.shortLabel}</span>
+                </span>
               </button>
-            ))}
-          </div>
-        ) : null}
+            );
+          })}
+        </div>
 
         <form action={submitAction} className="wf-form-stack">
           <input name="sessionId" type="hidden" value={session.id} />
@@ -105,36 +94,16 @@ export const SessionEntryForm = ({
             <CheckCircle2 size={20} />
             Wyślij
           </Button>
-
-          <details className="wf-accordion">
-            <summary>
-              <span>Instrukcja: Jak sprawdzić czas przed ekranem?</span>
-              <ChevronDown size={18} />
-            </summary>
-            <div className="wf-accordion-body">
-              <div>
-                <div className="wf-chip-row" style={{ marginBottom: 16 }}>
-                  {operatingSystemOrder.map((candidate) => (
-                    <button
-                      className={`wf-chip-button${candidate === operatingSystem ? " is-active" : ""}`}
-                      key={candidate}
-                      onClick={() => setOperatingSystem(candidate)}
-                      type="button"
-                    >
-                      {getOperatingSystemConfig(candidate).label}
-                    </button>
-                  ))}
-                </div>
-                <div className="wf-accordion-title">{operatingSystemConfig.label}</div>
-                <ol className="wf-steps-list">
-                  {operatingSystemConfig.steps.map((step) => (
-                    <li key={step}>{step}</li>
-                  ))}
-                </ol>
-              </div>
-            </div>
-          </details>
         </form>
+
+        <div className="wf-step-note">
+          <div className="wf-accordion-title">{operatingSystemConfig.label}</div>
+          <ol className="wf-steps-list">
+            {operatingSystemConfig.steps.map((step) => (
+              <li key={step}>{step}</li>
+            ))}
+          </ol>
+        </div>
       </CardContent>
     </Card>
   );
