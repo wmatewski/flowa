@@ -87,11 +87,11 @@ export default async function LiveLinkPage({
   const { userId, orgId, orgRole } = await auth();
 
   if (!userId) {
-    redirect("/auth?redirect_url=/link");
+    redirect("/login?redirect_url=/link");
   }
 
   if (!orgId) {
-    redirect("/auth?redirect_url=/link");
+    redirect("/login?redirect_url=/link");
   }
 
   const requestId = typeof query.request === "string" ? query.request : null;

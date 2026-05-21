@@ -74,12 +74,12 @@ export default function GuidesPage() {
             <Link className="wf-nav-link is-active" href="/guides">
               Guides
             </Link>
-            <Link className="wf-nav-link" href="/auth">
+            <Link className="wf-nav-link" href="/login">
               Profile
             </Link>
           </nav>
 
-          <Link className="wf-btn wf-btn-secondary" href="/auth">
+          <Link className="wf-btn wf-btn-secondary" href="/login">
             Zaloguj się
           </Link>
         </div>

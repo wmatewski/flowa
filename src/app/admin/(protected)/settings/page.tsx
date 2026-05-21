@@ -28,7 +28,7 @@ export default async function OrganizationSettingsPage({
   const { orgId } = await auth();
 
   if (!orgId) {
-    redirect("/auth");
+    redirect("/login");
   }
 
   const query = await searchParams;

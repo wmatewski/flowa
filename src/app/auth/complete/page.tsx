@@ -29,11 +29,11 @@ export default function AuthCompletePage() {
         }
 
         if (!cancelled) {
-          router.replace(`/auth?mode=register&oauth=google&redirect_url=${encodeURIComponent(redirectUrl)}`);
+          router.replace(`/sign-up?oauth=google&redirect_url=${encodeURIComponent(redirectUrl)}`);
         }
       } catch {
         if (!cancelled) {
-          router.replace(`/auth?mode=login&error=oauth-failed&redirect_url=${encodeURIComponent(redirectUrl)}`);
+          router.replace(`/login?error=oauth-failed&redirect_url=${encodeURIComponent(redirectUrl)}`);
         }
       }
     };

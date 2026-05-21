@@ -256,17 +256,17 @@ export const inviteAdminAction = async (formData: FormData) => {
     redirect("/admin/organization?error=forbidden");
   }
 
-  await clerk.organizations.createOrganizationInvitation({
-    organizationId: orgId,
-    emailAddress: email,
-    role: toClerkRole(role),
-    inviterUserId: user.id,
-    redirectUrl: `${publicEnv.appUrl}/auth?mode=register`,
-    publicMetadata: {
-      invitedBy: user.id,
-      organizationId: organization.id,
-      source: "flowa-organization-panel",
-    },
+    await clerk.organizations.createOrganizationInvitation({
+      organizationId: orgId,
+      emailAddress: email,
+      role: toClerkRole(role),
+      inviterUserId: user.id,
+      redirectUrl: `${publicEnv.appUrl}/sign-up`,
+      publicMetadata: {
+        invitedBy: user.id,
+        organizationId: organization.id,
+        source: "flowa-organization-panel",
+      },
   });
 
   await logOrganizationActivity({

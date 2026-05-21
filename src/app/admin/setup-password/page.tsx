@@ -6,5 +6,5 @@ export default async function AdminSetupPasswordPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   await searchParams;
-  redirect("/auth?mode=register");
+  redirect("/sign-up");
 }

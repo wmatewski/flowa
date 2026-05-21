@@ -96,7 +96,7 @@ export const getAuthenticatedUser = async (): Promise<AuthenticatedUser> => {
   const { userId, sessionClaims } = await auth();
 
   if (!userId) {
-    redirect("/auth");
+    redirect("/login");
   }
 
   const client = await clerkClient();
@@ -140,11 +140,11 @@ export const getAuthenticatedAdmin = async (): Promise<{
   const verificationStatus = getEmailVerificationStatus(user);
 
   if (verificationStatus?.isExpired) {
-    redirect("/auth?error=email-verification-expired");
+    redirect("/login?error=email-verification-expired");
   }
 
   if (!orgId) {
-    redirect("/auth");
+    redirect("/login");
   }
 
   const clerk = await clerkClient();
@@ -178,7 +178,7 @@ export const getAuthenticatedAdmin = async (): Promise<{
   });
 
   if (!currentMembership) {
-    redirect("/auth?error=not-authorized");
+    redirect("/login?error=not-authorized");
   }
 
   const currentRole = mapOrganizationRole(orgRole ?? currentMembership.role);

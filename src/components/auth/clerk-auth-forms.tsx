@@ -31,18 +31,19 @@ const clerkAppearance = {
 
 interface ClerkAuthFormsProps {
   mode: "login" | "register";
+  path: "/login" | "/sign-up";
   requiresOrganizationSetup: boolean;
   redirectUrl: string;
 }
 
-export function ClerkAuthForms({ mode, requiresOrganizationSetup, redirectUrl }: ClerkAuthFormsProps) {
-  const authPath = "/auth";
+export function ClerkAuthForms({ mode, path, requiresOrganizationSetup, redirectUrl }: ClerkAuthFormsProps) {
+  const counterpartPath = path === "/login" ? "/sign-up" : "/login";
 
   if (requiresOrganizationSetup) {
     return (
       <CreateOrganization
         key="create-organization"
-        path={authPath}
+        path={path}
         routing="path"
         afterCreateOrganizationUrl={redirectUrl}
         appearance={clerkAppearance}
@@ -54,10 +55,10 @@ export function ClerkAuthForms({ mode, requiresOrganizationSetup, redirectUrl }:
     return (
       <SignUp
         key="sign-up"
-        path={authPath}
+        path={path}
         routing="path"
         fallbackRedirectUrl={redirectUrl}
-        signInUrl={`${authPath}?mode=login&redirect_url=${encodeURIComponent(redirectUrl)}`}
+        signInUrl={`${counterpartPath}?redirect_url=${encodeURIComponent(redirectUrl)}`}
         appearance={clerkAppearance}
       />
     );
@@ -66,10 +67,10 @@ export function ClerkAuthForms({ mode, requiresOrganizationSetup, redirectUrl }:
   return (
     <SignIn
       key="sign-in"
-      path={authPath}
+      path={path}
       routing="path"
       fallbackRedirectUrl={redirectUrl}
-      signUpUrl={`${authPath}?mode=register&redirect_url=${encodeURIComponent(redirectUrl)}`}
+      signUpUrl={`${counterpartPath}?redirect_url=${encodeURIComponent(redirectUrl)}`}
       appearance={clerkAppearance}
     />
   );

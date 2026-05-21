@@ -108,7 +108,7 @@ export const AuthForms = ({
   const completeOrganizerSignUp = async (sessionId: string) => {
     await setSignUpActive?.({ session: sessionId });
     await sendSignUpVerificationLink().catch(() => undefined);
-    router.push(`/auth?registered=1&redirect_url=${encodeURIComponent(redirectUrl)}`);
+    router.push(`/login?registered=1&redirect_url=${encodeURIComponent(redirectUrl)}`);
     router.refresh();
   };
 

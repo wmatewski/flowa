@@ -19,7 +19,7 @@ const ensureSessionAccess = async (sessionId: string) => {
   const { userId, orgId, orgRole } = await auth();
 
   if (!userId) {
-    redirect("/auth?redirect_url=/link");
+    redirect("/login?redirect_url=/link");
   }
 
   if (!orgId) {

@@ -29,10 +29,10 @@ export default async function HomePage() {
               </Link>
             ) : (
               <>
-                <Link className="wf-nav-link" href="/auth?mode=login">
+                <Link className="wf-nav-link" href="/login">
                   Logowanie
                 </Link>
-                <Link className="wf-nav-link" href="/auth?mode=register">
+                <Link className="wf-nav-link" href="/sign-up">
                   Rejestracja
                 </Link>
               </>
@@ -51,7 +51,7 @@ export default async function HomePage() {
             </p>
             <div className="wf-hero-actions">
               <Button asChild className="wf-hero-primary-link">
-                <Link href={isSignedIn ? "/admin" : "/auth?mode=register"}>
+                <Link href={isSignedIn ? "/admin" : "/sign-up"}>
                   {isSignedIn ? "Przejdź do panelu" : "Rozpocznij"}
                   <ArrowRight size={18} />
                 </Link>
@@ -206,7 +206,7 @@ export default async function HomePage() {
                 </Link>
               ) : (
                 <>
-                  <Link className="wf-btn wf-btn-primary" href="/auth?mode=register">
+                  <Link className="wf-btn wf-btn-primary" href="/sign-up">
                     Uruchom projekt
                   </Link>
                   <Link className="wf-btn wf-btn-secondary" href="/guides">
@@ -239,7 +239,7 @@ export default async function HomePage() {
             <a href={githubUrl} rel="noreferrer" target="_blank">
               GitHub
             </a>
-            {isSignedIn ? <Link href="/admin">Panel</Link> : <Link href="/auth?mode=register">Rejestracja</Link>}
+            {isSignedIn ? <Link href="/admin">Panel</Link> : <Link href="/sign-up">Rejestracja</Link>}
           </nav>
         </div>
       </footer>

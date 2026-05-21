@@ -43,7 +43,7 @@ export default function AuthVerifyPage() {
 
     void clerk
       .handleEmailLinkVerification({
-        redirectUrl: "/auth",
+        redirectUrl: "/login",
         redirectUrlComplete: redirectUrl,
         onVerifiedOnOtherDevice: () => {
           setVerifiedOnOtherDevice(true);
@@ -73,7 +73,7 @@ export default function AuthVerifyPage() {
           {errorMessage || verifiedOnOtherDevice ? (
             <div className="wf-auth-stage">
               <div className="wf-form-stack wf-auth-form wf-auth-stage-panel">
-                <Link className="wf-btn wf-btn-secondary wf-btn-block" href="/auth">
+                <Link className="wf-btn wf-btn-secondary wf-btn-block" href="/login">
                   Wróć do logowania
                 </Link>
               </div>

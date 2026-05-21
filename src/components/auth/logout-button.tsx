@@ -9,7 +9,7 @@ export const LogoutButton = () => {
   const clerk = useClerk();
 
   return (
-    <Button className="wf-btn-block" onClick={() => clerk.signOut({ redirectUrl: "/auth" })} type="button" variant="secondary">
+    <Button className="wf-btn-block" onClick={() => clerk.signOut({ redirectUrl: "/login" })} type="button" variant="secondary">
       <LogOut size={18} />
       Wyloguj
     </Button>
