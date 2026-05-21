@@ -239,6 +239,7 @@ export default async function HomePage() {
             <a href={githubUrl} rel="noreferrer" target="_blank">
               GitHub
             </a>
+            <Link href="/privacy">Polityka prywatności</Link>
             {isSignedIn ? <Link href="/admin">Panel</Link> : <Link href="/sign-up">Rejestracja</Link>}
           </nav>
         </div>
