@@ -48,6 +48,7 @@ export default async function AuthPage({
 
         <Suspense>
           <ClerkAuthForms
+            key={mode}
             mode={mode}
             redirectUrl={redirectUrl}
             requiresOrganizationSetup={requiresOrganizationSetup}
