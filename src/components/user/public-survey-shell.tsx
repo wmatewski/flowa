@@ -113,7 +113,9 @@ export const PublicSurveyShell = ({
 
           {actions ? <div className="wf-survey-content-actions">{actions}</div> : null}
 
-          <div className="wf-survey-content-footer">powered by Wojticore Flowa</div>
+          <Link className="wf-survey-content-footer" href="/">
+            powered by Wojticore Flowa
+          </Link>
         </div>
       </section>
     </main>

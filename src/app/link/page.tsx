@@ -68,7 +68,7 @@ const LinkPageShell = ({
     <main className="wf-link-main">{children}</main>
 
     <footer className="wf-link-footer">
-      <div className="wf-link-footer-copy">© 2024 Wojticore Flowa. Analytical & Transparent.</div>
+      <div className="wf-link-footer-copy">© 2026 Wojticore Flowa. Analytical & Transparent.</div>
       <nav className="wf-link-footer-links" aria-label="Linki stopki">
         <Link href="#">Privacy</Link>
         <Link href="#">Terms</Link>

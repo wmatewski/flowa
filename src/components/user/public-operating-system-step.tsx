@@ -97,11 +97,11 @@ export const PublicOperatingSystemStep = ({
       >
         <ArrowLeft size={18} />
       </button>
-    ) : (
+    ) : hasAgeStep ? (
       <Link aria-label="Wstecz" className="wf-survey-icon-button" href={previousHref}>
         <ArrowLeft size={18} />
       </Link>
-    );
+    ) : null;
 
   return (
     <PublicSurveyShell
@@ -116,12 +116,12 @@ export const PublicOperatingSystemStep = ({
               <ArrowLeft size={18} />
               <span>Wstecz</span>
             </button>
-          ) : (
+          ) : hasAgeStep ? (
             <Link className="wf-survey-action wf-survey-action-secondary" href={previousHref}>
               <ArrowLeft size={18} />
               <span>Wstecz</span>
             </Link>
-          )}
+          ) : null}
 
           {view === "instructions" ? (
             <Link className="wf-survey-action wf-survey-action-primary" href={nextHref}>
@@ -146,7 +146,7 @@ export const PublicOperatingSystemStep = ({
       step={hasAgeStep ? 2 : 1}
       stepItems={buildPublicSurveyStepItems(hasAgeStep, hasAgeStep ? 2 : 1)}
       title="Wybierz swoj system"
-      topbarLeading={leadingAction}
+      topbarLeading={leadingAction ?? undefined}
       totalSteps={totalSteps}
     >
       {view === "select" ? (

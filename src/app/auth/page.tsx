@@ -14,6 +14,7 @@ export default async function AuthPage({
 }) {
   const { userId, orgId } = await auth();
   const query = await searchParams;
+  const mode = typeof query.mode === "string" && query.mode === "register" ? "register" : "login";
   const redirectUrl = sanitizeInternalRedirectUrl(
     typeof query.redirect_url === "string" ? query.redirect_url : null,
     "/admin",
@@ -46,7 +47,11 @@ export default async function AuthPage({
         ) : null}
 
         <Suspense>
-          <ClerkAuthForms redirectUrl={redirectUrl} requiresOrganizationSetup={requiresOrganizationSetup} />
+          <ClerkAuthForms
+            mode={mode}
+            redirectUrl={redirectUrl}
+            requiresOrganizationSetup={requiresOrganizationSetup}
+          />
         </Suspense>
       </section>
     </main>

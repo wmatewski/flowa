@@ -1,6 +1,5 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
 import { CreateOrganization, SignIn, SignUp } from "@clerk/nextjs";
 
 const clerkAppearance = {
@@ -31,17 +30,16 @@ const clerkAppearance = {
 } as const;
 
 interface ClerkAuthFormsProps {
+  mode: "login" | "register";
   requiresOrganizationSetup: boolean;
   redirectUrl: string;
 }
 
-export function ClerkAuthForms({ requiresOrganizationSetup, redirectUrl }: ClerkAuthFormsProps) {
-  const searchParams = useSearchParams();
-  const mode = searchParams.get("mode") === "register" ? "register" : "login";
-
+export function ClerkAuthForms({ mode, requiresOrganizationSetup, redirectUrl }: ClerkAuthFormsProps) {
   if (requiresOrganizationSetup) {
     return (
       <CreateOrganization
+        key="create-organization"
         afterCreateOrganizationUrl={redirectUrl}
         appearance={clerkAppearance}
       />
@@ -51,8 +49,9 @@ export function ClerkAuthForms({ requiresOrganizationSetup, redirectUrl }: Clerk
   if (mode === "register") {
     return (
       <SignUp
+        key="sign-up"
         fallbackRedirectUrl={redirectUrl}
-        signInUrl={`/auth?redirect_url=${encodeURIComponent(redirectUrl)}`}
+        signInUrl={`/auth?mode=login&redirect_url=${encodeURIComponent(redirectUrl)}`}
         appearance={clerkAppearance}
       />
     );
@@ -60,6 +59,7 @@ export function ClerkAuthForms({ requiresOrganizationSetup, redirectUrl }: Clerk
 
   return (
     <SignIn
+      key="sign-in"
       fallbackRedirectUrl={redirectUrl}
       signUpUrl={`/auth?mode=register&redirect_url=${encodeURIComponent(redirectUrl)}`}
       appearance={clerkAppearance}

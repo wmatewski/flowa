@@ -1,7 +1,6 @@
 import { cookies, headers } from "next/headers";
-import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 
 import { SessionEntryState } from "@/components/user/session-entry-state";
 import {
@@ -56,10 +55,6 @@ export default async function PublicSessionAgePage({
       <PublicSurveyShell
         actions={
           <div className="wf-survey-action-bar">
-            <Link className="wf-survey-action wf-survey-action-secondary" href="/">
-              <ArrowLeft size={18} />
-              <span>Wstecz</span>
-            </Link>
             <button
               className="wf-survey-action wf-survey-action-primary"
               form="wf-age-form"
@@ -76,11 +71,6 @@ export default async function PublicSessionAgePage({
         step={1}
         stepItems={buildPublicSurveyStepItems(true, 1)}
         title="Podaj swoj wiek"
-        topbarLeading={
-          <Link aria-label="Wstecz" className="wf-survey-icon-button" href="/">
-            <ArrowLeft size={18} />
-          </Link>
-        }
         totalSteps={4}
       >
         <div className="wf-survey-form-stack">

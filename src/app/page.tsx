@@ -22,26 +22,22 @@ export default async function HomePage() {
           </Link>
 
           <nav className="wf-nav wf-landing-nav">
-            <Link className="wf-nav-link" href="#funkcje">
-              Funkcje
-            </Link>
-            <Link className="wf-nav-link" href="#jak-to-dziala">
-              Jak to działa
-            </Link>
-            <Link className="wf-nav-link" href="/guides">
-              Dokumentacja
-            </Link>
-            <a className="wf-nav-link" href={githubUrl} rel="noreferrer" target="_blank">
-              GitHub
-            </a>
+            {isSignedIn ? (
+              <Link className="wf-nav-link" href="/admin">
+                Dashboard
+                <ArrowRight size={18} />
+              </Link>
+            ) : (
+              <>
+                <Link className="wf-nav-link" href="/auth?mode=login">
+                  Logowanie
+                </Link>
+                <Link className="wf-nav-link" href="/auth?mode=register">
+                  Rejestracja
+                </Link>
+              </>
+            )}
           </nav>
-
-          <Button asChild className="wf-landing-topbar-cta">
-            <Link href={isSignedIn ? "/admin" : "/auth?mode=register"}>
-              {isSignedIn ? "Panel" : "Rozpocznij"}
-              <ArrowRight size={18} />
-            </Link>
-          </Button>
         </div>
       </header>
 
