@@ -5,16 +5,7 @@ import { PublicOperatingSystemStep } from "@/components/user/public-operating-sy
 import { SessionEntryState } from "@/components/user/session-entry-state";
 import { getPublicSessionExperienceData } from "@/lib/data";
 import { publicEnv } from "@/lib/env/public";
-import { detectOperatingSystem, isOperatingSystem } from "@/lib/os";
-import type { OperatingSystem } from "@/lib/types";
-
-const getAvailableOperatingSystems = (detectedOperatingSystem: OperatingSystem) => {
-  if (detectedOperatingSystem === "ios" || detectedOperatingSystem === "android") {
-    return ["ios", "android"] as OperatingSystem[];
-  }
-
-  return ["windows", "macos", "linux"] as OperatingSystem[];
-};
+import { detectOperatingSystem, getAvailableOperatingSystems, isOperatingSystem } from "@/lib/os";
 
 export default async function PublicSessionInstructionsPage({
   params,
@@ -41,7 +32,7 @@ export default async function PublicSessionInstructionsPage({
     redirect(`/ankieta/${sessionId}/age`);
   }
 
-  const availableOperatingSystems = getAvailableOperatingSystems(detectedOperatingSystem);
+  const availableOperatingSystems = getAvailableOperatingSystems(headerStore.get("user-agent"));
   const selectedOperatingSystem =
     typeof query.os === "string" &&
     isOperatingSystem(query.os) &&

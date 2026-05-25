@@ -1,5 +1,8 @@
 import type { OperatingSystem, OperatingSystemConfig } from "@/lib/types";
 
+const mobileOperatingSystems = ["ios", "android"] as const satisfies readonly OperatingSystem[];
+const desktopOperatingSystems = ["windows", "macos", "linux"] as const satisfies readonly OperatingSystem[];
+
 export const operatingSystemConfig: Record<OperatingSystem, OperatingSystemConfig> = {
   ios: {
     key: "ios",
@@ -114,6 +117,22 @@ export const operatingSystemOrder: OperatingSystem[] = [
   "unknown",
 ];
 
+const isMobileUserAgent = (userAgent: string | null | undefined) => {
+  if (!userAgent) {
+    return false;
+  }
+
+  const value = userAgent.toLowerCase();
+
+  return (
+    value.includes("android") ||
+    value.includes("iphone") ||
+    value.includes("ipad") ||
+    value.includes("ipod") ||
+    value.includes("mobile")
+  );
+};
+
 export const detectOperatingSystem = (
   userAgent: string | null | undefined,
 ): OperatingSystem => {
@@ -149,6 +168,16 @@ export const detectOperatingSystem = (
   }
 
   return "unknown";
+};
+
+export const getAvailableOperatingSystems = (
+  userAgent: string | null | undefined,
+): OperatingSystem[] => {
+  if (isMobileUserAgent(userAgent)) {
+    return [...mobileOperatingSystems];
+  }
+
+  return [...desktopOperatingSystems];
 };
 
 export const isOperatingSystem = (value: string): value is OperatingSystem =>

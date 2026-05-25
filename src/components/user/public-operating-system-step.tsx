@@ -2,13 +2,13 @@
 
 import { ArrowLeft, ArrowRight, Apple, Check, Monitor, Smartphone } from "lucide-react";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import {
   PublicSurveyShell,
   buildPublicSurveyStepItems,
 } from "@/components/user/public-survey-shell";
-import { getOperatingSystemConfig } from "@/lib/os";
+import { getAvailableOperatingSystems, getOperatingSystemConfig } from "@/lib/os";
 import type { AgeMode, OperatingSystem } from "@/lib/types";
 
 interface PublicOperatingSystemStepProps {
@@ -66,18 +66,19 @@ export const PublicOperatingSystemStep = ({
   sessionId,
   sessionName,
 }: PublicOperatingSystemStepProps) => {
-  const allowedOperatingSystems = useMemo(() => {
+  const serverAllowedOperatingSystems = useMemo(() => {
     const filtered = availableOperatingSystems.filter((value) => value !== "unknown");
 
     return filtered.length ? filtered : (["ios", "android"] as OperatingSystem[]);
   }, [availableOperatingSystems]);
+  const [allowedOperatingSystems, setAllowedOperatingSystems] = useState(serverAllowedOperatingSystems);
   const hasAgeStep = ageMode === "variable";
   const totalSteps = hasAgeStep ? 4 : 3;
   const previousHref = hasAgeStep ? `/ankieta/${sessionId}?age=${age}` : "/";
-  const seededSelection = allowedOperatingSystems.includes(initialOperatingSystem)
+  const seededSelection = serverAllowedOperatingSystems.includes(initialOperatingSystem)
     ? initialOperatingSystem
-    : allowedOperatingSystems[0];
-  const shouldOpenInstructionsByDefault = allowedOperatingSystems.includes(initialOperatingSystem);
+    : serverAllowedOperatingSystems[0];
+  const shouldOpenInstructionsByDefault = serverAllowedOperatingSystems.includes(initialOperatingSystem);
   const [selectedOperatingSystem, setSelectedOperatingSystem] = useState<OperatingSystem>(
     seededSelection,
   );
@@ -86,6 +87,34 @@ export const PublicOperatingSystemStep = ({
   );
   const selectedConfig = getOperatingSystemConfig(selectedOperatingSystem);
   const nextHref = `/ankieta/${sessionId}/time?age=${age}&os=${selectedOperatingSystem}`;
+
+  useEffect(() => {
+    setAllowedOperatingSystems(serverAllowedOperatingSystems);
+  }, [serverAllowedOperatingSystems]);
+
+  useEffect(() => {
+    const clientAllowedOperatingSystems = getAvailableOperatingSystems(window.navigator.userAgent);
+
+    setAllowedOperatingSystems((current) => {
+      if (
+        current.length === clientAllowedOperatingSystems.length &&
+        current.every((value, index) => value === clientAllowedOperatingSystems[index])
+      ) {
+        return current;
+      }
+
+      return clientAllowedOperatingSystems;
+    });
+  }, []);
+
+  useEffect(() => {
+    if (allowedOperatingSystems.includes(selectedOperatingSystem)) {
+      return;
+    }
+
+    setSelectedOperatingSystem(allowedOperatingSystems[0]);
+    setView("select");
+  }, [allowedOperatingSystems, selectedOperatingSystem]);
 
   const leadingAction =
     view === "instructions" ? (
